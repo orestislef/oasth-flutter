@@ -5,10 +5,12 @@ import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/line_name.dart';
 import 'package:oasth/api/responses/lines.dart';
 import 'package:oasth/api/responses/lines_and_routes_for_m_land_l_code.dart';
+import 'package:oasth/api/responses/lines_with_ml_info.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/routes_for_line.dart';
 import 'package:oasth/api/responses/sched_lines.dart';
 import 'package:oasth/api/responses/schedule_days_master_line.dart';
+import 'package:oasth/api/responses/stop_by_sip.dart';
 import 'package:oasth/api/responses/stop_details.dart';
 
 const Map<String, String> header = {
@@ -109,8 +111,8 @@ class Api {
     }
   }
 
-  static Future<LinesAndRoutesForMLandLCode> getLinesAndRoutesForMasterLineAndLineCode(
-      int p1, int p2) async {
+  static Future<LinesAndRoutesForMLandLCode>
+      getLinesAndRoutesForMasterLineAndLineCode(int p1, int p2) async {
     final url =
         Uri.parse('$baseUrl/?act=getLinesAndRoutesForMlandLCode&p1=$p1&p2=$p2');
 
@@ -123,7 +125,8 @@ class Api {
             LinesAndRoutesForMLandLCode.fromMap(data);
         return linesAndRoutesForMLandLCodes;
       } else {
-        throw Exception('Failed to get Lines And Routes For Master Line And Line Code');
+        throw Exception(
+            'Failed to get Lines And Routes For Master Line And Line Code');
       }
     } catch (error) {
       throw Exception('Error: $error');
@@ -198,6 +201,43 @@ class Api {
         return busLocation;
       } else {
         throw Exception('Failed to get Bus Location');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
+
+  static Future<LinesWithMasterLineInfo> webGetLinesWithMLInfo() async {
+    final url = Uri.parse('$baseUrl/?act=webGetLinesWithMLInfo');
+
+    try {
+      final response = await http.get(url, headers: header);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        LinesWithMasterLineInfo linesWithMasterLineInfo =
+            LinesWithMasterLineInfo.fromMap(data);
+        return linesWithMasterLineInfo;
+      } else {
+        throw Exception('Failed to get Lines With ML Info');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
+
+  static Future<StopBySip> getStopBySIP(int sip) async {
+    final url = Uri.parse('$baseUrl/?act=getStopBySIP&sip=$sip');
+
+    try {
+      final response = await http.get(url, headers: header);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        StopBySip stopBySip = StopBySip.fromMap(data);
+        return stopBySip;
+      } else {
+        throw Exception('Failed to get Stop By SIP');
       }
     } catch (error) {
       throw Exception('Error: $error');

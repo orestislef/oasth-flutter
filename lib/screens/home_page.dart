@@ -1,77 +1,80 @@
+import 'package:bottom_navy_bar/bottom_navy_bar.dart';
 import 'package:flutter/material.dart';
-import 'package:oasth/api/api/api.dart';
-import 'package:oasth/api/responses/lines.dart';
-import 'package:oasth/screens/line_page.dart';
+import 'package:oasth/screens/best_route_page.dart';
+import 'package:oasth/screens/lines_page.dart';
+import 'package:oasth/screens/stops_page.dart';
 
-class LinesPage extends StatefulWidget {
-  const LinesPage({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
   @override
-  State<LinesPage> createState() => _LinesPageState();
+  State<HomePage> createState() => _HomePageState();
 }
 
-class _LinesPageState extends State<LinesPage> {
+class _HomePageState extends State<HomePage> {
+  int currentIndex = 0;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: const Text('ΟΑΣΘ γραμμές'),
+        title: _buildTitleBasedOnIndex(currentIndex),
       ),
-      body: Column(
-        children: <Widget>[
-          const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text(
-                'Επιλέξτε τη γραμμή που σας ενδιαφέρει, για να δείτε: το ωράριο λειτουργίας και τις στάσεις της.'),
+      bottomNavigationBar: BottomNavyBar(
+        selectedIndex: currentIndex,
+        items: <BottomNavyBarItem>[
+          BottomNavyBarItem(
+            icon: const Icon(Icons.linear_scale_rounded),
+            title: const Text('Γραμμές'),
+            activeColor: Colors.red,
+            inactiveColor: Colors.blue,
           ),
-          const SizedBox(height: 10),
-          Expanded(
-            child: FutureBuilder<Line>(
-              future: Api.wegGetLines(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator.adaptive(),
-                  );
-                } else if (snapshot.hasError) {
-                  return Text('${snapshot.error}');
-                } else {
-                  final lines = snapshot.data!;
-                  return Scrollbar(
-                    child: ListView.builder(
-                      itemCount: lines.lines.length,
-                      itemBuilder: (context, index) {
-                        bool isOdd = index % 2 == 0;
-                        return ListTile(
-
-                          tileColor: isOdd ? Colors.grey[200] : null,
-                          enableFeedback: true,
-                          leading: Text(lines.lines[index].lineID),
-                          title: Text(lines.lines[index].lineDescr),
-                          subtitle: Text(lines.lines[index].lineDescrEng),
-                          onTap: () {
-                            _onTapOnLine(context, lines.lines[index]);
-                          },
-                        );
-                      },
-                    ),
-                  );
-                }
-              },
-            ),
+          BottomNavyBarItem(
+            icon: const Icon(Icons.business),
+            title: const Text('Στάσεις'),
+            activeColor: Colors.red,
+            inactiveColor: Colors.blue,
+          ),
+          BottomNavyBarItem(
+            icon: const Icon(Icons.accessible_forward),
+            title: const Text('Βέλτιστη Διαδρομή'),
+            activeColor: Colors.red,
+            inactiveColor: Colors.blue,
           ),
         ],
+        onItemSelected: (int value) {
+          setState(() {
+            currentIndex = value;
+          });
+        },
       ),
+      body: getWidgetBasedOnIndex(currentIndex),
     );
   }
 
-  void _onTapOnLine(BuildContext context, LineData line) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => LinePage(line: line),
-      ),
-    );
+  Widget getWidgetBasedOnIndex(int currentIndex) {
+    switch (currentIndex) {
+      case 0:
+        return const LinesPage();
+      case 1:
+        return const StopsPage();
+      case 2:
+        return const BestRoutePage();
+      default:
+        return Container();
+    }
+  }
+
+  _buildTitleBasedOnIndex(int currentIndex) {
+    switch (currentIndex) {
+      case 0:
+        return const Text('Γραμμές');
+      case 1:
+        return const Text('Στάσεις');
+      case 2:
+        return const Text('Βέλτιστη Διαδρομή');
+      default:
+        return Container();
+    }
   }
 }
