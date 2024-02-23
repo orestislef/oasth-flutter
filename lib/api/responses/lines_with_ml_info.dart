@@ -21,6 +21,7 @@ class LineWithMasterLineInfo {
   String? lineCode;
   String? lineId;
   String? lineDescription;
+  String? lineDescriptionEng;
   String? masterLineDMaster;
 
   LineWithMasterLineInfo.fromMap(Map<String, dynamic> data) {
@@ -29,6 +30,7 @@ class LineWithMasterLineInfo {
     lineCode = data['line_code'];
     lineId = data['line_id'];
     lineDescription = data['line_descr'];
+    lineDescriptionEng = data['line_descr_eng'];
     masterLineDMaster = data['mld_master'];
   }
 
@@ -39,6 +41,7 @@ class LineWithMasterLineInfo {
       'line_code': lineCode,
       'line_id': lineId,
       'line_descr': lineDescription,
+      'line_descr_eng': lineDescriptionEng,
       'mld_master': masterLineDMaster
     };
   }

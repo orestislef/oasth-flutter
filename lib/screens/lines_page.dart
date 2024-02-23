@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:oasth/api/api/api.dart';
-import 'package:oasth/api/responses/lines.dart';
-import 'package:oasth/screens/line_page.dart';
+import 'package:oasth/api/responses/lines_with_ml_info.dart';
+import 'package:oasth/screens/line_info_page.dart';
 
 class LinesPage extends StatefulWidget {
   const LinesPage({super.key});
@@ -23,8 +23,8 @@ class _LinesPageState extends State<LinesPage> {
           ),
           const SizedBox(height: 10),
           Expanded(
-            child: FutureBuilder<Line>(
-              future: Api.wegGetLines(),
+            child: FutureBuilder<LinesWithMasterLineInfo>(
+              future: Api.webGetLinesWithMLInfo(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
@@ -33,21 +33,29 @@ class _LinesPageState extends State<LinesPage> {
                 } else if (snapshot.hasError) {
                   return Text('${snapshot.error}');
                 } else {
-                  final lines = snapshot.data!;
+                  LinesWithMasterLineInfo linesWithMasterLineInfo =
+                      snapshot.data!;
                   return Scrollbar(
                     child: ListView.builder(
-                      itemCount: lines.lines.length,
+                      itemCount: linesWithMasterLineInfo
+                          .linesWithMasterLineInfo.length,
                       itemBuilder: (context, index) {
                         bool isOdd = index % 2 == 0;
                         return ListTile(
-
                           tileColor: isOdd ? Colors.grey[200] : null,
                           enableFeedback: true,
-                          leading: Text(lines.lines[index].lineID),
-                          title: Text(lines.lines[index].lineDescr),
-                          subtitle: Text(lines.lines[index].lineDescrEng),
+                          leading: Text(linesWithMasterLineInfo
+                              .linesWithMasterLineInfo[index].lineId!),
+                          title: Text(linesWithMasterLineInfo
+                              .linesWithMasterLineInfo[index].lineDescription!),
+                          subtitle: Text(linesWithMasterLineInfo
+                              .linesWithMasterLineInfo[index]
+                              .lineDescriptionEng!),
                           onTap: () {
-                            _onTapOnLine(context, lines.lines[index]);
+                            _onTapOnLine(
+                                context,
+                                linesWithMasterLineInfo
+                                    .linesWithMasterLineInfo[index]);
                           },
                         );
                       },
@@ -62,11 +70,16 @@ class _LinesPageState extends State<LinesPage> {
     );
   }
 
-  void _onTapOnLine(BuildContext context, LineData line) {
+  void _onTapOnLine(
+    BuildContext context,
+    LineWithMasterLineInfo linesWithMasterLineInfo,
+  ) {
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (context) => LinePage(line: line),
+        builder: (context) => LineInfoPage(
+          linesWithMasterLineInfo: linesWithMasterLineInfo,
+        ),
       ),
     );
   }

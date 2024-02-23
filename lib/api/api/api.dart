@@ -37,7 +37,7 @@ const Map<String, String> header = {
 const String baseUrl = 'https://telematics.oasth.gr/api';
 
 class Api {
-  static Future<Line> wegGetLines() async {
+  static Future<Line> webGetLines() async {
     final url = Uri.parse('$baseUrl/?act=webGetLines');
 
     try {
