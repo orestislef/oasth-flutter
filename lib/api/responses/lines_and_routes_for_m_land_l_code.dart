@@ -2,13 +2,13 @@ class LinesAndRoutesForMLandLCode {
   late List<LinesAndRoutesForMLandLCodeData> linesAndRoutesForMlandLcodes;
 
   static LinesAndRoutesForMLandLCode fromMap(List<dynamic> map) {
-    LinesAndRoutesForMLandLCode obj = LinesAndRoutesForMLandLCode();
-    obj.linesAndRoutesForMlandLcodes = [];
+    LinesAndRoutesForMLandLCode linesAndRoutesForMLandLCode = LinesAndRoutesForMLandLCode();
+    linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes = [];
     for (int i = 0; i < map.length; i++) {
-      obj.linesAndRoutesForMlandLcodes
+      linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes
           .add(LinesAndRoutesForMLandLCodeData.fromMap(map[i]));
     }
-    return obj;
+    return linesAndRoutesForMLandLCode;
   }
 
   Map toJson() => {

@@ -1,27 +1,28 @@
-class ScheduleDaysMasterline {
-  late List<ScheduleDayMasterline> scheduleDaysMasterline;
+class ScheduleDaysMasterLine {
+  late List<MasterLineData> scheduleDaysMasterLine;
 
-  static ScheduleDaysMasterline fromMap(List<dynamic> map) {
-    ScheduleDaysMasterline obj = ScheduleDaysMasterline();
-    obj.scheduleDaysMasterline = [];
+  static ScheduleDaysMasterLine fromMap(List<dynamic> map) {
+    ScheduleDaysMasterLine scheduleDaysMasterLine = ScheduleDaysMasterLine();
+    scheduleDaysMasterLine.scheduleDaysMasterLine = [];
     for (int i = 0; i < map.length; i++) {
-      obj.scheduleDaysMasterline.add(ScheduleDayMasterline.fromMap(map[i]));
+      scheduleDaysMasterLine.scheduleDaysMasterLine
+          .add(MasterLineData.fromMap(map[i]));
     }
-    return obj;
+    return scheduleDaysMasterLine;
   }
 
-  Map toJson() => {"schedule_days_masterline": scheduleDaysMasterline};
+  Map toJson() => {"schedule_days_masterline": scheduleDaysMasterLine};
 }
 
-class ScheduleDayMasterline {
+class MasterLineData {
   String? scheduleDescription;
   String? scheduleDescriptionEng;
   String? scheduleCode;
   String? computed3;
   String? computed4;
 
-  static ScheduleDayMasterline fromMap(Map<String, dynamic> map) {
-    ScheduleDayMasterline objBean = ScheduleDayMasterline();
+  static MasterLineData fromMap(Map<String, dynamic> map) {
+    MasterLineData objBean = MasterLineData();
     objBean.scheduleDescription = map['sdc_descr'];
     objBean.scheduleDescriptionEng = map['sdc_descr_eng'];
     objBean.scheduleCode = map['sdc_code'];

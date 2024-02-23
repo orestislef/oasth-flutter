@@ -109,7 +109,7 @@ class Api {
     }
   }
 
-  static Future<LinesAndRoutesForMLandLCode> getLinesAndRoutesForMlandLcode(
+  static Future<LinesAndRoutesForMLandLCode> getLinesAndRoutesForMasterLineAndLineCode(
       int p1, int p2) async {
     final url =
         Uri.parse('$baseUrl/?act=getLinesAndRoutesForMlandLCode&p1=$p1&p2=$p2');
@@ -123,7 +123,7 @@ class Api {
             LinesAndRoutesForMLandLCode.fromMap(data);
         return linesAndRoutesForMLandLCodes;
       } else {
-        throw Exception('Failed to get Lines And Routes For Mland Lcode');
+        throw Exception('Failed to get Lines And Routes For Master Line And Line Code');
       }
     } catch (error) {
       throw Exception('Error: $error');
@@ -148,7 +148,7 @@ class Api {
     }
   }
 
-  static Future<ScheduleDaysMasterline> getScheduleDaysMasterline(
+  static Future<ScheduleDaysMasterLine> getScheduleDaysMasterLine(
       int p1) async {
     final url = Uri.parse('$baseUrl/?act=getScheduleDaysMasterline&p1=$p1');
 
@@ -157,11 +157,11 @@ class Api {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        ScheduleDaysMasterline scheduleDaysMasterline =
-            ScheduleDaysMasterline.fromMap(data);
-        return scheduleDaysMasterline;
+        ScheduleDaysMasterLine scheduleDaysMasterLine =
+            ScheduleDaysMasterLine.fromMap(data);
+        return scheduleDaysMasterLine;
       } else {
-        throw Exception('Failed to get Schedule Days Masterline');
+        throw Exception('Failed to get Schedule Days MasterLine');
       }
     } catch (error) {
       throw Exception('Error: $error');
