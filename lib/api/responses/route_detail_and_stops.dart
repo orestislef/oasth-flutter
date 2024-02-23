@@ -20,10 +20,10 @@ class RouteDetailAndStops {
 }
 
 class Stops {
-  late String stopCode;
+  late String? stopCode;
   late String stopID;
-  late String stopDescr;
-  late String stopDescrEng;
+  late String stopDescription;
+  late String stopDescriptionEng;
   late String? stopStreet;
   dynamic stopStreetEng;
   late String stopHeading;
@@ -37,8 +37,8 @@ class Stops {
     Stops stops = Stops();
     stops.stopCode = map['StopCode'];
     stops.stopID = map['StopID'];
-    stops.stopDescr = map['StopDescr'];
-    stops.stopDescrEng = map['StopDescrEng'];
+    stops.stopDescription = map['StopDescr'];
+    stops.stopDescriptionEng = map['StopDescrEng'];
     stops.stopStreet = map['StopStreet'];
     stops.stopStreetEng = map['StopStreetEng'];
     stops.stopHeading = map['StopHeading'];
@@ -53,8 +53,8 @@ class Stops {
   Map<String, dynamic> toJson() => {
     "StopCode": stopCode,
     "StopID": stopID,
-    "StopDescr": stopDescr,
-    "StopDescrEng": stopDescrEng,
+    "StopDescr": stopDescription,
+    "StopDescrEng": stopDescriptionEng,
     "StopStreet": stopStreet,
     "StopStreetEng": stopStreetEng,
     "StopHeading": stopHeading,

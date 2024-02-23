@@ -5,8 +5,13 @@ import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/screens/stop_page.dart';
 
 class RoutePage extends StatelessWidget {
-  const RoutePage({super.key, required this.details, required this.stops});
+  const RoutePage(
+      {super.key,
+      required this.details,
+      required this.stops,
+      this.hasAppBar = true});
 
+  final bool hasAppBar;
   final List<Details> details;
   final List<Stops> stops;
 
@@ -48,7 +53,7 @@ class RoutePage extends StatelessWidget {
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(8.0, 2.0, 2.0, 8.0),
                     child: Text(
-                      stop.stopDescr,
+                      stop.stopDescription,
                       softWrap: false,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
@@ -77,9 +82,9 @@ class RoutePage extends StatelessWidget {
     }
 
     return Scaffold(
-        appBar: AppBar(
+        appBar: hasAppBar ?AppBar(
           title: const Text('Route'),
-        ),
+        ): null,
         body: FlutterMap(
           mapController: MapController(),
           options: MapOptions(

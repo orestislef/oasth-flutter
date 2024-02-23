@@ -14,7 +14,7 @@ class StopPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(stop.stopDescr),
+        title: Text(stop.stopDescription),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -25,8 +25,8 @@ class StopPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Description: ${stop.stopDescr}'),
-                Text('English Description: ${stop.stopDescrEng}'),
+                Text('Description: ${stop.stopDescription}'),
+                Text('English Description: ${stop.stopDescriptionEng}'),
                 Text('Street: ${stop.stopStreet ?? "N/A"}'),
                 Text('English Street: ${stop.stopStreetEng ?? "N/A"}'),
                 Text('Heading: ${stop.stopHeading}'),
@@ -50,7 +50,7 @@ class StopPage extends StatelessWidget {
                   height: MediaQuery.of(context).size.height * 0.20,
                   width: double.infinity,
                   child: FutureBuilder(
-                      future: Api.getStopArrivals(stop.stopCode),
+                      future: Api.getStopArrivals(stop.stopCode!),
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
                           StopArrivals stopArrivals = snapshot.data!;

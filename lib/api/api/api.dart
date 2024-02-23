@@ -112,7 +112,7 @@ class Api {
   }
 
   static Future<LinesAndRoutesForMLandLCode>
-      getLinesAndRoutesForMasterLineAndLineCode(int p1, int p2) async {
+      getLinesAndRoutesForMasterLineAndLineCode(String p1, String p2) async {
     final url =
         Uri.parse('$baseUrl/?act=getLinesAndRoutesForMlandLCode&p1=$p1&p2=$p2');
 

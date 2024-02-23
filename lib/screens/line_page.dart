@@ -59,24 +59,26 @@ class LinePage extends StatelessWidget {
             } else if (snapshot.data == null || snapshot.data!.stops.isEmpty) {
               return const Text('No stops found');
             } else {
-              return ListView.builder(
-                itemCount: snapshot.data!.stops.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    title: Text(snapshot.data!.stops[index].stopDescr),
-                    subtitle: Text(snapshot.data!.stops[index].stopDescrEng),
-                    onTap: () {
-                      final stop = snapshot.data!.stops[index];
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => StopPage(stop: stop),
-                        ),
-                      );
-                    },
-                    enableFeedback: true,
-                  );
-                },
+              return Scrollbar(
+                child: ListView.builder(
+                  itemCount: snapshot.data!.stops.length,
+                  itemBuilder: (context, index) {
+                    return ListTile(
+                      title: Text(snapshot.data!.stops[index].stopDescription),
+                      subtitle: Text(snapshot.data!.stops[index].stopDescriptionEng),
+                      onTap: () {
+                        final stop = snapshot.data!.stops[index];
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => StopPage(stop: stop),
+                          ),
+                        );
+                      },
+                      enableFeedback: true,
+                    );
+                  },
+                ),
               );
             }
           },

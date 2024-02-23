@@ -16,39 +16,41 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: _buildTitleBasedOnIndex(currentIndex),
+    return SafeArea(
+      child: Scaffold(
+        appBar: AppBar(
+          title: _buildTitleBasedOnIndex(currentIndex),
+        ),
+        bottomNavigationBar: BottomNavyBar(
+          selectedIndex: currentIndex,
+          items: <BottomNavyBarItem>[
+            BottomNavyBarItem(
+              icon: const Icon(Icons.linear_scale_rounded),
+              title: _buildTitleBasedOnIndex(0),
+              activeColor: Colors.deepOrangeAccent,
+              inactiveColor: Colors.deepOrange,
+            ),
+            BottomNavyBarItem(
+              icon: const Icon(Icons.follow_the_signs),
+              title: _buildTitleBasedOnIndex(1),
+              activeColor: Colors.blueAccent,
+              inactiveColor: Colors.blue,
+            ),
+            BottomNavyBarItem(
+              icon: const Icon(Icons.route),
+              title: _buildTitleBasedOnIndex(2),
+              activeColor: Colors.greenAccent,
+              inactiveColor: Colors.green,
+            ),
+          ],
+          onItemSelected: (int value) {
+            setState(() {
+              currentIndex = value;
+            });
+          },
+        ),
+        body: getWidgetBasedOnIndex(currentIndex),
       ),
-      bottomNavigationBar: BottomNavyBar(
-        selectedIndex: currentIndex,
-        items: <BottomNavyBarItem>[
-          BottomNavyBarItem(
-            icon: const Icon(Icons.linear_scale_rounded),
-            title: _buildTitleBasedOnIndex(0),
-            activeColor: Colors.deepOrangeAccent,
-            inactiveColor: Colors.deepOrange,
-          ),
-          BottomNavyBarItem(
-            icon: const Icon(Icons.business),
-            title: _buildTitleBasedOnIndex(1),
-            activeColor: Colors.blueAccent,
-            inactiveColor: Colors.blue,
-          ),
-          BottomNavyBarItem(
-            icon: const Icon(Icons.accessible_forward),
-            title: _buildTitleBasedOnIndex(2),
-            activeColor: Colors.greenAccent,
-            inactiveColor: Colors.green,
-          ),
-        ],
-        onItemSelected: (int value) {
-          setState(() {
-            currentIndex = value;
-          });
-        },
-      ),
-      body: getWidgetBasedOnIndex(currentIndex),
     );
   }
 
