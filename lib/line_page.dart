@@ -2,10 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:oasth/screens/line_route_page.dart';
-import 'package:oasth/api/responses/lines.dart';
-import 'package:oasth/api/responses/route_detail_and_stops.dart';
-import 'package:oasth/screens/stop_page.dart';
+import 'package:oasth/line_route_page.dart';
+import 'package:oasth/lines.dart';
+import 'package:oasth/route_detail_and_stops.dart';
+import 'package:oasth/stop_page.dart';
 
 class LinePage extends StatelessWidget {
   final Line line;
