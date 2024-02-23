@@ -1,3 +1,20 @@
+class Lines {
+  late List<Line> lines;
+
+  static Lines fromMap(List<dynamic> map) {
+    Lines obj = Lines();
+    obj.lines = [];
+    for (int i = 0; i < map.length; i++) {
+      obj.lines.add(Line.fromMap(map[i]));
+    }
+    return obj;
+  }
+
+  Map toJson() => {
+        "lines": lines,
+      };
+}
+
 class Line {
   late String lineCode;
   late String lineID;
@@ -16,10 +33,10 @@ class Line {
   }
 
   Map toJson() => {
-    "LineCode": lineCode,
-    "LineID": lineID,
-    "LineIDGR": lineIDGR,
-    "LineDescr": lineDescr,
-    "LineDescrEng": lineDescrEng,
-  };
+        "LineCode": lineCode,
+        "LineID": lineID,
+        "LineIDGR": lineIDGR,
+        "LineDescr": lineDescr,
+        "LineDescrEng": lineDescrEng,
+      };
 }

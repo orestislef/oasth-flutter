@@ -51,7 +51,9 @@ class LinePage extends StatelessWidget {
           future: Api.webGetRoutesDetailsAndStops(int.parse(line.lineCode)),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
-              return const CircularProgressIndicator();
+              return const Center(
+                child: CircularProgressIndicator.adaptive(),
+              );
             } else if (snapshot.hasError) {
               return Text('${snapshot.error}');
             } else if (snapshot.data == null || snapshot.data!.stops.isEmpty) {

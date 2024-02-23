@@ -1,8 +1,13 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:oasth/api/responses/line_name.dart';
 import 'package:oasth/api/responses/lines.dart';
+import 'package:oasth/api/responses/lines_and_routes_for_m_land_l_code.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
+import 'package:oasth/api/responses/routes_for_line.dart';
+import 'package:oasth/api/responses/sched_lines.dart';
+import 'package:oasth/api/responses/schedule_days_master_line.dart';
 import 'package:oasth/api/responses/stop_details.dart';
 
 const Map<String, String> header = {
@@ -29,7 +34,7 @@ const Map<String, String> header = {
 const String baseUrl = 'https://telematics.oasth.gr/api';
 
 class Api {
-  static Future<List<Line>> wegGetLines() async {
+  static Future<Lines> wegGetLines() async {
     final url = Uri.parse('$baseUrl/?act=webGetLines');
 
     try {
@@ -37,11 +42,8 @@ class Api {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        List<Line> lines = [];
-        for (int i = 0; i < data.length; i++) {
-          Line line = Line.fromMap(data[i]);
-          lines.add(line);
-        }
+
+        Lines lines = Lines.fromMap(data);
         return lines;
       } else {
         throw Exception('Failed to web Get Lines');
@@ -82,6 +84,101 @@ class Api {
         return routeDetailAndStops;
       } else {
         throw Exception('Failed to web Get Routes Details And Stops');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
+
+  static Future<LineNames> getLineName(int p1) async {
+    final url = Uri.parse('$baseUrl/?act=getLineName&p1=$p1');
+
+    try {
+      final response = await http.get(url, headers: header);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        LineNames lineNames = LineNames.fromMap(data);
+        return lineNames;
+      } else {
+        throw Exception('Failed to get Line Name');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
+
+  static Future<LinesAndRoutesForMLandLCodes> getLinesAndRoutesForMlandLcode(
+      int p1, int p2) async {
+    final url =
+        Uri.parse('$baseUrl/?act=getLinesAndRoutesForMlandLCode&p1=$p1&p2=$p2');
+
+    try {
+      final response = await http.get(url, headers: header);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        LinesAndRoutesForMLandLCodes linesAndRoutesForMLandLCodes =
+            LinesAndRoutesForMLandLCodes.fromMap(data);
+        return linesAndRoutesForMLandLCodes;
+      } else {
+        throw Exception('Failed to get Lines And Routes For Mland Lcode');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
+
+  static Future<RoutesForLine> getRoutesForLine(int p1) async {
+    final url = Uri.parse('$baseUrl/?act=getRoutesForLine&p1=$p1');
+
+    try {
+      final response = await http.get(url, headers: header);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        RoutesForLine routesFroLine = RoutesForLine.fromMap(data);
+        return routesFroLine;
+      } else {
+        throw Exception('Failed to get Routes For Line');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
+
+  static Future<ScheduleDaysMasterline> getScheduleDaysMasterline(
+      int p1) async {
+    final url = Uri.parse('$baseUrl/?act=getScheduleDaysMasterline&p1=$p1');
+
+    try {
+      final response = await http.get(url, headers: header);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        ScheduleDaysMasterline scheduleDaysMasterline =
+            ScheduleDaysMasterline.fromMap(data);
+        return scheduleDaysMasterline;
+      } else {
+        throw Exception('Failed to get Schedule Days Masterline');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
+
+  static Future<SchedLines> getSchedLines(int p1, int p2, int p3) async {
+    final url = Uri.parse('$baseUrl/?act=getSchedLines&p1=$p1&p2=$p2&p3=$p3');
+
+    try {
+      final response = await http.get(url, headers: header);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> data = json.decode(response.body);
+        SchedLines schedLines = SchedLines.fromMap(data);
+        return schedLines;
+      } else {
+        throw Exception('Failed to get Sched Lines');
       }
     } catch (error) {
       throw Exception('Error: $error');
