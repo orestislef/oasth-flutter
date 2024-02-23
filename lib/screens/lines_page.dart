@@ -41,22 +41,24 @@ class _LinesPageState extends State<LinesPage> {
                           .linesWithMasterLineInfo.length,
                       itemBuilder: (context, index) {
                         bool isOdd = index % 2 == 0;
-                        return ListTile(
-                          tileColor: isOdd ? Colors.grey[200] : null,
-                          enableFeedback: true,
-                          leading: Text(linesWithMasterLineInfo
-                              .linesWithMasterLineInfo[index].lineId!),
-                          title: Text(linesWithMasterLineInfo
-                              .linesWithMasterLineInfo[index].lineDescription!),
-                          subtitle: Text(linesWithMasterLineInfo
-                              .linesWithMasterLineInfo[index]
-                              .lineDescriptionEng!),
-                          onTap: () {
-                            _onTapOnLine(
-                                context,
-                                linesWithMasterLineInfo
-                                    .linesWithMasterLineInfo[index]);
-                          },
+                        return Card(
+                          color: isOdd ? null : Colors.grey.shade300,
+                          child: ListTile(
+                            enableFeedback: true,
+                            leading: Text(linesWithMasterLineInfo
+                                .linesWithMasterLineInfo[index].lineId!),
+                            title: Text(linesWithMasterLineInfo
+                                .linesWithMasterLineInfo[index].lineDescription!),
+                            subtitle: Text(linesWithMasterLineInfo
+                                .linesWithMasterLineInfo[index]
+                                .lineDescriptionEng!),
+                            onTap: () {
+                              _onTapOnLine(
+                                  context,
+                                  linesWithMasterLineInfo
+                                      .linesWithMasterLineInfo[index]);
+                            },
+                          ),
                         );
                       },
                     ),

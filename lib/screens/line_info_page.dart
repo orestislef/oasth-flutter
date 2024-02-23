@@ -150,14 +150,18 @@ class _LineInfoPageState extends State<LineInfoPage> {
                           subtitle: Text(
                               '${linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes[index].lineDescrEng}'),
                           enableFeedback: true,
-                          onTap: () {
-                            setState(() {
-                              widget.linesWithMasterLineInfo.lineCode =
-                                  linesAndRoutesForMLandLCode
-                                      .linesAndRoutesForMlandLcodes[index]
-                                      .lineCode!;
-                            });
-                          },
+                          onTap: linesAndRoutesForMLandLCode
+                                      .linesAndRoutesForMlandLcodes.length >
+                                  1
+                              ? () {
+                                  setState(() {
+                                    widget.linesWithMasterLineInfo.lineCode =
+                                        linesAndRoutesForMLandLCode
+                                            .linesAndRoutesForMlandLcodes[index]
+                                            .lineCode!;
+                                  });
+                                }
+                              : null,
                         ),
                       );
                     });
@@ -204,11 +208,13 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                 subtitle: Text(
                                     '${routesForLine.routesForLine[index].routeDescriptionEng}'),
                                 enableFeedback: true,
-                                onTap: () {
-                                  setState(() {
-                                    widget.selectedDirectionIndex = index;
-                                  });
-                                },
+                                onTap: routesForLine.routesForLine.length > 1
+                                    ? () {
+                                        setState(() {
+                                          widget.selectedDirectionIndex = index;
+                                        });
+                                      }
+                                    : null,
                               ),
                             ),
                           ],
@@ -242,6 +248,11 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                       physics:
                                           const NeverScrollableScrollPhysics(),
                                       itemBuilder: (context, index) {
+                                        bool hasStopStreet = routeDetailAndStops
+                                                    .stops[index].stopStreet !=
+                                                null &&
+                                            routeDetailAndStops.stops[index]
+                                                .stopStreet!.isNotEmpty;
                                         return Card(
                                           child: ListTile(
                                             leading: CircleAvatar(
@@ -250,9 +261,10 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                             ),
                                             title: Text(routeDetailAndStops
                                                 .stops[index].stopDescription),
-                                            subtitle: Text(routeDetailAndStops
-                                                    .stops[index].stopStreet ??
-                                                ''),
+                                            subtitle: hasStopStreet
+                                                ? Text(routeDetailAndStops
+                                                    .stops[index].stopStreet!)
+                                                : null,
                                             trailing: routeDetailAndStops
                                                         .stops[index]
                                                         .stopAmea ==
