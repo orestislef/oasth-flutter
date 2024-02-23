@@ -6,13 +6,13 @@ class Line {
   late String lineDescrEng;
 
   static Line fromMap(Map<String, dynamic> map) {
-    Line obj = Line();
-    obj.lineCode = map['LineCode'];
-    obj.lineID = map['LineID'];
-    obj.lineIDGR = map['LineIDGR'];
-    obj.lineDescr = map['LineDescr'];
-    obj.lineDescrEng = map['LineDescrEng'];
-    return obj;
+    Line objBean = Line();
+    objBean.lineCode = map['LineCode'];
+    objBean.lineID = map['LineID'];
+    objBean.lineIDGR = map['LineIDGR'];
+    objBean.lineDescr = map['LineDescr'];
+    objBean.lineDescrEng = map['LineDescrEng'];
+    return objBean;
   }
 
   Map toJson() => {

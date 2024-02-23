@@ -51,27 +51,25 @@ class _MyHomePageState extends State<MyHomePage> {
             if (snapshot.data!.isEmpty) {
               return const Text('No lines found');
             }
-            return Expanded(
-              child: ListView.builder(
-                itemCount: snapshot.data!.length,
-                itemBuilder: (context, index) {
-                  return ListTile(
-                    enableFeedback: true,
-                    leading: Text(snapshot.data![index].lineIDGR),
-                    title: Text(snapshot.data![index].lineDescr),
-                    subtitle: Text(snapshot.data![index].lineDescrEng),
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              LinePage(line: snapshot.data![index]),
-                        ),
-                      );
-                    },
-                  );
-                },
-              ),
+            return ListView.builder(
+              itemCount: snapshot.data!.length,
+              itemBuilder: (context, index) {
+                return ListTile(
+                  enableFeedback: true,
+                  leading: Text(snapshot.data![index].lineIDGR),
+                  title: Text(snapshot.data![index].lineDescr),
+                  subtitle: Text(snapshot.data![index].lineDescrEng),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) =>
+                            LinePage(line: snapshot.data![index]),
+                      ),
+                    );
+                  },
+                );
+              },
             );
           } else if (snapshot.hasError) {
             return Text('${snapshot.error}');
