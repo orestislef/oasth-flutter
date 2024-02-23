@@ -1,11 +1,11 @@
-class Lines {
-  late List<Line> lines;
+class Line {
+  late List<LineData> lines;
 
-  static Lines fromMap(List<dynamic> map) {
-    Lines obj = Lines();
+  static Line fromMap(List<dynamic> map) {
+    Line obj = Line();
     obj.lines = [];
     for (int i = 0; i < map.length; i++) {
-      obj.lines.add(Line.fromMap(map[i]));
+      obj.lines.add(LineData.fromMap(map[i]));
     }
     return obj;
   }
@@ -15,15 +15,15 @@ class Lines {
       };
 }
 
-class Line {
+class LineData {
   late String lineCode;
   late String lineID;
   late String lineIDGR;
   late String lineDescr;
   late String lineDescrEng;
 
-  static Line fromMap(Map<String, dynamic> map) {
-    Line objBean = Line();
+  static LineData fromMap(Map<String, dynamic> map) {
+    LineData objBean = LineData();
     objBean.lineCode = map['LineCode'];
     objBean.lineID = map['LineID'];
     objBean.lineIDGR = map['LineIDGR'];

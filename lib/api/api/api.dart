@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/line_name.dart';
 import 'package:oasth/api/responses/lines.dart';
 import 'package:oasth/api/responses/lines_and_routes_for_m_land_l_code.dart';
@@ -34,7 +35,7 @@ const Map<String, String> header = {
 const String baseUrl = 'https://telematics.oasth.gr/api';
 
 class Api {
-  static Future<Lines> wegGetLines() async {
+  static Future<Line> wegGetLines() async {
     final url = Uri.parse('$baseUrl/?act=webGetLines');
 
     try {
@@ -43,7 +44,7 @@ class Api {
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
 
-        Lines lines = Lines.fromMap(data);
+        Line lines = Line.fromMap(data);
         return lines;
       } else {
         throw Exception('Failed to web Get Lines');
@@ -90,7 +91,7 @@ class Api {
     }
   }
 
-  static Future<LineNames> getLineName(int p1) async {
+  static Future<LineName> getLineName(int p1) async {
     final url = Uri.parse('$baseUrl/?act=getLineName&p1=$p1');
 
     try {
@@ -98,7 +99,7 @@ class Api {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        LineNames lineNames = LineNames.fromMap(data);
+        LineName lineNames = LineName.fromMap(data);
         return lineNames;
       } else {
         throw Exception('Failed to get Line Name');
@@ -108,7 +109,7 @@ class Api {
     }
   }
 
-  static Future<LinesAndRoutesForMLandLCodes> getLinesAndRoutesForMlandLcode(
+  static Future<LinesAndRoutesForMLandLCode> getLinesAndRoutesForMlandLcode(
       int p1, int p2) async {
     final url =
         Uri.parse('$baseUrl/?act=getLinesAndRoutesForMlandLCode&p1=$p1&p2=$p2');
@@ -118,8 +119,8 @@ class Api {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        LinesAndRoutesForMLandLCodes linesAndRoutesForMLandLCodes =
-            LinesAndRoutesForMLandLCodes.fromMap(data);
+        LinesAndRoutesForMLandLCode linesAndRoutesForMLandLCodes =
+            LinesAndRoutesForMLandLCode.fromMap(data);
         return linesAndRoutesForMLandLCodes;
       } else {
         throw Exception('Failed to get Lines And Routes For Mland Lcode');
@@ -179,6 +180,24 @@ class Api {
         return schedLines;
       } else {
         throw Exception('Failed to get Sched Lines');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
+
+  static Future<BusLocation> getBusLocation(int p1) async {
+    final url = Uri.parse('$baseUrl/?act=getBusLocation&p1=$p1');
+
+    try {
+      final response = await http.get(url, headers: header);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+        BusLocation busLocation = BusLocation.fromMap(data);
+        return busLocation;
+      } else {
+        throw Exception('Failed to get Bus Location');
       }
     } catch (error) {
       throw Exception('Error: $error');

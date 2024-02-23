@@ -6,7 +6,7 @@ import 'package:oasth/screens/line_route_page.dart';
 import 'package:oasth/screens/stop_page.dart';
 
 class LinePage extends StatelessWidget {
-  final Line line;
+  final LineData line;
 
   const LinePage({super.key, required this.line});
 

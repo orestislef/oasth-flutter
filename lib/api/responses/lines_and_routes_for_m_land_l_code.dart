@@ -1,12 +1,12 @@
-class LinesAndRoutesForMLandLCodes {
-  late List<LinesAndRoutesForMLandLCode> linesAndRoutesForMlandLcodes;
+class LinesAndRoutesForMLandLCode {
+  late List<LinesAndRoutesForMLandLCodeData> linesAndRoutesForMlandLcodes;
 
-  static LinesAndRoutesForMLandLCodes fromMap(List<dynamic> map) {
-    LinesAndRoutesForMLandLCodes obj = LinesAndRoutesForMLandLCodes();
+  static LinesAndRoutesForMLandLCode fromMap(List<dynamic> map) {
+    LinesAndRoutesForMLandLCode obj = LinesAndRoutesForMLandLCode();
     obj.linesAndRoutesForMlandLcodes = [];
     for (int i = 0; i < map.length; i++) {
       obj.linesAndRoutesForMlandLcodes
-          .add(LinesAndRoutesForMLandLCode.fromMap(map[i]));
+          .add(LinesAndRoutesForMLandLCodeData.fromMap(map[i]));
     }
     return obj;
   }
@@ -16,16 +16,16 @@ class LinesAndRoutesForMLandLCodes {
       };
 }
 
-class LinesAndRoutesForMLandLCode {
+class LinesAndRoutesForMLandLCodeData {
   String? lineCode;
   String? lineId;
   String? lineIdGr;
   String? lineDescr;
   String? lineDescrEng;
 
-  static LinesAndRoutesForMLandLCode fromMap(Map<String, dynamic> map) {
-    LinesAndRoutesForMLandLCode linesAndRoutesForMLandLCodeBean =
-        LinesAndRoutesForMLandLCode();
+  static LinesAndRoutesForMLandLCodeData fromMap(Map<String, dynamic> map) {
+    LinesAndRoutesForMLandLCodeData linesAndRoutesForMLandLCodeBean =
+        LinesAndRoutesForMLandLCodeData();
     linesAndRoutesForMLandLCodeBean.lineCode = map['line_code'];
     linesAndRoutesForMLandLCodeBean.lineId = map['line_id'];
     linesAndRoutesForMLandLCodeBean.lineIdGr = map['line_id_gr'];

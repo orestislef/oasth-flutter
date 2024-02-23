@@ -2,12 +2,12 @@ class RoutesForLine {
   late List<RouteForLine> routes;
 
   static RoutesForLine fromMap(List<dynamic> map) {
-    RoutesForLine obj = RoutesForLine();
-    obj.routes = [];
+    RoutesForLine routeForLine = RoutesForLine();
+    routeForLine.routes = [];
     for (int i = 0; i < map.length; i++) {
-      obj.routes.add(RouteForLine.fromMap(map[i]));
+      routeForLine.routes.add(RouteForLine.fromMap(map[i]));
     }
-    return obj;
+    return routeForLine;
   }
 
   Map toJson() => {

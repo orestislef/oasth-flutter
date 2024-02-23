@@ -27,7 +27,7 @@ class _LinesPageState extends State<LinesPage> {
           ),
           const SizedBox(height: 10),
           Expanded(
-            child: FutureBuilder<Lines>(
+            child: FutureBuilder<Line>(
               future: Api.wegGetLines(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
@@ -66,7 +66,7 @@ class _LinesPageState extends State<LinesPage> {
     );
   }
 
-  void _onTapOnLine(BuildContext context, Line line) {
+  void _onTapOnLine(BuildContext context, LineData line) {
     Navigator.push(
       context,
       MaterialPageRoute(

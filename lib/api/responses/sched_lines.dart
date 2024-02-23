@@ -12,11 +12,10 @@ class SchedLines {
   }
 
   Map<String, dynamic> toJson() => {
-    "come": come.map((come) => come.toJson()).toList(),
-    "go": go.map((go) => go.toJson()).toList(),
-  };
+        "come": come.map((come) => come.toJson()).toList(),
+        "go": go.map((go) => go.toJson()).toList(),
+      };
 }
-
 
 class Go {
   String? sdeCode;
@@ -87,8 +86,8 @@ class Come {
   String? sdeAa;
   String? sdeLine1;
   String? sdeKp1;
-  dynamic sdeStart1;
-  dynamic sdeEnd1;
+  String? sdeStart1; //dateTime
+  String? sdeEnd1; //dateTime
   String? sdeLine2;
   String? sdeKp2;
   String? sdeStart2;
