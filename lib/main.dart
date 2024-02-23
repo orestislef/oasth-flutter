@@ -2,9 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:oasth/line_page.dart';
-import 'package:oasth/line_route_page.dart';
-import 'package:oasth/lines.dart';
+import 'package:oasth/screens/line_page.dart';
+import 'package:oasth/screens/line_route_page.dart';
+import 'package:oasth/api/responses/lines.dart';
 
 void main() {
   runApp(const MyApp());

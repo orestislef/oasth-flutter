@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:oasth/route_detail_and_stops.dart';
-import 'package:oasth/stop_page.dart';
+import 'package:oasth/api/responses/route_detail_and_stops.dart';
+import 'package:oasth/screens/stop_page.dart';
 
 class RoutePage extends StatelessWidget {
   const RoutePage({super.key, required this.details, required this.stops});

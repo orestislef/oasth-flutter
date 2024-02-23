@@ -4,8 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
-import 'package:oasth/route_detail_and_stops.dart';
-import 'package:oasth/stop_details.dart';
+import 'package:oasth/api/responses/route_detail_and_stops.dart';
+import 'package:oasth/api/responses/stop_details.dart';
 
 class StopPage extends StatelessWidget {
   const StopPage({super.key, required this.stop});
@@ -64,17 +64,23 @@ class StopPage extends StatelessWidget {
                                 itemCount: stopArrivals.stopDetails.length,
                                 itemBuilder: (BuildContext context, int index) {
                                   return ListTile(
-                                    title: Text(
-                                      'in: ${stopArrivals.stopDetails[index].btime2!}',
+                                    leading: Text(
+                                      '| Bus: ${stopArrivals.stopDetails[index].routeCode!} |',
                                       style: const TextStyle(
-                                        color: Colors.white,
+                                          color: Colors.amberAccent),
+                                    ),
+                                    title: Text(
+                                      'in ${stopArrivals.stopDetails[index].btime2!} minutes',
+                                      style: const TextStyle(
+                                        color: Colors.amberAccent,
                                       ),
                                     ),
-                                    leading: Text(
-                                      'Bus: ${stopArrivals.stopDetails[index].routeCode!}',
-                                      style:
-                                          const TextStyle(color: Colors.white),
-                                    ),
+                                    trailing: Text(
+                                      'veh code: ${stopArrivals.stopDetails[index].vehCode!}',
+                                      style: const TextStyle(
+                                        color: Colors.amberAccent,
+                                      ),
+                                    ) ,
                                   );
                                 },
                               ),
