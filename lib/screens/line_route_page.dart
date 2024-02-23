@@ -10,6 +10,7 @@ class RoutePage extends StatelessWidget {
       required this.details,
       required this.stops,
       this.hasAppBar = true});
+  //have to pass ROUTE_CODE to take bus location info
 
   final bool hasAppBar;
   final List<Details> details;

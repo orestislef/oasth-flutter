@@ -74,7 +74,7 @@ class Api {
     }
   }
 
-  static Future<RouteDetailAndStops> webGetRoutesDetailsAndStops(int p1) async {
+  static Future<RouteDetailAndStops> webGetRoutesDetailsAndStops(String p1) async {
     final url = Uri.parse('$baseUrl/?act=webGetRoutesDetailsAndStops&p1=$p1');
 
     try {
@@ -93,7 +93,7 @@ class Api {
     }
   }
 
-  static Future<LineName> getLineName(int p1) async {
+  static Future<LineName> getLineName(String p1) async {
     final url = Uri.parse('$baseUrl/?act=getLineName&p1=$p1');
 
     try {

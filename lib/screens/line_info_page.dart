@@ -58,8 +58,8 @@ class _LineInfoPageState extends State<LineInfoPage> {
                 color: Colors.red,
               ),
               title: FutureBuilder<LineName>(
-                future: Api.getLineName(
-                    int.parse(widget.linesWithMasterLineInfo.lineCode!)),
+                future:
+                    Api.getLineName(widget.linesWithMasterLineInfo.lineCode!),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
@@ -219,9 +219,7 @@ class _LineInfoPageState extends State<LineInfoPage> {
                       const SizedBox(height: 10.0),
                       FutureBuilder(
                           future: Api.webGetRoutesDetailsAndStops(
-                            int.parse(
-                                routesForLine.routesForLine.first.routeCode!),
-                          ),
+                              routesForLine.routesForLine.first.routeCode!),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting) {

@@ -17,7 +17,7 @@ class LinePage extends StatelessWidget {
         title: Text(line.lineDescr),
         actions: [
           FutureBuilder<RouteDetailAndStops>(
-            future: Api.webGetRoutesDetailsAndStops(int.parse(line.lineCode)),
+            future: Api.webGetRoutesDetailsAndStops(line.lineCode),
             builder: (context, snapshot) {
               return IconButton(
                 icon: const Icon(Icons.map_rounded),
@@ -48,7 +48,7 @@ class LinePage extends StatelessWidget {
       ),
       body: Center(
         child: FutureBuilder<RouteDetailAndStops>(
-          future: Api.webGetRoutesDetailsAndStops(int.parse(line.lineCode)),
+          future: Api.webGetRoutesDetailsAndStops(line.lineCode),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
