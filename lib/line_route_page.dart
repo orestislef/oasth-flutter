@@ -7,8 +7,8 @@ import 'package:oasth/stop_page.dart';
 class RoutePage extends StatelessWidget {
   const RoutePage({super.key, required this.details, required this.stops});
 
-  final List<DetailsBean> details;
-  final List<StopsBean> stops;
+  final List<Details> details;
+  final List<Stops> stops;
 
   @override
   Widget build(BuildContext context) {

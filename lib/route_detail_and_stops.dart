@@ -1,16 +1,16 @@
 class RouteDetailAndStops {
-  late List<DetailsBean> details;
-  late List<StopsBean> stops;
+  late List<Details> details;
+  late List<Stops> stops;
 
   static RouteDetailAndStops fromMap(Map<String, dynamic> map) {
-    RouteDetailAndStops routeDetailAndStopsBean = RouteDetailAndStops();
-    routeDetailAndStopsBean.details = List<DetailsBean>.from(
-      (map['details'] as List<dynamic>?)?.map((o) => DetailsBean.fromMap(o)) ?? [],
+    RouteDetailAndStops routeDetailAndStops = RouteDetailAndStops();
+    routeDetailAndStops.details = List<Details>.from(
+      (map['details'] as List<dynamic>?)?.map((o) => Details.fromMap(o)) ?? [],
     );
-    routeDetailAndStopsBean.stops = List<StopsBean>.from(
-      (map['stops'] as List<dynamic>?)?.map((o) => StopsBean.fromMap(o)) ?? [],
+    routeDetailAndStops.stops = List<Stops>.from(
+      (map['stops'] as List<dynamic>?)?.map((o) => Stops.fromMap(o)) ?? [],
     );
-    return routeDetailAndStopsBean;
+    return routeDetailAndStops;
   }
 
   Map<String, dynamic> toJson() => {
@@ -19,7 +19,7 @@ class RouteDetailAndStops {
   };
 }
 
-class StopsBean {
+class Stops {
   late String stopCode;
   late String stopID;
   late String stopDescr;
@@ -33,21 +33,21 @@ class StopsBean {
   late String stopType;
   late String stopAmea;
 
-  static StopsBean fromMap(Map<String, dynamic> map) {
-    StopsBean stopsBean = StopsBean();
-    stopsBean.stopCode = map['StopCode'];
-    stopsBean.stopID = map['StopID'];
-    stopsBean.stopDescr = map['StopDescr'];
-    stopsBean.stopDescrEng = map['StopDescrEng'];
-    stopsBean.stopStreet = map['StopStreet'];
-    stopsBean.stopStreetEng = map['StopStreetEng'];
-    stopsBean.stopHeading = map['StopHeading'];
-    stopsBean.stopLat = map['StopLat'];
-    stopsBean.stopLng = map['StopLng'];
-    stopsBean.routeStopOrder = map['RouteStopOrder'];
-    stopsBean.stopType = map['StopType'];
-    stopsBean.stopAmea = map['StopAmea'];
-    return stopsBean;
+  static Stops fromMap(Map<String, dynamic> map) {
+    Stops stops = Stops();
+    stops.stopCode = map['StopCode'];
+    stops.stopID = map['StopID'];
+    stops.stopDescr = map['StopDescr'];
+    stops.stopDescrEng = map['StopDescrEng'];
+    stops.stopStreet = map['StopStreet'];
+    stops.stopStreetEng = map['StopStreetEng'];
+    stops.stopHeading = map['StopHeading'];
+    stops.stopLat = map['StopLat'];
+    stops.stopLng = map['StopLng'];
+    stops.routeStopOrder = map['RouteStopOrder'];
+    stops.stopType = map['StopType'];
+    stops.stopAmea = map['StopAmea'];
+    return stops;
   }
 
   Map<String, dynamic> toJson() => {
@@ -66,17 +66,17 @@ class StopsBean {
   };
 }
 
-class DetailsBean {
+class Details {
   late String routedX;
   late String routedY;
   late String routedOrder;
 
-  static DetailsBean fromMap(Map<String, dynamic> map) {
-    DetailsBean detailsBean = DetailsBean();
-    detailsBean.routedX = map['routed_x'];
-    detailsBean.routedY = map['routed_y'];
-    detailsBean.routedOrder = map['routed_order'];
-    return detailsBean;
+  static Details fromMap(Map<String, dynamic> map) {
+    Details details = Details();
+    details.routedX = map['routed_x'];
+    details.routedY = map['routed_y'];
+    details.routedOrder = map['routed_order'];
+    return details;
   }
 
   Map<String, dynamic> toJson() => {
