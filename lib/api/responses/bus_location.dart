@@ -2,12 +2,12 @@ class BusLocation {
   late List<BusLocationData> busLocation;
 
   static BusLocation fromMap(List<dynamic> map) {
-    BusLocation obj = BusLocation();
-    obj.busLocation = [];
+    BusLocation busLocation = BusLocation();
+    busLocation.busLocation = [];
     for (int i = 0; i < map.length; i++) {
-      obj.busLocation.add(BusLocationData.fromMap(map[i]));
+      busLocation.busLocation.add(BusLocationData.fromMap(map[i]));
     }
-    return obj;
+    return busLocation;
   }
 }
 
@@ -19,13 +19,13 @@ class BusLocationData {
   String? routeCode;
 
   static BusLocationData fromMap(Map<String, dynamic> map) {
-    BusLocationData objBean = BusLocationData();
-    objBean.vehNo = map['VEH_NO'];
-    objBean.csDate = map['CS_DATE'];
-    objBean.csLat = map['CS_LAT'];
-    objBean.csLng = map['CS_LNG'];
-    objBean.routeCode = map['ROUTE_CODE'];
-    return objBean;
+    BusLocationData busLocation = BusLocationData();
+    busLocation.vehNo = map['VEH_NO'];
+    busLocation.csDate = map['CS_DATE'];
+    busLocation.csLat = map['CS_LAT'];
+    busLocation.csLng = map['CS_LNG'];
+    busLocation.routeCode = map['ROUTE_CODE'];
+    return busLocation;
   }
 
   Map toJson() => {

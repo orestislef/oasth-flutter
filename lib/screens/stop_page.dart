@@ -88,7 +88,9 @@ class StopPage extends StatelessWidget {
                             );
                           }
                         } else {
-                          return const Text('Loading...');
+                          return const Center(
+                              child: Text('Loading...',
+                                  style: TextStyle(color: Colors.amberAccent)));
                         }
                       }),
                 ),

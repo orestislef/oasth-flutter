@@ -13,7 +13,7 @@ class LineInfoPage extends StatefulWidget {
   LineInfoPage({super.key, required this.linesWithMasterLineInfo});
 
   final LineWithMasterLineInfo linesWithMasterLineInfo;
-  late int selectedDirectionIndex;
+  int selectedDirectionIndex = 0;
 
   @override
   State<LineInfoPage> createState() => _LineInfoPageState();
@@ -21,13 +21,6 @@ class LineInfoPage extends StatefulWidget {
 
 class _LineInfoPageState extends State<LineInfoPage> {
   final ScrollController _scrollController = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    widget.selectedDirectionIndex = 0;
-  }
-
   @override
   void dispose() {
     _scrollController.dispose();
@@ -246,8 +239,9 @@ class _LineInfoPageState extends State<LineInfoPage> {
                     children: <Widget>[
                       const SizedBox(height: 10.0),
                       FutureBuilder(
-                          future: Api.webGetRoutesDetailsAndStops(
-                              routesForLine.routesForLine.first.routeCode!),
+                          future: Api.webGetRoutesDetailsAndStops(routesForLine
+                              .routesForLine[widget.selectedDirectionIndex]
+                              .routeCode!),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
                                 ConnectionState.waiting) {
@@ -324,6 +318,10 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                       details: routeDetailAndStops.details,
                                       stops: routeDetailAndStops.stops,
                                       hasAppBar: false,
+                                      routeCode: routesForLine
+                                          .routesForLine[
+                                              widget.selectedDirectionIndex]
+                                          .routeCode!,
                                     ),
                                   )
                                 ],

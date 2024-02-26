@@ -36,6 +36,7 @@ class LinePage extends StatelessWidget {
                         builder: (context) => RoutePage(
                           details: details,
                           stops: stops,
+                          routeCode: line.lineCode,
                         ),
                       ),
                     );
