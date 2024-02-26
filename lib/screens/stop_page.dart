@@ -8,7 +8,7 @@ import 'package:oasth/api/responses/stop_details.dart';
 class StopPage extends StatelessWidget {
   const StopPage({super.key, required this.stop});
 
-  final Stops stop;
+  final Stop stop;
 
   @override
   Widget build(BuildContext context) {

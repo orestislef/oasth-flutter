@@ -16,7 +16,7 @@ class RoutePage extends StatelessWidget {
 
   final bool hasAppBar;
   final List<Details> details;
-  final List<Stops> stops;
+  final List<Stop> stops;
   final String routeCode;
 
   @override

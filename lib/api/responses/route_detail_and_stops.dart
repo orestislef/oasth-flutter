@@ -1,14 +1,14 @@
 class RouteDetailAndStops {
   late List<Details> details;
-  late List<Stops> stops;
+  late List<Stop> stops;
 
   static RouteDetailAndStops fromMap(Map<String, dynamic> map) {
     RouteDetailAndStops routeDetailAndStops = RouteDetailAndStops();
     routeDetailAndStops.details = List<Details>.from(
       (map['details'] as List<dynamic>?)?.map((o) => Details.fromMap(o)) ?? [],
     );
-    routeDetailAndStops.stops = List<Stops>.from(
-      (map['stops'] as List<dynamic>?)?.map((o) => Stops.fromMap(o)) ?? [],
+    routeDetailAndStops.stops = List<Stop>.from(
+      (map['stops'] as List<dynamic>?)?.map((o) => Stop.fromMap(o)) ?? [],
     );
     return routeDetailAndStops;
   }
@@ -19,7 +19,7 @@ class RouteDetailAndStops {
   };
 }
 
-class Stops {
+class Stop {
   late String? stopCode;
   late String stopID;
   late String stopDescription;
@@ -33,8 +33,8 @@ class Stops {
   late String stopType;
   late String stopAmea;
 
-  static Stops fromMap(Map<String, dynamic> map) {
-    Stops stops = Stops();
+  static Stop fromMap(Map<String, dynamic> map) {
+    Stop stops = Stop();
     stops.stopCode = map['StopCode'];
     stops.stopID = map['StopID'];
     stops.stopDescription = map['StopDescr'];

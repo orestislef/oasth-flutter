@@ -14,7 +14,7 @@ class LinePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(line.lineDescr),
+        title: Text(line.lineDescription),
         actions: [
           FutureBuilder<RouteDetailAndStops>(
             future: Api.webGetRoutesDetailsAndStops(line.lineCode),

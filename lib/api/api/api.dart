@@ -7,7 +7,9 @@ import 'package:oasth/api/responses/lines.dart';
 import 'package:oasth/api/responses/lines_and_routes_for_m_land_l_code.dart';
 import 'package:oasth/api/responses/lines_with_ml_info.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
+import 'package:oasth/api/responses/routes.dart';
 import 'package:oasth/api/responses/routes_for_line.dart';
+import 'package:oasth/api/responses/routes_for_stop.dart';
 import 'package:oasth/api/responses/sched_lines.dart';
 import 'package:oasth/api/responses/schedule_days_master_line.dart';
 import 'package:oasth/api/responses/stop_by_sip.dart';
@@ -37,6 +39,44 @@ const Map<String, String> header = {
 const String baseUrl = 'https://telematics.oasth.gr/api';
 
 class Api {
+  static Future<Routes> webGetRoutes(String p1) async {
+    final url = Uri.parse('$baseUrl/?act=webGetRoutes&p1=$p1');
+
+    try {
+      final response = await http.post(url, headers: header);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+
+        Routes routes = Routes.fromMap(data);
+        return routes;
+      } else {
+        throw Exception('Failed to web Get Routes');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
+
+  static Future<RoutesForStop> getRoutesForStop(String stopCode) async {
+    final url = Uri.parse('$baseUrl/?act=webRoutesForStop&p1=$stopCode');
+
+    try {
+      final response = await http.post(url, headers: header);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+
+        RoutesForStop routesForStop = RoutesForStop.fromMap(data);
+        return routesForStop;
+      } else {
+        throw Exception('Failed to get Routes For Stop');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
+
   static Future<Line> webGetLines() async {
     final url = Uri.parse('$baseUrl/?act=webGetLines');
 
@@ -74,7 +114,8 @@ class Api {
     }
   }
 
-  static Future<RouteDetailAndStops> webGetRoutesDetailsAndStops(String p1) async {
+  static Future<RouteDetailAndStops> webGetRoutesDetailsAndStops(
+      String p1) async {
     final url = Uri.parse('$baseUrl/?act=webGetRoutesDetailsAndStops&p1=$p1');
 
     try {
@@ -226,7 +267,7 @@ class Api {
     }
   }
 
-  static Future<StopBySip> getStopBySIP(int sip) async {
+  static Future<StopBySip> getStopBySIP(String sip) async {
     final url = Uri.parse('$baseUrl/?act=getStopBySIP&sip=$sip');
 
     try {
