@@ -12,8 +12,11 @@ class BestRoutePage extends StatefulWidget {
 
 class _BestRoutePageState extends State<BestRoutePage> {
   final TextEditingController _destinationController = TextEditingController();
-  String _startLocation = '';
-  bool _loading = false;
+  final TextEditingController _startLocationController =
+      TextEditingController();
+  bool _canGetDirections = false;
+  bool _loadingStartLocation = false;
+  bool _loadingDestination = false;
 
   @override
   Widget build(BuildContext context) {
@@ -23,36 +26,50 @@ class _BestRoutePageState extends State<BestRoutePage> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            _loading
-                ? const CircularProgressIndicator.adaptive()
-                : ElevatedButton(
-                    onPressed: () {
-                      _getCurrentLocation();
-                    },
-                    child: const Text('Get Current Location Street'),
-                  ),
             const SizedBox(height: 16.0),
+            const Text('Βρίσκομαι κοντά σε ...'),
+            const SizedBox(height: 8.0),
             TextField(
-              controller: TextEditingController(text: _startLocation),
-              decoration: const InputDecoration(
-                labelText: 'Start Location',
-                border: OutlineInputBorder(),
+              controller: _startLocationController,
+              decoration: InputDecoration(
+                labelText: 'Διεύθυνση - Οδό',
+                border: const OutlineInputBorder(),
+                suffixIcon: _loadingStartLocation
+                    ? const CircularProgressIndicator.adaptive()
+                    : IconButton(
+                        onPressed: () => _getCurrentLocation(isStart: true),
+                        icon: const Icon(Icons.my_location),
+                      ),
               ),
+              onChanged: (_) => _validateFields(),
             ),
             const SizedBox(height: 16.0),
+            const Text('Θέλω να πάω σε ...'),
+            const SizedBox(height: 8.0),
             TextField(
               controller: _destinationController,
-              decoration: const InputDecoration(
-                labelText: 'Destination Address',
-                border: OutlineInputBorder(),
+              decoration: InputDecoration(
+                labelText: 'Διεύθυνση - Οδό',
+                border: const OutlineInputBorder(),
+                suffixIcon: _loadingDestination
+                    ? const CircularProgressIndicator.adaptive()
+                    : IconButton(
+                        onPressed: () => _getCurrentLocation(isStart: false),
+                        icon: const Icon(Icons.my_location),
+                      ),
               ),
+              onChanged: (_) => _validateFields(),
             ),
             const SizedBox(height: 16.0),
             ElevatedButton(
-              onPressed: () {
-                _launchMaps();
-              },
+              onPressed: _canGetDirections ? _launchMaps : null,
               child: const Text('Get Directions'),
+            ),
+            const SizedBox(height: 16.0),
+            const Text(
+              'Get directions based on the provided addresses and will open Google Maps to find the best bus route.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey),
             ),
           ],
         ),
@@ -60,15 +77,30 @@ class _BestRoutePageState extends State<BestRoutePage> {
     );
   }
 
-  _getCurrentLocation() async {
+  void _validateFields() {
     setState(() {
-      _loading = true;
+      _canGetDirections = _startLocationController.text.isNotEmpty &&
+          _destinationController.text.isNotEmpty;
+    });
+  }
+
+  Future<void> _getCurrentLocation({required bool isStart}) async {
+    setState(() {
+      if (isStart) {
+        _loadingStartLocation = true;
+      } else {
+        _loadingDestination = true;
+      }
     });
 
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       setState(() {
-        _loading = false;
+        if (isStart) {
+          _loadingStartLocation = false;
+        } else {
+          _loadingDestination = false;
+        }
       });
       return;
     } else {
@@ -80,7 +112,11 @@ class _BestRoutePageState extends State<BestRoutePage> {
     if (permission == LocationPermission.denied ||
         permission == LocationPermission.deniedForever) {
       setState(() {
-        _loading = false;
+        if (isStart) {
+          _loadingStartLocation = false;
+        } else {
+          _loadingDestination = false;
+        }
       });
       return;
     }
@@ -91,22 +127,32 @@ class _BestRoutePageState extends State<BestRoutePage> {
 
     if (placemarks.isNotEmpty) {
       setState(() {
-        _startLocation = '${placemarks[0].street},'
-                ' ${placemarks[0].locality},'
-                ' ${placemarks[0].postalCode},'
-                ' ${placemarks[0].country}'
-            .toString();
-        _loading = false;
+        String text = '${placemarks[0].street},'
+            ' ${placemarks[0].locality},'
+            ' ${placemarks[0].postalCode},'
+            ' ${placemarks[0].country}';
+        if (isStart) {
+          _startLocationController.text = text;
+          _loadingStartLocation = false;
+        } else {
+          _destinationController.text = text;
+          _loadingDestination = false;
+        }
+        _validateFields(); // Check if fields are filled after setting start location
       });
     } else {
       setState(() {
-        _loading = false;
+        if (isStart) {
+          _loadingStartLocation = false;
+        } else {
+          _loadingDestination = false;
+        }
       });
     }
   }
 
-  _launchMaps() async {
-    String startLocation = _startLocation;
+  Future<void> _launchMaps() async {
+    String startLocation = _startLocationController.text;
     String destination = _destinationController.text;
     String googleMapsUrl =
         'https://www.google.com/maps/dir/?api=1&origin=$startLocation&destination=$destination&travelmode=transit';
@@ -120,6 +166,7 @@ class _BestRoutePageState extends State<BestRoutePage> {
   @override
   void dispose() {
     _destinationController.dispose();
+    _startLocationController.dispose();
     super.dispose();
   }
 }
