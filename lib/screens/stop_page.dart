@@ -41,7 +41,9 @@ class StopPage extends StatelessWidget {
                       right: BorderSide(width: 2.0, color: Colors.grey),
                       bottom: BorderSide(width: 2.0, color: Colors.grey),
                     ),
-                    borderRadius: BorderRadius.all(Radius.circular(15.0)),
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(15.0),
+                    ),
                   ),
                   height: MediaQuery.of(context).size.height * 0.20,
                   width: double.infinity,
@@ -103,14 +105,16 @@ class StopPage extends StatelessWidget {
               mapController: MapController(),
               options: MapOptions(
                 initialCenter: LatLng(
-                    double.parse(stop.stopLat), double.parse(stop.stopLng)),
+                  double.parse(stop.stopLat),
+                  double.parse(stop.stopLng),
+                ),
                 initialZoom: 15.0,
               ),
               children: [
                 TileLayer(
-                  urlTemplate:
-                      'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                   subdomains: const ['a', 'b', 'c'],
+                  userAgentPackageName: 'com.oasth.oast',
                 ),
                 MarkerLayer(
                   markers: [

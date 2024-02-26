@@ -44,6 +44,8 @@ class _LineInfoPageState extends State<LineInfoPage> {
         controller: _scrollController,
         slivers: <Widget>[
           SliverAppBar(
+            surfaceTintColor: Colors.white,
+            shadowColor: Colors.blue,
             actions: [
               IconButton(
                 icon: const Icon(
