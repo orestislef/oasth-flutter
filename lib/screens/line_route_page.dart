@@ -10,6 +10,7 @@ class RoutePage extends StatelessWidget {
       required this.details,
       required this.stops,
       this.hasAppBar = true});
+
   //have to pass ROUTE_CODE to take bus location info
 
   final bool hasAppBar;
@@ -49,16 +50,16 @@ class RoutePage extends StatelessWidget {
                     color: Colors.white,
                     shape: BoxShape.rectangle,
                     borderRadius: BorderRadius.circular(5.0),
-                    backgroundBlendMode: BlendMode.colorDodge,
+                    backgroundBlendMode: BlendMode.luminosity,
                   ),
                   child: Padding(
-                    padding: const EdgeInsets.fromLTRB(8.0, 2.0, 2.0, 8.0),
+                    padding: const EdgeInsets.fromLTRB(4.0, 2.0, 2.0, 4.0),
                     child: Text(
                       stop.stopDescription,
                       softWrap: false,
                       overflow: TextOverflow.ellipsis,
                       maxLines: 1,
-                      style: const TextStyle(fontSize: 16),
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ),
                 ),
@@ -69,9 +70,9 @@ class RoutePage extends StatelessWidget {
                     backgroundBlendMode: BlendMode.difference,
                   ),
                   child: const Padding(
-                    padding: EdgeInsets.all(8.0),
+                    padding: EdgeInsets.all(4.0),
                     child: Icon(
-                      Icons.bus_alert,
+                      Icons.signpost_outlined,
                     ),
                   ),
                 ),
@@ -83,9 +84,11 @@ class RoutePage extends StatelessWidget {
     }
 
     return Scaffold(
-        appBar: hasAppBar ?AppBar(
-          title: const Text('Route'),
-        ): null,
+        appBar: hasAppBar
+            ? AppBar(
+                title: const Text('Route'),
+              )
+            : null,
         body: FlutterMap(
           mapController: MapController(),
           options: MapOptions(

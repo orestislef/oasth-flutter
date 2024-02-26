@@ -5,6 +5,7 @@ import 'package:oasth/api/responses/lines_and_routes_for_m_land_l_code.dart';
 import 'package:oasth/api/responses/lines_with_ml_info.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/routes_for_line.dart';
+import 'package:oasth/screens/stop_page.dart';
 
 import 'line_route_page.dart';
 
@@ -107,14 +108,6 @@ class _LineInfoPageState extends State<LineInfoPage> {
   Widget _buildBody() {
     return Column(
       children: <Widget>[
-        const SizedBox(height: 10),
-        const Center(
-          child: Text(
-            'Εναλλακτική Διαδρομή',
-            style: TextStyle(fontSize: 20),
-            textAlign: TextAlign.center,
-          ),
-        ),
         FutureBuilder(
             future: Api.getLinesAndRoutesForMasterLineAndLineCode(
                 widget.linesWithMasterLineInfo.masterLineCode!,
@@ -122,65 +115,86 @@ class _LineInfoPageState extends State<LineInfoPage> {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
-                  child: CircularProgressIndicator.adaptive(),
+                  child: Column(
+                    children: <Widget>[
+                      SizedBox(height: 10),
+                      CircularProgressIndicator.adaptive(),
+                      SizedBox(height: 10),
+                    ],
+                  ),
                 );
               } else if (snapshot.hasError) {
                 return Text('${snapshot.error}');
               } else {
                 LinesAndRoutesForMLandLCode linesAndRoutesForMLandLCode =
                     snapshot.data!;
-                return ListView.builder(
-                    itemCount: linesAndRoutesForMLandLCode
-                        .linesAndRoutesForMlandLcodes.length,
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    itemBuilder: (context, index) {
-                      bool isTheSelected = linesAndRoutesForMLandLCode
-                              .linesAndRoutesForMlandLcodes[index].lineCode ==
-                          widget.linesWithMasterLineInfo.lineCode;
-                      return Card(
-                        child: ListTile(
-                          selected: isTheSelected,
-                          trailing:
-                              isTheSelected ? const Icon(Icons.check) : null,
-                          leading: Text(
-                              '${linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes[index].lineIdGr}'),
-                          title: Text(
-                              '${linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes[index].lineDescr}'),
-                          subtitle: Text(
-                              '${linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes[index].lineDescrEng}'),
-                          enableFeedback: true,
-                          onTap: linesAndRoutesForMLandLCode
-                                      .linesAndRoutesForMlandLcodes.length >
-                                  1
-                              ? () {
-                                  setState(() {
-                                    widget.linesWithMasterLineInfo.lineCode =
-                                        linesAndRoutesForMLandLCode
-                                            .linesAndRoutesForMlandLcodes[index]
-                                            .lineCode!;
-                                  });
-                                }
-                              : null,
-                        ),
-                      );
-                    });
+                return Column(
+                  children: <Widget>[
+                    const SizedBox(height: 10),
+                    const Center(
+                      child: Text(
+                        'Εναλλακτική Διαδρομή',
+                        style: TextStyle(fontSize: 20),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                    ListView.builder(
+                        itemCount: linesAndRoutesForMLandLCode
+                            .linesAndRoutesForMlandLcodes.length,
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        itemBuilder: (context, index) {
+                          bool isTheSelected = linesAndRoutesForMLandLCode
+                                  .linesAndRoutesForMlandLcodes[index]
+                                  .lineCode ==
+                              widget.linesWithMasterLineInfo.lineCode;
+                          return Card(
+                            child: ListTile(
+                              selected: isTheSelected,
+                              trailing: isTheSelected
+                                  ? const Icon(Icons.check)
+                                  : null,
+                              leading: Text(
+                                  '${linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes[index].lineIdGr}'),
+                              title: Text(
+                                  '${linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes[index].lineDescr}'),
+                              subtitle: Text(
+                                  '${linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes[index].lineDescrEng}'),
+                              enableFeedback: true,
+                              onTap: linesAndRoutesForMLandLCode
+                                          .linesAndRoutesForMlandLcodes.length >
+                                      1
+                                  ? () {
+                                      setState(() {
+                                        widget.linesWithMasterLineInfo
+                                                .lineCode =
+                                            linesAndRoutesForMLandLCode
+                                                .linesAndRoutesForMlandLcodes[
+                                                    index]
+                                                .lineCode!;
+                                      });
+                                    }
+                                  : null,
+                            ),
+                          );
+                        }),
+                  ],
+                );
               }
             }),
-        const Center(
-          child: Text(
-            'Κατεύθυνση',
-            style: TextStyle(fontSize: 20),
-            textAlign: TextAlign.center,
-          ),
-        ),
         FutureBuilder<RoutesForLine>(
           future: Api.getRoutesForLine(
               int.parse(widget.linesWithMasterLineInfo.lineCode!)),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(
-                child: CircularProgressIndicator.adaptive(),
+                child: Column(
+                  children: [
+                    SizedBox(height: 10),
+                    CircularProgressIndicator.adaptive(),
+                    SizedBox(height: 10),
+                  ],
+                ),
               );
             } else if (snapshot.hasError) {
               return Text('${snapshot.error}');
@@ -188,6 +202,14 @@ class _LineInfoPageState extends State<LineInfoPage> {
               RoutesForLine routesForLine = snapshot.data!;
               return Column(
                 children: [
+                  const SizedBox(height: 10),
+                  const Center(
+                    child: Text(
+                      'Κατεύθυνση',
+                      style: TextStyle(fontSize: 20),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
                   ListView.builder(
                       itemCount: routesForLine.routesForLine.length,
                       shrinkWrap: true,
@@ -265,15 +287,29 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                                 ? Text(routeDetailAndStops
                                                     .stops[index].stopStreet!)
                                                 : null,
-                                            trailing: routeDetailAndStops
-                                                        .stops[index]
-                                                        .stopAmea ==
-                                                    '1'
-                                                ? const Icon(Icons.accessible)
-                                                : null,
+                                            trailing: Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: <Widget>[
+                                                routeDetailAndStops.stops[index]
+                                                            .stopAmea ==
+                                                        '1'
+                                                    ? const Icon(
+                                                        Icons.accessible)
+                                                    : const SizedBox(),
+                                                const Icon(Icons.arrow_right,
+                                                    size: 20),
+                                              ],
+                                            ),
                                             enableFeedback: true,
                                             onTap: () {
-                                              //TODO:
+                                              Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                  builder: (context) => StopPage(
+                                                      stop: routeDetailAndStops
+                                                          .stops[index]),
+                                                ),
+                                              );
                                             },
                                           ),
                                         );

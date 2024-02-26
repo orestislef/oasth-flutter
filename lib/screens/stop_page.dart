@@ -25,16 +25,12 @@ class StopPage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Description: ${stop.stopDescription}'),
                 Text('English Description: ${stop.stopDescriptionEng}'),
                 Text('Street: ${stop.stopStreet ?? "N/A"}'),
                 Text('English Street: ${stop.stopStreetEng ?? "N/A"}'),
-                Text('Heading: ${stop.stopHeading}'),
-                Text('Latitude: ${stop.stopLat}'),
-                Text('Longitude: ${stop.stopLng}'),
                 Text('Route Stop Order: ${stop.routeStopOrder}'),
-                Text('Stop Type: ${stop.stopType}'),
-                Text('Stop Amea: ${stop.stopAmea}'),
+                Text('Stop Amea: ${stop.stopAmea == '0' ? '❌' : '✔️'}'),
+                const SizedBox(height: 10.0),
                 Container(
                   decoration: const BoxDecoration(
                     color: Colors.black87,
@@ -55,7 +51,14 @@ class StopPage extends StatelessWidget {
                         if (snapshot.hasData) {
                           StopArrivals stopArrivals = snapshot.data!;
                           if (stopArrivals.stopDetails.isEmpty) {
-                            return const Text('No stop details found');
+                            return const Center(
+                              child: Text(
+                                'No stop details found',
+                                style: TextStyle(
+                                  color: Colors.amberAccent,
+                                ),
+                              ),
+                            );
                           } else {
                             return Scrollbar(
                               child: ListView.builder(
