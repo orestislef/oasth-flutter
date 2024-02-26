@@ -21,6 +21,7 @@ class LineInfoPage extends StatefulWidget {
 
 class _LineInfoPageState extends State<LineInfoPage> {
   final ScrollController _scrollController = ScrollController();
+
   @override
   void dispose() {
     _scrollController.dispose();
@@ -43,14 +44,21 @@ class _LineInfoPageState extends State<LineInfoPage> {
         controller: _scrollController,
         slivers: <Widget>[
           SliverAppBar(
-            backgroundColor: Colors.redAccent,
-            expandedHeight: 200.0,
+            actions: [
+              IconButton(
+                icon: const Icon(
+                  Icons.map,
+                  color: Colors.blueAccent,
+                ),
+                onPressed: () => _scrollToBottom(),
+              ),
+            ],
+            collapsedHeight: 64.0,
+            expandedHeight: 224.0,
             floating: false,
             pinned: true,
             flexibleSpace: FlexibleSpaceBar(
-              background: Container(
-                color: Colors.red,
-              ),
+              titlePadding: const EdgeInsets.fromLTRB(48.0, 0.0, 48.0, 0.0),
               title: FutureBuilder<LineName>(
                 future:
                     Api.getLineName(widget.linesWithMasterLineInfo.lineCode!),
@@ -63,24 +71,9 @@ class _LineInfoPageState extends State<LineInfoPage> {
                     return Text('${snapshot.error}');
                   } else {
                     LineName lineName = snapshot.data!;
-                    return Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                              '${lineName.lineNames.first.lineId} ${lineName.lineNames.first.lineDescription!}'),
-                        ),
-                        Padding(
-                          padding: const EdgeInsets.all(8.0),
-                          child: IconButton(
-                            icon: const Icon(
-                              Icons.map,
-                              color: Colors.blueAccent,
-                              size: 40,
-                            ),
-                            onPressed: () => _scrollToBottom(),
-                          ),
-                        ),
-                      ],
+                    return Text(
+                      '${lineName.lineNames.first.lineId} ${lineName.lineNames.first.lineDescription!}',
+                      style: const TextStyle(color: Colors.black),
                     );
                   }
                 },
