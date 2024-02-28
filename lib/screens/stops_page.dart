@@ -63,6 +63,7 @@ class _StopsPageState extends State<StopsPage> {
               textInputAction: TextInputAction.done,
               maxLength: 5,
               maxLines: 1,
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
               controller: _textFieldController,
               decoration: const InputDecoration(
                 border: OutlineInputBorder(),
@@ -129,7 +130,9 @@ class _StopsPageState extends State<StopsPage> {
                       child: ListView.builder(
                           itemCount: routesForStop.routesForStop!.length,
                           itemBuilder: (context, index) {
+                            bool isOdd = index % 2 == 0;
                             return Card(
+                              color: isOdd ? null : Colors.grey.shade300,
                               child: ListTile(
                                 leading: Icon(
                                   Icons.circle,
@@ -254,22 +257,22 @@ class _StopsPageState extends State<StopsPage> {
       Line line = snapshot.data!;
       List<LineData> lines = line.lines;
 
-      return Expanded(
-        child: Scrollbar(
-          child: ListView.builder(
-            itemCount: lines.length,
-            itemBuilder: (context, index) {
-              LineData line = lines[index];
-              return Card(
-                child: ListTile(
-                  leading: Text(line.lineID),
-                  title: Text(line.lineDescription),
-                  subtitle: Text(line.lineDescriptionEng),
-                  onTap: () => _onPressedOnStop(context, line),
-                ),
-              );
-            },
-          ),
+      return Scrollbar(
+        child: ListView.builder(
+          itemCount: lines.length,
+          itemBuilder: (context, index) {
+            LineData line = lines[index];
+            bool isOdd = index % 2 == 0;
+            return Card(
+              color: isOdd ? null : Colors.grey.shade300,
+              child: ListTile(
+                leading: Text(line.lineID),
+                title: Text(line.lineDescription),
+                subtitle: Text(line.lineDescriptionEng),
+                onTap: () => _onPressedOnStop(context, line),
+              ),
+            );
+          },
         ),
       );
     } else if (snapshot.hasError) {
@@ -310,7 +313,9 @@ class _StopsPageState extends State<StopsPage> {
                       child: ListView.builder(
                         itemCount: routesForLine.routesForLine.length,
                         itemBuilder: (context, index) {
+                          bool isOdd = index % 2 == 0;
                           return Card(
+                            color: isOdd ? null : Colors.grey.shade300,
                             child: ListTile(
                               leading: Icon(Icons.circle,
                                   color: ColorGenerator(index).generateColor()),
@@ -358,7 +363,9 @@ class _StopsPageState extends State<StopsPage> {
                         child: ListView.builder(
                           itemCount: snapshot.data!.stops.length,
                           itemBuilder: (context, index) {
+                            bool isOdd = index % 2 == 0;
                             return Card(
+                              color: isOdd ? null : Colors.grey.shade300,
                               child: ListTile(
                                 leading: CircleAvatar(
                                   child: Text(snapshot

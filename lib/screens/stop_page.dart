@@ -92,8 +92,11 @@ class StopPage extends StatelessWidget {
                           }
                         } else {
                           return const Center(
-                              child: Text('Loading...',
-                                  style: TextStyle(color: Colors.amberAccent)));
+                            child: Text(
+                              'Loading...',
+                              style: TextStyle(color: Colors.amberAccent),
+                            ),
+                          );
                         }
                       }),
                 ),

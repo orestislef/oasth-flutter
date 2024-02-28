@@ -136,7 +136,9 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                   .linesAndRoutesForMlandLcodes[index]
                                   .lineCode ==
                               widget.linesWithMasterLineInfo.lineCode;
+                          bool isOdd = index % 2 == 0;
                           return Card(
+                            color: isOdd ? null : Colors.grey.shade300,
                             child: ListTile(
                               selected: isTheSelected,
                               trailing: isTheSelected
@@ -205,9 +207,11 @@ class _LineInfoPageState extends State<LineInfoPage> {
                       itemBuilder: (context, index) {
                         bool isTheSelected =
                             widget.selectedDirectionIndex == index;
+                        bool isOdd = index % 2 == 0;
                         return Column(
                           children: <Widget>[
                             Card(
+                              color: isOdd ? null : Colors.grey.shade300,
                               child: ListTile(
                                 selected: isTheSelected,
                                 trailing: isTheSelected
@@ -264,7 +268,9 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                                 null &&
                                             routeDetailAndStops.stops[index]
                                                 .stopStreet!.isNotEmpty;
+                                        bool isOdd = index % 2 == 0;
                                         return Card(
+                                          color: isOdd ? null : Colors.grey.shade300,
                                           child: ListTile(
                                             leading: CircleAvatar(
                                               child: Text(routeDetailAndStops
