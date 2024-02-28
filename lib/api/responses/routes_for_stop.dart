@@ -23,6 +23,7 @@ class RouteForStop {
   String? routeDistance;
   String? lineID;
   String? lineDescription;
+  String? lineDescriptionEng;
   String? masterLineCode;
 
   static RouteForStop fromMap(Map<String, dynamic> map) {
@@ -35,6 +36,7 @@ class RouteForStop {
     routeForStop.routeDistance = map['RouteDistance'];
     routeForStop.lineID = map['LineID'];
     routeForStop.lineDescription = map['LineDescr'];
+    routeForStop.lineDescriptionEng = map['LineDescrEng'];
     routeForStop.masterLineCode = map['MasterLineCode'];
     return routeForStop;
   }
@@ -48,6 +50,7 @@ class RouteForStop {
         "RouteDistance": routeDistance,
         "LineID": lineID,
         "LineDescr": lineDescription,
+        "LineDescrEng": lineDescriptionEng,
         "MasterLineCode": masterLineCode,
       };
 }

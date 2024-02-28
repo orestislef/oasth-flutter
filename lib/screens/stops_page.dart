@@ -97,9 +97,67 @@ class _StopsPageState extends State<StopsPage> {
     required String stopCode,
   }) async {
     StopBySip stopBySip = await Api.getStopBySIP(stopCode);
-    RoutesForStop routesForStop = await Api.getRoutesForStop(stopBySip.id!);
+    RouteForStop? routeForStop = await showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return FutureBuilder(
+              future: Api.getRoutesForStop(stopBySip.id!),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                      child: CircularProgressIndicator.adaptive());
+                } else if (snapshot.hasError) {
+                  return Center(child: Text('${snapshot.error}'));
+                }
+                RoutesForStop routesForStop = snapshot.data!;
+                if (routesForStop.routesForStop!.isEmpty) {
+                  return const Center(
+                      child: Text('Δεν υπάρχουν πληροφορίες γραμμής'));
+                }
 
-    //todo show dromologio
+                return Column(
+                  children: <Widget>[
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Choose route',
+                      style: TextStyle(fontSize: 20.0),
+                    ),
+                    Expanded(
+                      child: ListView.builder(
+                          itemCount: routesForStop.routesForStop!.length,
+                          itemBuilder: (context, index) {
+                            return Card(
+                              child: ListTile(
+                                leading: Icon(
+                                  Icons.circle,
+                                  color: ColorGenerator(index).generateColor(),
+                                ),
+                                title: Text(
+                                    '${routesForStop.routesForStop![index].lineDescription}'),
+                                subtitle: Text(
+                                    '${routesForStop.routesForStop![index].lineDescriptionEng}'),
+                                trailing: Text(routesForStop
+                                    .routesForStop![index].lineID!),
+                                onTap: () {
+                                  Navigator.pop(context,
+                                      routesForStop.routesForStop![index]);
+                                },
+                              ),
+                            );
+                          }),
+                    ),
+                  ],
+                );
+              });
+        });
+
+    if (routeForStop != null) {
+      showModalBottomSheet(
+          context: context,
+          builder: (context) {
+            return const Placeholder();
+          });
+    }
   }
 
   Widget _buildLines(BuildContext context, AsyncSnapshot<Line> snapshot) {
@@ -148,7 +206,7 @@ class _StopsPageState extends State<StopsPage> {
                   );
                 }
                 if (snapshot.hasError) {
-                  return Text('${snapshot.error}');
+                  return Center(child: Text('${snapshot.error}'));
                 }
                 return Column(
                   children: <Widget>[
@@ -194,7 +252,7 @@ class _StopsPageState extends State<StopsPage> {
                     );
                   }
                   if (snapshot.hasError) {
-                    return Text('${snapshot.error}');
+                    return Center(child: Text('${snapshot.error}'));
                   }
                   return Column(
                     children: <Widget>[
