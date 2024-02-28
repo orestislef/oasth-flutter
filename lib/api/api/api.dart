@@ -14,6 +14,7 @@ import 'package:oasth/api/responses/sched_lines.dart';
 import 'package:oasth/api/responses/schedule_days_master_line.dart';
 import 'package:oasth/api/responses/stop_by_sip.dart';
 import 'package:oasth/api/responses/stop_details.dart';
+import 'package:oasth/api/responses/stop_name_xy.dart';
 import 'package:oasth/api/responses/web_stops.dart';
 
 const Map<String, String> header = {
@@ -40,6 +41,25 @@ const Map<String, String> header = {
 const String baseUrl = 'https://telematics.oasth.gr/api';
 
 class Api {
+
+  static Future<StopsNameXy> getStopNameAndXY(String p1) async {
+    final url = Uri.parse('$baseUrl/?act=getStopNameAndXY&p1=$p1');
+
+    try {
+      final response = await http.post(url, headers: header);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+
+        StopsNameXy stopsNameXy = StopsNameXy.fromMap(data);
+        return stopsNameXy;
+      } else {
+        throw Exception('Failed to web Get Stop name and xy');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
 
   static Future<WebStops> webGetStops(String p1) async {
     final url = Uri.parse('$baseUrl/?act=webGetStops&p1=$p1');

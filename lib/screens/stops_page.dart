@@ -5,6 +5,8 @@ import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/routes_for_line.dart' as rfl;
 import 'package:oasth/api/responses/routes_for_stop.dart';
 import 'package:oasth/api/responses/stop_by_sip.dart';
+import 'package:oasth/api/responses/stop_details.dart';
+import 'package:oasth/api/responses/stop_name_xy.dart';
 import 'package:oasth/helpers/color_generator_helper.dart';
 import 'package:oasth/helpers/input_formatters_helper.dart';
 import 'package:oasth/screens/stop_page.dart';
@@ -155,7 +157,88 @@ class _StopsPageState extends State<StopsPage> {
       showModalBottomSheet(
           context: context,
           builder: (context) {
-            return const Placeholder();
+            return Column(
+              children: <Widget>[
+                FutureBuilder(
+                    future: Api.getStopNameAndXY(stopBySip.id!),
+                    builder: (context, snapshot) {
+                      StopsNameXy stopsNameXy = snapshot.data!;
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const Center(
+                            child: CircularProgressIndicator.adaptive());
+                      } else if (snapshot.hasError) {
+                        return Center(child: Text('${snapshot.error}'));
+                      }
+                      return Text(stopsNameXy.stopsNameXy.first.stopDescr!);
+                    }),
+                const SizedBox(height: 16),
+                Container(
+                  decoration: const BoxDecoration(
+                    color: Colors.black87,
+                    shape: BoxShape.rectangle,
+                    border: Border(
+                      top: BorderSide(width: 2.0, color: Colors.grey),
+                      left: BorderSide(width: 2.0, color: Colors.grey),
+                      right: BorderSide(width: 2.0, color: Colors.grey),
+                      bottom: BorderSide(width: 2.0, color: Colors.grey),
+                    ),
+                    borderRadius: BorderRadius.all(
+                      Radius.circular(15.0),
+                    ),
+                  ),
+                  height: MediaQuery.of(context).size.height * 0.20,
+                  width: double.infinity,
+                  child: FutureBuilder(
+                      future: Api.getStopArrivals(stopBySip.id!),
+                      builder: (context, snapshot) {
+                        if (snapshot.hasData) {
+                          StopArrivals stopArrivals = snapshot.data!;
+                          if (stopArrivals.stopDetails.isEmpty) {
+                            return const Center(
+                              child: Text(
+                                'No stop details found',
+                                style: TextStyle(
+                                  color: Colors.amberAccent,
+                                ),
+                              ),
+                            );
+                          } else {
+                            return Scrollbar(
+                              child: ListView.builder(
+                                itemCount: stopArrivals.stopDetails.length,
+                                itemBuilder: (BuildContext context, int index) {
+                                  return ListTile(
+                                    leading: Text(
+                                      '| Bus: ${stopArrivals.stopDetails[index].routeCode!} |',
+                                      style: const TextStyle(
+                                          color: Colors.amberAccent),
+                                    ),
+                                    title: Text(
+                                      'in ${stopArrivals.stopDetails[index].btime2!} minutes',
+                                      style: const TextStyle(
+                                        color: Colors.amberAccent,
+                                      ),
+                                    ),
+                                    trailing: Text(
+                                      'veh code: ${stopArrivals.stopDetails[index].vehCode!}',
+                                      style: const TextStyle(
+                                        color: Colors.amberAccent,
+                                      ),
+                                    ),
+                                  );
+                                },
+                              ),
+                            );
+                          }
+                        } else {
+                          return const Center(
+                              child: Text('Loading...',
+                                  style: TextStyle(color: Colors.amberAccent)));
+                        }
+                      }),
+                ),
+              ],
+            );
           });
     }
   }

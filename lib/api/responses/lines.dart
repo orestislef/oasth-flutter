@@ -2,12 +2,12 @@ class Line {
   late List<LineData> lines;
 
   static Line fromMap(List<dynamic> map) {
-    Line obj = Line();
-    obj.lines = [];
+    Line line = Line();
+    line.lines = [];
     for (int i = 0; i < map.length; i++) {
-      obj.lines.add(LineData.fromMap(map[i]));
+      line.lines.add(LineData.fromMap(map[i]));
     }
-    return obj;
+    return line;
   }
 
   Map toJson() => {
