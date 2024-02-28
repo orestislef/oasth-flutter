@@ -79,12 +79,6 @@ class StopPage extends StatelessWidget {
                                         color: Colors.amberAccent,
                                       ),
                                     ),
-                                    trailing: Text(
-                                      'veh code: ${stopArrivals.stopDetails[index].vehCode!}',
-                                      style: const TextStyle(
-                                        color: Colors.amberAccent,
-                                      ),
-                                    ),
                                   );
                                 },
                               ),

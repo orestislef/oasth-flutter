@@ -228,12 +228,6 @@ class _StopsPageState extends State<StopsPage> {
                                         color: Colors.amberAccent,
                                       ),
                                     ),
-                                    trailing: Text(
-                                      'veh code: ${stopArrivals.stopDetails[index].vehCode!}',
-                                      style: const TextStyle(
-                                        color: Colors.amberAccent,
-                                      ),
-                                    ),
                                   );
                                 },
                               ),
