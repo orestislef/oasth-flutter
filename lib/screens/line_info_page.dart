@@ -171,8 +171,8 @@ class _LineInfoPageState extends State<LineInfoPage> {
               }
             }),
         FutureBuilder<RoutesForLine>(
-          future: Api.getRoutesForLine(
-              int.parse(widget.linesWithMasterLineInfo.lineCode!)),
+          future:
+              Api.getRoutesForLine(widget.linesWithMasterLineInfo.lineCode!),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(

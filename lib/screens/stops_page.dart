@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/lines.dart';
+import 'package:oasth/api/responses/route_detail_and_stops.dart';
+import 'package:oasth/api/responses/routes_for_line.dart' as rfl;
 import 'package:oasth/api/responses/routes_for_stop.dart';
 import 'package:oasth/api/responses/stop_by_sip.dart';
+import 'package:oasth/helpers/color_generator_helper.dart';
 import 'package:oasth/helpers/input_formatters_helper.dart';
+import 'package:oasth/screens/stop_page.dart';
 
 class StopsPage extends StatefulWidget {
   const StopsPage({super.key});
@@ -109,11 +113,13 @@ class _StopsPageState extends State<StopsPage> {
             itemCount: lines.length,
             itemBuilder: (context, index) {
               LineData line = lines[index];
-              return ListTile(
-                leading: Text(line.lineID),
-                title: Text(line.lineDescription),
-                subtitle: Text(line.lineDescriptionEng),
-                onTap: () => _onPressedOnStop(context, line),
+              return Card(
+                child: ListTile(
+                  leading: Text(line.lineID),
+                  title: Text(line.lineDescription),
+                  subtitle: Text(line.lineDescriptionEng),
+                  onTap: () => _onPressedOnStop(context, line),
+                ),
               );
             },
           ),
@@ -126,8 +132,114 @@ class _StopsPageState extends State<StopsPage> {
     }
   }
 
-  void _onPressedOnStop(BuildContext context, LineData line) {
+  void _onPressedOnStop(BuildContext context, LineData line) async {
     debugPrint('line: ${line.lineID}');
-    //TODO:
+    rfl.RoutesForLine routesForLine = await Api.getRoutesForLine(line.lineCode);
+
+    rfl.Route? route = await showModalBottomSheet(
+        context: context,
+        builder: (context) {
+          return FutureBuilder(
+              future: Api.getRoutesForLine(line.lineCode),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator.adaptive(),
+                  );
+                }
+                if (snapshot.hasError) {
+                  return Text('${snapshot.error}');
+                }
+                return Column(
+                  children: <Widget>[
+                    const SizedBox(height: 16),
+                    const Text(
+                      'Επιλέξτε την γραμμή',
+                      style: TextStyle(fontSize: 20),
+                    ),
+                    const SizedBox(height: 10),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: routesForLine.routesForLine.length,
+                        itemBuilder: (context, index) {
+                          return Card(
+                            child: ListTile(
+                              leading: Icon(Icons.circle,
+                                  color: ColorGenerator(index).generateColor()),
+                              title: Text(routesForLine
+                                  .routesForLine[index].routeDescription!),
+                              subtitle: Text(routesForLine
+                                  .routesForLine[index].routeDescriptionEng!),
+                              onTap: () => Navigator.pop(
+                                  context, routesForLine.routesForLine[index]),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                  ],
+                );
+              });
+        });
+    if (route != null) {
+      Stop? stop = await showModalBottomSheet(
+          context: context,
+          builder: (context) {
+            return FutureBuilder(
+                future: Api.webGetStops(route.routeCode!),
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(
+                      child: CircularProgressIndicator.adaptive(),
+                    );
+                  }
+                  if (snapshot.hasError) {
+                    return Text('${snapshot.error}');
+                  }
+                  return Column(
+                    children: <Widget>[
+                      const SizedBox(height: 16),
+                      const Center(
+                        child: Text(
+                          'Επιλέξτε την στάση',
+                          style: TextStyle(fontSize: 20),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Expanded(
+                        child: ListView.builder(
+                          itemCount: snapshot.data!.stops.length,
+                          itemBuilder: (context, index) {
+                            return Card(
+                              child: ListTile(
+                                leading: Icon(Icons.circle,
+                                    color:
+                                        ColorGenerator(index).generateColor()),
+                                title: Text(snapshot
+                                    .data!.stops[index].stopDescription),
+                                subtitle: Text(snapshot
+                                    .data!.stops[index].stopDescriptionEng),
+                                onTap: () => Navigator.pop(
+                                    context, snapshot.data!.stops[index]),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
+                  );
+                });
+          });
+      if (stop != null) {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => StopPage(
+              stop: stop,
+            ),
+          ),
+        );
+      }
+    }
   }
 }
