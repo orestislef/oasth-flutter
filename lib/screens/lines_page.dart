@@ -11,59 +11,71 @@ class LinesPage extends StatefulWidget {
 }
 
 class _LinesPageState extends State<LinesPage> {
+  late List<LineWithMasterLineInfo> allLines = [];
+  late List<LineWithMasterLineInfo> displayedLines = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchLines();
+  }
+
+  Future<void> _fetchLines() async {
+    try {
+      final lines = await Api.webGetLinesWithMLInfo();
+      setState(() {
+        allLines = lines.linesWithMasterLineInfo;
+        displayedLines = allLines;
+      });
+    } catch (error) {
+      debugPrint('Error fetching lines: $error');
+    }
+  }
+
+  void _filterLines(String query) {
+    setState(() {
+      displayedLines = allLines.where((line) =>
+      line.lineDescription!.toLowerCase().contains(query.toLowerCase()) ||
+          line.lineId!.toLowerCase().contains(query.toLowerCase())).toList();
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       body: Column(
         children: <Widget>[
-          const Padding(
-            padding: EdgeInsets.all(8.0),
-            child: Text(
-                'Επιλέξτε τη γραμμή που σας ενδιαφέρει, για να δείτε: το ωράριο λειτουργίας και τις στάσεις της.'),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: TextField(
+              decoration: const InputDecoration(
+                labelText: 'Search by Line Description or Line ID',
+                prefixIcon: Icon(Icons.search),
+              ),
+              onChanged: _filterLines,
+            ),
           ),
-          const SizedBox(height: 10),
           Expanded(
-            child: FutureBuilder<LinesWithMasterLineInfo>(
-              future: Api.webGetLinesWithMLInfo(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator.adaptive(),
-                  );
-                } else if (snapshot.hasError) {
-                  return Text('${snapshot.error}');
-                } else {
-                  LinesWithMasterLineInfo linesWithMasterLineInfo =
-                      snapshot.data!;
-                  return Scrollbar(
-                    child: ListView.builder(
-                      itemCount: linesWithMasterLineInfo
-                          .linesWithMasterLineInfo.length,
-                      itemBuilder: (context, index) {
-                        bool isOdd = index % 2 == 0;
-                        return Card(
-                          color: isOdd ? null : Colors.grey.shade300,
-                          child: ListTile(
-                            enableFeedback: true,
-                            leading: Text(linesWithMasterLineInfo
-                                .linesWithMasterLineInfo[index].lineId!),
-                            title: Text(linesWithMasterLineInfo
-                                .linesWithMasterLineInfo[index].lineDescription!),
-                            subtitle: Text(linesWithMasterLineInfo
-                                .linesWithMasterLineInfo[index]
-                                .lineDescriptionEng!),
-                            onTap: () {
-                              _onTapOnLine(
-                                  context,
-                                  linesWithMasterLineInfo
-                                      .linesWithMasterLineInfo[index]);
-                            },
-                          ),
-                        );
-                      },
-                    ),
-                  );
-                }
+            child: displayedLines.isEmpty
+                ? const Center(
+              child: Text('No lines found.'),
+            )
+                : ListView.builder(
+              itemCount: displayedLines.length,
+              itemBuilder: (context, index) {
+                final line = displayedLines[index];
+                bool isOdd = index % 2 == 0;
+                return Card(
+                  color: isOdd ? null : Colors.grey.shade300,
+                  child: ListTile(
+                    leading: Text(line.lineId!),
+                    title: Text(line.lineDescription!),
+                    subtitle: Text(line.lineDescriptionEng!),
+                    onTap: () {
+                      _onTapOnLine(context, line);
+                    },
+                  ),
+                );
               },
             ),
           ),
@@ -73,14 +85,14 @@ class _LinesPageState extends State<LinesPage> {
   }
 
   void _onTapOnLine(
-    BuildContext context,
-    LineWithMasterLineInfo linesWithMasterLineInfo,
-  ) {
+      BuildContext context,
+      LineWithMasterLineInfo line,
+      ) {
     Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => LineInfoPage(
-          linesWithMasterLineInfo: linesWithMasterLineInfo,
+          linesWithMasterLineInfo: line,
         ),
       ),
     );
