@@ -118,6 +118,7 @@ class _StopsPageState extends State<StopsPage> {
                 }
 
                 return Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     const SizedBox(height: 16),
                     const Text(
@@ -158,18 +159,23 @@ class _StopsPageState extends State<StopsPage> {
           context: context,
           builder: (context) {
             return Column(
+              mainAxisSize: MainAxisSize.min,
               children: <Widget>[
+                const SizedBox(height: 16),
                 FutureBuilder(
                     future: Api.getStopNameAndXY(stopBySip.id!),
                     builder: (context, snapshot) {
-                      StopsNameXy stopsNameXy = snapshot.data!;
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(
                             child: CircularProgressIndicator.adaptive());
                       } else if (snapshot.hasError) {
                         return Center(child: Text('${snapshot.error}'));
                       }
-                      return Text(stopsNameXy.stopsNameXy.first.stopDescr!);
+                      StopsNameXy stopsNameXy = snapshot.data!;
+                      return Text(
+                        '${stopsNameXy.stopsNameXy.first.stopDescr!} - ($stopCode)',
+                        style: const TextStyle(fontSize: 20.0),
+                      );
                     }),
                 const SizedBox(height: 16),
                 Container(
@@ -292,6 +298,7 @@ class _StopsPageState extends State<StopsPage> {
                   return Center(child: Text('${snapshot.error}'));
                 }
                 return Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     const SizedBox(height: 16),
                     const Text(
@@ -353,9 +360,10 @@ class _StopsPageState extends State<StopsPage> {
                           itemBuilder: (context, index) {
                             return Card(
                               child: ListTile(
-                                leading: Icon(Icons.circle,
-                                    color:
-                                        ColorGenerator(index).generateColor()),
+                                leading: CircleAvatar(
+                                  child: Text(snapshot
+                                      .data!.stops[index].routeStopOrder),
+                                ),
                                 title: Text(snapshot
                                     .data!.stops[index].stopDescription),
                                 subtitle: Text(snapshot

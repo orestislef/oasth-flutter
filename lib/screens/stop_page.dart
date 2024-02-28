@@ -27,7 +27,8 @@ class StopPage extends StatelessWidget {
               children: [
                 Text('English Description: ${stop.stopDescriptionEng}'),
                 Text('Street: ${stop.stopStreet ?? "N/A"}'),
-                Text('English Street: ${stop.stopStreetEng ?? "N/A"}'),
+                if (stop.stopStreetEng != null && stop.stopStreetEng.isNotEmpty)
+                  Text('English Street: ${stop.stopStreetEng ?? "N/A"}'),
                 Text('Route Stop Order: ${stop.routeStopOrder}'),
                 Text('Stop Amea: ${stop.stopAmea == '0' ? '❌' : '✔️'}'),
                 const SizedBox(height: 10.0),
