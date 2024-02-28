@@ -48,6 +48,7 @@ class _LinesPageState extends State<LinesPage> {
           Padding(
             padding: const EdgeInsets.all(8.0),
             child: TextField(
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
               decoration: const InputDecoration(
                 labelText: 'Search by Line Description or Line ID',
                 prefixIcon: Icon(Icons.search),

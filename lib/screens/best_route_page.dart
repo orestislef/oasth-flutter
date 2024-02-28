@@ -47,6 +47,7 @@ class _BestRoutePageState extends State<BestRoutePage> {
             const Text('Θέλω να πάω σε ...'),
             const SizedBox(height: 8.0),
             TextField(
+              onTapOutside: (_) => FocusScope.of(context).unfocus(),
               controller: _destinationController,
               decoration: InputDecoration(
                 labelText: 'Διεύθυνση - Οδό',
