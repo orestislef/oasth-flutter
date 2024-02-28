@@ -304,24 +304,26 @@ class _StopsPageState extends State<StopsPage> {
                     ),
                     const SizedBox(height: 10),
                     Expanded(
-                      child: ListView.builder(
-                        itemCount: routesForLine.routesForLine.length,
-                        itemBuilder: (context, index) {
-                          bool isOdd = index % 2 == 0;
-                          return Card(
-                            color: isOdd ? null : Colors.grey.shade300,
-                            child: ListTile(
-                              leading: Icon(Icons.circle,
-                                  color: ColorGenerator(index).generateColor()),
-                              title: Text(routesForLine
-                                  .routesForLine[index].routeDescription!),
-                              subtitle: Text(routesForLine
-                                  .routesForLine[index].routeDescriptionEng!),
-                              onTap: () => Navigator.pop(
-                                  context, routesForLine.routesForLine[index]),
-                            ),
-                          );
-                        },
+                      child: Scrollbar(
+                        child: ListView.builder(
+                          itemCount: routesForLine.routesForLine.length,
+                          itemBuilder: (context, index) {
+                            bool isOdd = index % 2 == 0;
+                            return Card(
+                              color: isOdd ? null : Colors.grey.shade300,
+                              child: ListTile(
+                                leading: Icon(Icons.circle,
+                                    color: ColorGenerator(index).generateColor()),
+                                title: Text(routesForLine
+                                    .routesForLine[index].routeDescription!),
+                                subtitle: Text(routesForLine
+                                    .routesForLine[index].routeDescriptionEng!),
+                                onTap: () => Navigator.pop(
+                                    context, routesForLine.routesForLine[index]),
+                              ),
+                            );
+                          },
+                        ),
                       ),
                     ),
                   ],
@@ -354,26 +356,28 @@ class _StopsPageState extends State<StopsPage> {
                       ),
                       const SizedBox(height: 10),
                       Expanded(
-                        child: ListView.builder(
-                          itemCount: snapshot.data!.stops.length,
-                          itemBuilder: (context, index) {
-                            bool isOdd = index % 2 == 0;
-                            return Card(
-                              color: isOdd ? null : Colors.grey.shade300,
-                              child: ListTile(
-                                leading: CircleAvatar(
-                                  child: Text(snapshot
-                                      .data!.stops[index].routeStopOrder),
+                        child: Scrollbar(
+                          child: ListView.builder(
+                            itemCount: snapshot.data!.stops.length,
+                            itemBuilder: (context, index) {
+                              bool isOdd = index % 2 == 0;
+                              return Card(
+                                color: isOdd ? null : Colors.grey.shade300,
+                                child: ListTile(
+                                  leading: CircleAvatar(
+                                    child: Text(snapshot
+                                        .data!.stops[index].routeStopOrder),
+                                  ),
+                                  title: Text(snapshot
+                                      .data!.stops[index].stopDescription),
+                                  subtitle: Text(snapshot
+                                      .data!.stops[index].stopDescriptionEng),
+                                  onTap: () => Navigator.pop(
+                                      context, snapshot.data!.stops[index]),
                                 ),
-                                title: Text(snapshot
-                                    .data!.stops[index].stopDescription),
-                                subtitle: Text(snapshot
-                                    .data!.stops[index].stopDescriptionEng),
-                                onTap: () => Navigator.pop(
-                                    context, snapshot.data!.stops[index]),
-                              ),
-                            );
-                          },
+                              );
+                            },
+                          ),
                         ),
                       ),
                     ],
