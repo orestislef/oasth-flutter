@@ -1,16 +1,27 @@
 # oasth
 
-A new Flutter project.
+## About
+
+This is a Flutter project aimed at leveraging the new API of OASTH telematics.
+
+## Features
+
+- [ ] Γραμμές
+- [ ] Στάστεις
+- [ ] Best Route
 
 ## Getting Started
 
-This project is a starting point for a Flutter application.
+all packages is up to date(29/02/2024)
+Tested and run perfect on iOS, Android
+App works for Windows and Web without geocoding atm
 
-A few resources to get you started if this is your first Flutter project:
+### Prerequisites
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+Before running this project, ensure you have Flutter installed. For installation instructions, visit the [Flutter documentation](https://flutter.dev/docs/get-started/install).
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+### Installation
+
+1. Clone the repository:
+   ```sh
+   git clone https://github.com/orestislef/oasth-flutter.git
