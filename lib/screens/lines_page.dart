@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/lines_with_ml_info.dart';
@@ -34,9 +35,13 @@ class _LinesPageState extends State<LinesPage> {
 
   void _filterLines(String query) {
     setState(() {
-      displayedLines = allLines.where((line) =>
-      line.lineDescription!.toLowerCase().contains(query.toLowerCase()) ||
-          line.lineId!.toLowerCase().contains(query.toLowerCase())).toList();
+      displayedLines = allLines
+          .where((line) =>
+              line.lineDescription!
+                  .toLowerCase()
+                  .contains(query.toLowerCase()) ||
+              line.lineId!.toLowerCase().contains(query.toLowerCase()))
+          .toList();
     });
   }
 
@@ -49,36 +54,36 @@ class _LinesPageState extends State<LinesPage> {
             padding: const EdgeInsets.all(8.0),
             child: TextField(
               onTapOutside: (_) => FocusScope.of(context).unfocus(),
-              decoration: const InputDecoration(
-                labelText: 'Search by Line Description or Line ID',
-                prefixIcon: Icon(Icons.search),
+              decoration: InputDecoration(
+                labelText: 'search_hint_for_lines'.tr(),
+                prefixIcon: const Icon(Icons.search),
               ),
               onChanged: _filterLines,
             ),
           ),
           Expanded(
             child: displayedLines.isEmpty
-                ? const Center(
-              child: Text('No lines found.'),
-            )
+                ? Center(
+                    child: Text('no_lines_found'.tr()),
+                  )
                 : ListView.builder(
-              itemCount: displayedLines.length,
-              itemBuilder: (context, index) {
-                final line = displayedLines[index];
-                bool isOdd = index % 2 == 0;
-                return Card(
-                  color: isOdd ? null : Colors.blueGrey.shade300,
-                  child: ListTile(
-                    leading: Text(line.lineId!),
-                    title: Text(line.lineDescription!),
-                    subtitle: Text(line.lineDescriptionEng!),
-                    onTap: () {
-                      _onTapOnLine(context, line);
+                    itemCount: displayedLines.length,
+                    itemBuilder: (context, index) {
+                      final line = displayedLines[index];
+                      bool isOdd = index % 2 == 0;
+                      return Card(
+                        color: isOdd ? null : Colors.blueGrey.shade300,
+                        child: ListTile(
+                          leading: Text(line.lineId!),
+                          title: Text(line.lineDescription!),
+                          subtitle: Text(line.lineDescriptionEng!),
+                          onTap: () {
+                            _onTapOnLine(context, line);
+                          },
+                        ),
+                      );
                     },
                   ),
-                );
-              },
-            ),
           ),
         ],
       ),
@@ -86,9 +91,9 @@ class _LinesPageState extends State<LinesPage> {
   }
 
   void _onTapOnLine(
-      BuildContext context,
-      LineWithMasterLineInfo line,
-      ) {
+    BuildContext context,
+    LineWithMasterLineInfo line,
+  ) {
     Navigator.push(
       context,
       MaterialPageRoute(

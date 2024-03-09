@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/lines.dart';
@@ -58,7 +59,7 @@ class LinePage extends StatelessWidget {
             } else if (snapshot.hasError) {
               return Text('${snapshot.error}');
             } else if (snapshot.data == null || snapshot.data!.stops.isEmpty) {
-              return const Text('No stops found');
+              return Text('no_stops_found'.tr());
             } else {
               return Scrollbar(
                 child: ListView.builder(
@@ -66,7 +67,8 @@ class LinePage extends StatelessWidget {
                   itemBuilder: (context, index) {
                     return ListTile(
                       title: Text(snapshot.data!.stops[index].stopDescription),
-                      subtitle: Text(snapshot.data!.stops[index].stopDescriptionEng),
+                      subtitle:
+                          Text(snapshot.data!.stops[index].stopDescriptionEng),
                       onTap: () {
                         final stop = snapshot.data!.stops[index];
                         Navigator.push(

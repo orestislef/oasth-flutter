@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/lines.dart';
@@ -50,13 +51,8 @@ class _StopsPageState extends State<StopsPage> {
           mainAxisAlignment: MainAxisAlignment.center,
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            const Center(
-              child: Text(
-                  'Επιλέξτε την στάση για την οποία ενδιαφέρεστε να λάβετε πληροφορίες. Συμπεριλαμβάνονται αφίξεις λεωφορείων και πληροφορίες γραμμής.'),
-            ),
-            const SizedBox(
-              height: 16.0,
-            ),
+            Center(child: Text('choose_station_hint'.tr())),
+            const SizedBox(height: 16.0),
             TextField(
               keyboardType: TextInputType.number,
               inputFormatters: InputFormattersHelper.getPhoneInputFormatter(),
@@ -65,9 +61,9 @@ class _StopsPageState extends State<StopsPage> {
               maxLines: 1,
               onTapOutside: (_) => FocusScope.of(context).unfocus(),
               controller: _textFieldController,
-              decoration: const InputDecoration(
-                border: OutlineInputBorder(),
-                labelText: 'Κωδικός στάσης',
+              decoration: InputDecoration(
+                border: const OutlineInputBorder(),
+                labelText: 'station_code'.tr(),
               ),
             ),
             const SizedBox(height: 10.0),
@@ -81,10 +77,10 @@ class _StopsPageState extends State<StopsPage> {
                       );
                     }
                   : null,
-              child: const Text('Λάβετε πληροφορίες γραμμής'),
+              child: Text('take_station_info'.tr()),
             ),
             const SizedBox(height: 20.0),
-            const Text('ή Επιλέξτε γραμμή'),
+            Text('or_choose_line'.tr()),
             const SizedBox(height: 10.0),
             Expanded(
                 child: FutureBuilder(
@@ -114,17 +110,16 @@ class _StopsPageState extends State<StopsPage> {
                 }
                 RoutesForStop routesForStop = snapshot.data!;
                 if (routesForStop.routesForStop!.isEmpty) {
-                  return const Center(
-                      child: Text('Δεν υπάρχουν πληροφορίες γραμμής'));
+                  return Center(child: Text('no_line_info'.tr()));
                 }
 
                 return Column(
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     const SizedBox(height: 16),
-                    const Text(
-                      'Choose route',
-                      style: TextStyle(fontSize: 20.0),
+                    Text(
+                      'choose_route'.tr(),
+                      style: const TextStyle(fontSize: 20.0),
                     ),
                     Expanded(
                       child: ListView.builder(
@@ -203,10 +198,10 @@ class _StopsPageState extends State<StopsPage> {
                         if (snapshot.hasData) {
                           StopArrivals stopArrivals = snapshot.data!;
                           if (stopArrivals.stopDetails.isEmpty) {
-                            return const Center(
+                            return Center(
                               child: Text(
-                                'No stop details found',
-                                style: TextStyle(
+                                'no_stop_details'.tr(),
+                                style: const TextStyle(
                                   color: Colors.amberAccent,
                                 ),
                               ),
@@ -218,7 +213,7 @@ class _StopsPageState extends State<StopsPage> {
                                 itemBuilder: (BuildContext context, int index) {
                                   return ListTile(
                                     leading: Text(
-                                      '| Bus: ${stopArrivals.stopDetails[index].routeCode!} |',
+                                      '| ${'bus'.tr()}: ${stopArrivals.stopDetails[index].routeCode!} |',
                                       style: const TextStyle(
                                           color: Colors.amberAccent),
                                     ),
@@ -234,9 +229,10 @@ class _StopsPageState extends State<StopsPage> {
                             );
                           }
                         } else {
-                          return const Center(
-                              child: Text('Loading...',
-                                  style: TextStyle(color: Colors.amberAccent)));
+                          return Center(
+                              child: Text('loading'.tr(),
+                                  style: const TextStyle(
+                                      color: Colors.amberAccent)));
                         }
                       }),
                 ),
@@ -298,9 +294,9 @@ class _StopsPageState extends State<StopsPage> {
                   mainAxisSize: MainAxisSize.min,
                   children: <Widget>[
                     const SizedBox(height: 16),
-                    const Text(
-                      'Επιλέξτε την γραμμή',
-                      style: TextStyle(fontSize: 20),
+                    Text(
+                      'choose_line'.tr(),
+                      style: const TextStyle(fontSize: 20),
                     ),
                     const SizedBox(height: 10),
                     Expanded(
@@ -313,13 +309,14 @@ class _StopsPageState extends State<StopsPage> {
                               color: isOdd ? null : Colors.blueGrey.shade300,
                               child: ListTile(
                                 leading: Icon(Icons.circle,
-                                    color: ColorGenerator(index).generateColor()),
+                                    color:
+                                        ColorGenerator(index).generateColor()),
                                 title: Text(routesForLine
                                     .routesForLine[index].routeDescription!),
                                 subtitle: Text(routesForLine
                                     .routesForLine[index].routeDescriptionEng!),
-                                onTap: () => Navigator.pop(
-                                    context, routesForLine.routesForLine[index]),
+                                onTap: () => Navigator.pop(context,
+                                    routesForLine.routesForLine[index]),
                               ),
                             );
                           },
@@ -348,10 +345,10 @@ class _StopsPageState extends State<StopsPage> {
                   return Column(
                     children: <Widget>[
                       const SizedBox(height: 16),
-                      const Center(
+                      Center(
                         child: Text(
-                          'Επιλέξτε την στάση',
-                          style: TextStyle(fontSize: 20),
+                          'choose_station'.tr(),
+                          style: const TextStyle(fontSize: 20),
                         ),
                       ),
                       const SizedBox(height: 10),
