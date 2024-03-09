@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/home_page.dart';
+import 'package:oasth/screens/news_screen.dart';
 
 import '../api/api/api.dart';
 import '../api/responses/news.dart';
@@ -74,17 +75,14 @@ class WelcomeScreen extends StatelessWidget {
                             );
                           },
                           child: Padding(
-                            padding: const EdgeInsets.all(15.0),
+                            padding: const EdgeInsets.all(5.0),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const Icon(Icons.linear_scale_rounded,
-                                    size: 30),
-                                Text('lines'.tr(),
-                                    style: const TextStyle(
-                                      fontSize: 25.0,
-                                    )),
+                                    size: 20),
+                                Text('lines'.tr()),
                               ],
                             ),
                           ),
@@ -115,20 +113,56 @@ class WelcomeScreen extends StatelessWidget {
                             );
                           },
                           child: Padding(
-                            padding: const EdgeInsets.all(15.0),
+                            padding: const EdgeInsets.all(5.0),
                             child: Column(
                               mainAxisAlignment: MainAxisAlignment.spaceAround,
                               mainAxisSize: MainAxisSize.min,
                               children: [
                                 const Icon(
                                   Icons.follow_the_signs,
-                                  size: 30,
+                                  size: 20,
                                 ),
-                                Text('stations'.tr(),
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 25.0,
-                                    )),
+                                Text('stations'.tr()),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.all(8.0),
+                        child: ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.blue.shade900,
+                            foregroundColor: Colors.white,
+                            elevation: 20.0,
+                            shadowColor: Colors.blue.shade900,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                          ),
+                          onPressed: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const HomePage(
+                                  currentIndex: 1,
+                                ),
+                              ),
+                            );
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(5.0),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.spaceAround,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(
+                                  Icons.more_horiz_rounded,
+                                  size: 20,
+                                ),
+                                Text('more'.tr()),
                               ],
                             ),
                           ),
@@ -196,7 +230,15 @@ class WelcomeScreen extends StatelessWidget {
                                               BorderRadius.circular(10.0),
                                         ),
                                       ),
-                                      onPressed: () {},
+                                      onPressed: () {
+                                        Navigator.push(
+                                          context,
+                                          MaterialPageRoute(
+                                            builder: (context) =>
+                                                NewsScreen(news: news),
+                                          ),
+                                        );
+                                      },
                                       child: Column(
                                         mainAxisSize: MainAxisSize.min,
                                         children: [
