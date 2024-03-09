@@ -6,7 +6,7 @@ import 'package:oasth/screens/lines_page.dart';
 import 'package:oasth/screens/stops_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key,  this.currentIndex = 0 });
+  const HomePage({super.key, this.currentIndex = 0});
 
   final int currentIndex;
 
@@ -19,7 +19,7 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-  _currentIndex == -1 ? _currentIndex = widget.currentIndex : 0;
+    _currentIndex == -1 ? _currentIndex = widget.currentIndex : 0;
 
     return Scaffold(
       appBar: AppBar(
@@ -73,11 +73,11 @@ class _HomePageState extends State<HomePage> {
   _buildTitleBasedOnIndex(int currentIndex) {
     switch (currentIndex) {
       case 0:
-        return  Text('lines'.tr());
+        return Text('lines'.tr());
       case 1:
-        return  Text('stations'.tr());
+        return Text('stations'.tr());
       case 2:
-        return  Text('best_route'.tr());
+        return Text('best_route'.tr());
       default:
         return Container();
     }

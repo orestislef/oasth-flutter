@@ -71,7 +71,7 @@ class _BestRoutePageState extends State<BestRoutePage> {
             Text(
               'get_directions_hint'.tr(),
               textAlign: TextAlign.center,
-              style: const TextStyle(color: Colors.blueGrey),
+              style: TextStyle(color: Colors.blue.shade900),
             ),
           ],
         ),

@@ -3,6 +3,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/home_page.dart';
+import 'package:oasth/screens/more_screen.dart';
 import 'package:oasth/screens/news_screen.dart';
 
 import '../api/api/api.dart';
@@ -82,7 +83,11 @@ class WelcomeScreen extends StatelessWidget {
                               children: [
                                 const Icon(Icons.linear_scale_rounded,
                                     size: 20),
-                                Text('lines'.tr()),
+                                Text(
+                                  'lines'.tr(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ],
                             ),
                           ),
@@ -122,7 +127,11 @@ class WelcomeScreen extends StatelessWidget {
                                   Icons.follow_the_signs,
                                   size: 20,
                                 ),
-                                Text('stations'.tr()),
+                                Text(
+                                  'stations'.tr(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ],
                             ),
                           ),
@@ -146,9 +155,7 @@ class WelcomeScreen extends StatelessWidget {
                             Navigator.push(
                               context,
                               MaterialPageRoute(
-                                builder: (context) => const HomePage(
-                                  currentIndex: 1,
-                                ),
+                                builder: (context) => const MorePage(),
                               ),
                             );
                           },
@@ -162,7 +169,11 @@ class WelcomeScreen extends StatelessWidget {
                                   Icons.more_horiz_rounded,
                                   size: 20,
                                 ),
-                                Text('more'.tr()),
+                                Text(
+                                  'more'.tr(),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
                               ],
                             ),
                           ),

@@ -10,6 +10,7 @@ import 'package:oasth/api/responses/stop_details.dart';
 import 'package:oasth/api/responses/stop_name_xy.dart';
 import 'package:oasth/helpers/color_generator_helper.dart';
 import 'package:oasth/helpers/input_formatters_helper.dart';
+import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/stop_page.dart';
 
 class StopsPage extends StatefulWidget {
@@ -127,18 +128,22 @@ class _StopsPageState extends State<StopsPage> {
                           itemBuilder: (context, index) {
                             bool isOdd = index % 2 == 0;
                             return Card(
-                              color: isOdd ? null : Colors.blueGrey.shade300,
+                              color: isOdd
+                                  ? Colors.blue.shade800
+                                  : Colors.blue.shade900,
                               child: ListTile(
                                 leading: Icon(
                                   Icons.circle,
                                   color: ColorGenerator(index).generateColor(),
                                 ),
                                 title: Text(
-                                    '${routesForStop.routesForStop![index].lineDescription}'),
-                                subtitle: Text(
-                                    '${routesForStop.routesForStop![index].lineDescriptionEng}'),
-                                trailing: Text(routesForStop
-                                    .routesForStop![index].lineID!),
+                                    LanguageHelper.getLanguageUsedInApp(
+                                                context) ==
+                                            'en'
+                                        ? '${routesForStop.routesForStop![index].lineDescriptionEng}'
+                                        : '${routesForStop.routesForStop![index].lineDescription}',
+                                    style:
+                                        const TextStyle(color: Colors.white)),
                                 onTap: () {
                                   Navigator.pop(context,
                                       routesForStop.routesForStop![index]);
@@ -177,16 +182,18 @@ class _StopsPageState extends State<StopsPage> {
                     }),
                 const SizedBox(height: 16),
                 Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: Colors.black87,
                     shape: BoxShape.rectangle,
                     border: Border(
-                      top: BorderSide(width: 2.0, color: Colors.blueGrey),
-                      left: BorderSide(width: 2.0, color: Colors.blueGrey),
-                      right: BorderSide(width: 2.0, color: Colors.blueGrey),
-                      bottom: BorderSide(width: 2.0, color: Colors.blueGrey),
+                      top: BorderSide(width: 2.0, color: Colors.blue.shade900),
+                      left: BorderSide(width: 2.0, color: Colors.blue.shade900),
+                      right:
+                          BorderSide(width: 2.0, color: Colors.blue.shade900),
+                      bottom:
+                          BorderSide(width: 2.0, color: Colors.blue.shade900),
                     ),
-                    borderRadius: BorderRadius.all(
+                    borderRadius: const BorderRadius.all(
                       Radius.circular(15.0),
                     ),
                   ),
@@ -254,11 +261,16 @@ class _StopsPageState extends State<StopsPage> {
             LineData line = lines[index];
             bool isOdd = index % 2 == 0;
             return Card(
-              color: isOdd ? null : Colors.blueGrey.shade300,
+              color: isOdd ? Colors.blue.shade800 : Colors.blue.shade900,
               child: ListTile(
-                leading: Text(line.lineID),
-                title: Text(line.lineDescription),
-                subtitle: Text(line.lineDescriptionEng),
+                leading: Text(line.lineID,
+                    style: const TextStyle(color: Colors.white)),
+                title: Text(
+                  LanguageHelper.getLanguageUsedInApp(context) == 'en'
+                      ? line.lineDescriptionEng
+                      : line.lineDescription,
+                  style: const TextStyle(color: Colors.white),
+                ),
                 onTap: () => _onPressedOnStop(context, line),
               ),
             );

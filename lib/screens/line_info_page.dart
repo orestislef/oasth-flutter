@@ -6,6 +6,7 @@ import 'package:oasth/api/responses/lines_and_routes_for_m_land_l_code.dart';
 import 'package:oasth/api/responses/lines_with_ml_info.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/routes_for_line.dart';
+import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/stop_page.dart';
 
 import 'line_route_page.dart';
@@ -139,18 +140,28 @@ class _LineInfoPageState extends State<LineInfoPage> {
                               widget.linesWithMasterLineInfo.lineCode;
                           bool isOdd = index % 2 == 0;
                           return Card(
-                            color: isOdd ? null : Colors.blueGrey.shade300,
+                            color: isOdd
+                                ? Colors.blue.shade800
+                                : Colors.blue.shade900,
                             child: ListTile(
                               selected: isTheSelected,
                               trailing: isTheSelected
-                                  ? const Icon(Icons.check)
+                                  ? const Icon(Icons.check, color: Colors.white)
                                   : null,
-                              leading: Text(
-                                  '${linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes[index].lineIdGr}'),
+                              leading: CircleAvatar(
+                                child: Text(
+                                  '${linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes[index].lineIdGr}',
+                                ),
+                              ),
                               title: Text(
-                                  '${linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes[index].lineDescr}'),
-                              subtitle: Text(
-                                  '${linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes[index].lineDescrEng}'),
+                                LanguageHelper.getLanguageUsedInApp(context) ==
+                                        'en'
+                                    ? '${linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes[index].lineDescrEng}'
+                                    : '${linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes[index].lineDescr}',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                ),
+                              ),
                               enableFeedback: true,
                               onTap: linesAndRoutesForMLandLCode
                                           .linesAndRoutesForMlandLcodes.length >
@@ -212,16 +223,23 @@ class _LineInfoPageState extends State<LineInfoPage> {
                         return Column(
                           children: <Widget>[
                             Card(
-                              color: isOdd ? null : Colors.blueGrey.shade300,
+                              color: isOdd
+                                  ? Colors.blue.shade800
+                                  : Colors.blue.shade900,
                               child: ListTile(
                                 selected: isTheSelected,
                                 trailing: isTheSelected
-                                    ? const Icon(Icons.check)
+                                    ? const Icon(Icons.check,
+                                        color: Colors.white)
                                     : null,
                                 title: Text(
-                                    '${routesForLine.routesForLine[index].routeDescription}'),
-                                subtitle: Text(
-                                    '${routesForLine.routesForLine[index].routeDescriptionEng}'),
+                                    LanguageHelper.getLanguageUsedInApp(
+                                                context) ==
+                                            'en'
+                                        ? '${routesForLine.routesForLine[index].routeDescriptionEng}'
+                                        : '${routesForLine.routesForLine[index].routeDescription}',
+                                    style:
+                                        const TextStyle(color: Colors.white)),
                                 enableFeedback: true,
                                 onTap: routesForLine.routesForLine.length > 1
                                     ? () {
@@ -272,18 +290,26 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                         bool isOdd = index % 2 == 0;
                                         return Card(
                                           color: isOdd
-                                              ? null
-                                              : Colors.blueGrey.shade300,
+                                              ? Colors.blue.shade800
+                                              : Colors.blue.shade900,
                                           child: ListTile(
                                             leading: CircleAvatar(
                                               child: Text(routeDetailAndStops
                                                   .stops[index].routeStopOrder),
                                             ),
-                                            title: Text(routeDetailAndStops
-                                                .stops[index].stopDescription),
+                                            title: Text(
+                                                routeDetailAndStops.stops[index]
+                                                    .stopDescription,
+                                                style: const TextStyle(
+                                                    color: Colors.white)),
                                             subtitle: hasStopStreet
-                                                ? Text(routeDetailAndStops
-                                                    .stops[index].stopStreet!)
+                                                ? Text(
+                                                    routeDetailAndStops
+                                                        .stops[index]
+                                                        .stopStreet!,
+                                                    style: const TextStyle(
+                                                        color: Colors.white),
+                                                  )
                                                 : null,
                                             trailing: Row(
                                               mainAxisSize: MainAxisSize.min,
@@ -292,9 +318,12 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                                             .stopAmea ==
                                                         '1'
                                                     ? const Icon(
-                                                        Icons.accessible)
+                                                        Icons.accessible,
+                                                        color: Colors.white,
+                                                      )
                                                     : const SizedBox(),
                                                 const Icon(Icons.arrow_right,
+                                                    color: Colors.white,
                                                     size: 20),
                                               ],
                                             ),
@@ -318,14 +347,17 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                   SizedBox(
                                     height: 500.0,
                                     width: double.infinity,
-                                    child: RoutePage(
-                                      details: routeDetailAndStops.details,
-                                      stops: routeDetailAndStops.stops,
-                                      hasAppBar: false,
-                                      routeCode: routesForLine
-                                          .routesForLine[
-                                              widget.selectedDirectionIndex]
-                                          .routeCode!,
+                                    child: ClipRRect(
+                                      borderRadius: BorderRadius.circular(10.0),
+                                      child: RoutePage(
+                                        details: routeDetailAndStops.details,
+                                        stops: routeDetailAndStops.stops,
+                                        hasAppBar: false,
+                                        routeCode: routesForLine
+                                            .routesForLine[
+                                                widget.selectedDirectionIndex]
+                                            .routeCode!,
+                                      ),
                                     ),
                                   )
                                 ],
