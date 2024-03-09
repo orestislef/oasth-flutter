@@ -70,7 +70,7 @@ class _BestRoutePageState extends State<BestRoutePage> {
             const Text(
               'Get directions based on the provided addresses and will open Google Maps to find the best bus route.',
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.grey),
+              style: TextStyle(color: Colors.blueGrey),
             ),
           ],
         ),

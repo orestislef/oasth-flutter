@@ -138,7 +138,7 @@ class _LineInfoPageState extends State<LineInfoPage> {
                               widget.linesWithMasterLineInfo.lineCode;
                           bool isOdd = index % 2 == 0;
                           return Card(
-                            color: isOdd ? null : Colors.grey.shade300,
+                            color: isOdd ? null : Colors.blueGrey.shade300,
                             child: ListTile(
                               selected: isTheSelected,
                               trailing: isTheSelected
@@ -211,7 +211,7 @@ class _LineInfoPageState extends State<LineInfoPage> {
                         return Column(
                           children: <Widget>[
                             Card(
-                              color: isOdd ? null : Colors.grey.shade300,
+                              color: isOdd ? null : Colors.blueGrey.shade300,
                               child: ListTile(
                                 selected: isTheSelected,
                                 trailing: isTheSelected
@@ -270,7 +270,7 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                                 .stopStreet!.isNotEmpty;
                                         bool isOdd = index % 2 == 0;
                                         return Card(
-                                          color: isOdd ? null : Colors.grey.shade300,
+                                          color: isOdd ? null : Colors.blueGrey.shade300,
                                           child: ListTile(
                                             leading: CircleAvatar(
                                               child: Text(routeDetailAndStops

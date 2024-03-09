@@ -17,6 +17,8 @@ import 'package:oasth/api/responses/stop_details.dart';
 import 'package:oasth/api/responses/stop_name_xy.dart';
 import 'package:oasth/api/responses/web_stops.dart';
 
+import '../responses/news.dart';
+
 const Map<String, String> header = {
   'Accept': 'application/json, text/javascript, */*; q=0.01',
   'Accept-Encoding': 'gzip, deflate, br',
@@ -41,6 +43,24 @@ const Map<String, String> header = {
 const String baseUrl = 'https://telematics.oasth.gr/api';
 
 class Api {
+  static Future<News> getNews(String lang) async {
+    final url = Uri.parse('$baseUrl/?act=getNews&lang=$lang');
+
+    try {
+      final response = await http.get(url, headers: header);
+
+      if (response.statusCode == 200) {
+        final List<dynamic> data = json.decode(response.body);
+
+        News news = News.fromJson(data);
+        return news;
+      } else {
+        throw Exception('Failed to get News');
+      }
+    } catch (error) {
+      throw Exception('Error: $error');
+    }
+  }
 
   static Future<StopsNameXy> getStopNameAndXY(String p1) async {
     final url = Uri.parse('$baseUrl/?act=getStopNameAndXY&p1=$p1');

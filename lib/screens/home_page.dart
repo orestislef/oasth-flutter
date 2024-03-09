@@ -5,23 +5,27 @@ import 'package:oasth/screens/lines_page.dart';
 import 'package:oasth/screens/stops_page.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({super.key,  this.currentIndex = 0 });
+
+  final int currentIndex;
 
   @override
   State<HomePage> createState() => _HomePageState();
 }
 
 class _HomePageState extends State<HomePage> {
-  int currentIndex = 0;
+  int _currentIndex = -1;
 
   @override
   Widget build(BuildContext context) {
+  _currentIndex == -1 ? _currentIndex = widget.currentIndex : 0;
+
     return Scaffold(
       appBar: AppBar(
-        title: _buildTitleBasedOnIndex(currentIndex),
+        title: _buildTitleBasedOnIndex(_currentIndex),
       ),
       bottomNavigationBar: BottomNavyBar(
-        selectedIndex: currentIndex,
+        selectedIndex: _currentIndex,
         items: <BottomNavyBarItem>[
           BottomNavyBarItem(
             icon: const Icon(Icons.linear_scale_rounded),
@@ -44,11 +48,11 @@ class _HomePageState extends State<HomePage> {
         ],
         onItemSelected: (int value) {
           setState(() {
-            currentIndex = value;
+            _currentIndex = value;
           });
         },
       ),
-      body: getWidgetBasedOnIndex(currentIndex),
+      body: getWidgetBasedOnIndex(_currentIndex),
     );
   }
 

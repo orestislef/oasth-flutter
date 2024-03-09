@@ -132,7 +132,7 @@ class _StopsPageState extends State<StopsPage> {
                           itemBuilder: (context, index) {
                             bool isOdd = index % 2 == 0;
                             return Card(
-                              color: isOdd ? null : Colors.grey.shade300,
+                              color: isOdd ? null : Colors.blueGrey.shade300,
                               child: ListTile(
                                 leading: Icon(
                                   Icons.circle,
@@ -186,10 +186,10 @@ class _StopsPageState extends State<StopsPage> {
                     color: Colors.black87,
                     shape: BoxShape.rectangle,
                     border: Border(
-                      top: BorderSide(width: 2.0, color: Colors.grey),
-                      left: BorderSide(width: 2.0, color: Colors.grey),
-                      right: BorderSide(width: 2.0, color: Colors.grey),
-                      bottom: BorderSide(width: 2.0, color: Colors.grey),
+                      top: BorderSide(width: 2.0, color: Colors.blueGrey),
+                      left: BorderSide(width: 2.0, color: Colors.blueGrey),
+                      right: BorderSide(width: 2.0, color: Colors.blueGrey),
+                      bottom: BorderSide(width: 2.0, color: Colors.blueGrey),
                     ),
                     borderRadius: BorderRadius.all(
                       Radius.circular(15.0),
@@ -258,7 +258,7 @@ class _StopsPageState extends State<StopsPage> {
             LineData line = lines[index];
             bool isOdd = index % 2 == 0;
             return Card(
-              color: isOdd ? null : Colors.grey.shade300,
+              color: isOdd ? null : Colors.blueGrey.shade300,
               child: ListTile(
                 leading: Text(line.lineID),
                 title: Text(line.lineDescription),
@@ -310,7 +310,7 @@ class _StopsPageState extends State<StopsPage> {
                           itemBuilder: (context, index) {
                             bool isOdd = index % 2 == 0;
                             return Card(
-                              color: isOdd ? null : Colors.grey.shade300,
+                              color: isOdd ? null : Colors.blueGrey.shade300,
                               child: ListTile(
                                 leading: Icon(Icons.circle,
                                     color: ColorGenerator(index).generateColor()),
@@ -362,7 +362,7 @@ class _StopsPageState extends State<StopsPage> {
                             itemBuilder: (context, index) {
                               bool isOdd = index % 2 == 0;
                               return Card(
-                                color: isOdd ? null : Colors.grey.shade300,
+                                color: isOdd ? null : Colors.blueGrey.shade300,
                                 child: ListTile(
                                   leading: CircleAvatar(
                                     child: Text(snapshot

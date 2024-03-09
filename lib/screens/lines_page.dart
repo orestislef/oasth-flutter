@@ -67,7 +67,7 @@ class _LinesPageState extends State<LinesPage> {
                 final line = displayedLines[index];
                 bool isOdd = index % 2 == 0;
                 return Card(
-                  color: isOdd ? null : Colors.grey.shade300,
+                  color: isOdd ? null : Colors.blueGrey.shade300,
                   child: ListTile(
                     leading: Text(line.lineId!),
                     title: Text(line.lineDescription!),
