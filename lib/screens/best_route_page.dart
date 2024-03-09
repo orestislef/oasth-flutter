@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:geolocator/geolocator.dart';
@@ -27,12 +28,12 @@ class _BestRoutePageState extends State<BestRoutePage> {
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             const SizedBox(height: 16.0),
-            const Text('Βρίσκομαι κοντά σε ...'),
+            Text('i_am_close_to'.tr()),
             const SizedBox(height: 8.0),
             TextField(
               controller: _startLocationController,
               decoration: InputDecoration(
-                labelText: 'Διεύθυνση - Οδό',
+                labelText: 'address'.tr(),
                 border: const OutlineInputBorder(),
                 suffixIcon: _loadingStartLocation
                     ? const CircularProgressIndicator.adaptive()
@@ -44,13 +45,13 @@ class _BestRoutePageState extends State<BestRoutePage> {
               onChanged: (_) => _validateFields(),
             ),
             const SizedBox(height: 16.0),
-            const Text('Θέλω να πάω σε ...'),
+            Text('i_want_to_go_to'.tr()),
             const SizedBox(height: 8.0),
             TextField(
               onTapOutside: (_) => FocusScope.of(context).unfocus(),
               controller: _destinationController,
               decoration: InputDecoration(
-                labelText: 'Διεύθυνση - Οδό',
+                labelText: 'address'.tr(),
                 border: const OutlineInputBorder(),
                 suffixIcon: _loadingDestination
                     ? const CircularProgressIndicator.adaptive()
@@ -64,13 +65,13 @@ class _BestRoutePageState extends State<BestRoutePage> {
             const SizedBox(height: 16.0),
             ElevatedButton(
               onPressed: _canGetDirections ? _launchMaps : null,
-              child: const Text('Get Directions'),
+              child: Text('get_directions'.tr()),
             ),
             const SizedBox(height: 16.0),
-            const Text(
-              'Get directions based on the provided addresses and will open Google Maps to find the best bus route.',
+            Text(
+              'get_directions_hint'.tr(),
               textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.blueGrey),
+              style: const TextStyle(color: Colors.blueGrey),
             ),
           ],
         ),

@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/line_name.dart';
@@ -119,10 +120,10 @@ class _LineInfoPageState extends State<LineInfoPage> {
                 return Column(
                   children: <Widget>[
                     const SizedBox(height: 10),
-                    const Center(
+                    Center(
                       child: Text(
-                        'Εναλλακτική Διαδρομή',
-                        style: TextStyle(fontSize: 20),
+                        'different_route'.tr(),
+                        style: const TextStyle(fontSize: 20),
                         textAlign: TextAlign.center,
                       ),
                     ),
@@ -193,10 +194,10 @@ class _LineInfoPageState extends State<LineInfoPage> {
               return Column(
                 children: [
                   const SizedBox(height: 10),
-                  const Center(
+                  Center(
                     child: Text(
-                      'Κατεύθυνση',
-                      style: TextStyle(fontSize: 20),
+                      'direction'.tr(),
+                      style: const TextStyle(fontSize: 20),
                       textAlign: TextAlign.center,
                     ),
                   ),
@@ -253,8 +254,8 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                   snapshot.data!;
                               return Column(
                                 children: <Widget>[
-                                  const Text('Πίνακας Στασεων',
-                                      style: TextStyle(fontSize: 20)),
+                                  Text('station_table'.tr(),
+                                      style: const TextStyle(fontSize: 20)),
                                   const SizedBox(height: 10.0),
                                   ListView.builder(
                                       itemCount:
@@ -270,7 +271,9 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                                 .stopStreet!.isNotEmpty;
                                         bool isOdd = index % 2 == 0;
                                         return Card(
-                                          color: isOdd ? null : Colors.blueGrey.shade300,
+                                          color: isOdd
+                                              ? null
+                                              : Colors.blueGrey.shade300,
                                           child: ListTile(
                                             leading: CircleAvatar(
                                               child: Text(routeDetailAndStops

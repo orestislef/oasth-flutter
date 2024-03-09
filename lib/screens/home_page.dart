@@ -1,4 +1,5 @@
 import 'package:bottom_navy_bar/bottom_navy_bar.dart';
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:oasth/screens/best_route_page.dart';
 import 'package:oasth/screens/lines_page.dart';
@@ -72,11 +73,11 @@ class _HomePageState extends State<HomePage> {
   _buildTitleBasedOnIndex(int currentIndex) {
     switch (currentIndex) {
       case 0:
-        return const Text('Γραμμές');
+        return  Text('lines'.tr());
       case 1:
-        return const Text('Στάσεις');
+        return  Text('stations'.tr());
       case 2:
-        return const Text('Βέλτιστη Διαδρομή');
+        return  Text('best_route'.tr());
       default:
         return Container();
     }

@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -52,13 +53,18 @@ class _StopPageState extends State<StopPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('English Description: ${widget.stop.stopDescriptionEng}'),
-                Text('Street: ${widget.stop.stopStreet ?? "N/A"}'),
+                Text(
+                    '${'english_description'.tr()}: ${widget.stop.stopDescriptionEng}'),
+                Text(
+                    '${'street'.tr()}: ${widget.stop.stopStreet ?? 'n_a'.tr()}}'),
                 if (widget.stop.stopStreetEng != null &&
                     widget.stop.stopStreetEng.isNotEmpty)
-                  Text('English Street: ${widget.stop.stopStreetEng ?? "N/A"}'),
-                Text('Route Stop Order: ${widget.stop.routeStopOrder}'),
-                Text('Stop Amea: ${widget.stop.stopAmea == '0' ? '❌' : '✔️'}'),
+                  Text(
+                      '${'english_street'.tr()}: ${widget.stop.stopStreetEng ?? 'n_a'.tr()}'),
+                Text(
+                    '${'route_stop_order'.tr()}: ${widget.stop.routeStopOrder}'),
+                Text(
+                    '${'stop_amea'.tr()}: ${widget.stop.stopAmea == '0' ? '❌' : '✔️'}'),
                 const SizedBox(height: 10.0),
                 Container(
                   decoration: const BoxDecoration(
@@ -91,10 +97,10 @@ class _StopPageState extends State<StopPage> {
                         StopArrivals stopArrivals =
                             snapshot.data as StopArrivals;
                         if (stopArrivals.stopDetails.isEmpty) {
-                          return const Center(
+                          return Center(
                             child: Text(
-                              'No stop details found',
-                              style: TextStyle(
+                              'no_stop_details'.tr(),
+                              style: const TextStyle(
                                 color: Colors.amberAccent,
                               ),
                             ),
@@ -111,7 +117,7 @@ class _StopPageState extends State<StopPage> {
                                         color: Colors.amberAccent),
                                   ),
                                   title: Text(
-                                    'in ${stopArrivals.stopDetails[index].btime2!} minutes',
+                                    '${'in'.tr()} ${stopArrivals.stopDetails[index].btime2!} ${'minutes'.tr()}',
                                     style: const TextStyle(
                                       color: Colors.amberAccent,
                                     ),
@@ -124,7 +130,7 @@ class _StopPageState extends State<StopPage> {
                       } else if (snapshot.hasError) {
                         return Center(
                           child: Text(
-                            'Error: ${snapshot.error}',
+                            '${'error'.tr()}: ${snapshot.error}',
                             style: const TextStyle(color: Colors.red),
                           ),
                         );
