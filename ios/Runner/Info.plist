@@ -49,5 +49,10 @@
     <string>We need your location for a better experience</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>We need your location for a better experience</string>
+    <key>CFBundleLocalizations</key>
+    <array>
+    	<string>en</string>
+    	<string>el</string>
+    </array>
 </dict>
 </plist>

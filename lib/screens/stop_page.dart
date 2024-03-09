@@ -65,10 +65,10 @@ class _StopPageState extends State<StopPage> {
                     color: Colors.black87,
                     shape: BoxShape.rectangle,
                     border: Border(
-                      top: BorderSide(width: 2.0, color: Colors.grey),
-                      left: BorderSide(width: 2.0, color: Colors.grey),
-                      right: BorderSide(width: 2.0, color: Colors.grey),
-                      bottom: BorderSide(width: 2.0, color: Colors.grey),
+                      top: BorderSide(width: 2.0, color: Colors.blueGrey),
+                      left: BorderSide(width: 2.0, color: Colors.blueGrey),
+                      right: BorderSide(width: 2.0, color: Colors.blueGrey),
+                      bottom: BorderSide(width: 2.0, color: Colors.blueGrey),
                     ),
                     borderRadius: BorderRadius.all(
                       Radius.circular(15.0),
@@ -82,7 +82,7 @@ class _StopPageState extends State<StopPage> {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(
                           child: CircularProgressIndicator.adaptive(
-                            backgroundColor: Colors.grey,
+                            backgroundColor: Colors.blueGrey,
                             valueColor:
                                 AlwaysStoppedAnimation<Color>(Colors.amber),
                           ),
