@@ -1,7 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/lines_with_ml_info.dart';
+import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/line_info_page.dart';
 
 class LinesPage extends StatefulWidget {
@@ -71,15 +73,39 @@ class _LinesPageState extends State<LinesPage> {
                     itemBuilder: (context, index) {
                       final line = displayedLines[index];
                       bool isOdd = index % 2 == 0;
-                      return Card(
-                        color: isOdd ? null : Colors.blueGrey.shade300,
-                        child: ListTile(
-                          leading: Text(line.lineId!),
-                          title: Text(line.lineDescription!),
-                          subtitle: Text(line.lineDescriptionEng!),
-                          onTap: () {
-                            _onTapOnLine(context, line);
-                          },
+                      return Padding(
+                        padding: const EdgeInsets.all(10.0),
+                        child: ElevatedButton(
+                          onPressed: () => _onTapOnLine(context, line),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: isOdd
+                                ? Colors.blue.shade800
+                                : Colors.blue.shade900,
+                            foregroundColor: Colors.white,
+                            elevation: 10.0,
+                            shadowColor: Colors.blue.shade900,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10.0),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.all(8.0),
+                                child: CircleAvatar(child: Text(line.lineId!)),
+                              ),
+                              Expanded(
+                                child: Text(
+                                  LanguageHelper.getLanguageUsedInApp(
+                                              context) ==
+                                          'en'
+                                      ? line.lineDescriptionEng!
+                                      : line.lineDescription!,
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       );
                     },

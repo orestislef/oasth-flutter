@@ -38,5 +38,6 @@
   "bus" :"Bus",
   "loading" : "Loading...",
   "choose_line": "Choose line",
-  "choose_station" : "Choose station"
+  "choose_station" : "Choose station",
+  "more" : "More"
 }

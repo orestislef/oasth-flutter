@@ -1,6 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:oasth/screens/welcome_screen.dart';
+import 'package:oasth/screens/welcome_page.dart';
 
 import 'helpers/language_helper.dart';
 

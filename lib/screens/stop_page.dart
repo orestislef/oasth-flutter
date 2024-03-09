@@ -67,16 +67,18 @@ class _StopPageState extends State<StopPage> {
                     '${'stop_amea'.tr()}: ${widget.stop.stopAmea == '0' ? '❌' : '✔️'}'),
                 const SizedBox(height: 10.0),
                 Container(
-                  decoration: const BoxDecoration(
+                  decoration: BoxDecoration(
                     color: Colors.black87,
                     shape: BoxShape.rectangle,
                     border: Border(
-                      top: BorderSide(width: 2.0, color: Colors.blueGrey),
-                      left: BorderSide(width: 2.0, color: Colors.blueGrey),
-                      right: BorderSide(width: 2.0, color: Colors.blueGrey),
-                      bottom: BorderSide(width: 2.0, color: Colors.blueGrey),
+                      top: BorderSide(width: 2.0, color: Colors.blue.shade900),
+                      left: BorderSide(width: 2.0, color: Colors.blue.shade900),
+                      right:
+                          BorderSide(width: 2.0, color: Colors.blue.shade900),
+                      bottom:
+                          BorderSide(width: 2.0, color: Colors.blue.shade900),
                     ),
-                    borderRadius: BorderRadius.all(
+                    borderRadius: const BorderRadius.all(
                       Radius.circular(15.0),
                     ),
                   ),
