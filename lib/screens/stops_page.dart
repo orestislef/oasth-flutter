@@ -276,12 +276,12 @@ class _StopsPageState extends State<StopsPage> {
             return Card(
               color: isOdd ? Colors.blue.shade800 : Colors.blue.shade900,
               child: ListTile(
-                leading: Text(line.lineID,
+                leading: Text(line.lineID!,
                     style: const TextStyle(color: Colors.white)),
                 title: Text(
                   LanguageHelper.getLanguageUsedInApp(context) == 'en'
-                      ? line.lineDescriptionEng
-                      : line.lineDescription,
+                      ? line.lineDescriptionEng!
+                      : line.lineDescription!,
                   style: const TextStyle(color: Colors.white),
                 ),
                 onTap: () => _onPressedOnStop(context, line),
@@ -299,13 +299,13 @@ class _StopsPageState extends State<StopsPage> {
 
   void _onPressedOnStop(BuildContext context, LineData line) async {
     debugPrint('line: ${line.lineID}');
-    rfl.RoutesForLine routesForLine = await Api.getRoutesForLine(line.lineCode);
+    rfl.RoutesForLine routesForLine = await Api.getRoutesForLine(line.lineCode!);
 
     rfl.Route? route = await showModalBottomSheet(
         context: context,
         builder: (context) {
           return FutureBuilder(
-              future: Api.getRoutesForLine(line.lineCode),
+              future: Api.getRoutesForLine(line.lineCode!),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(

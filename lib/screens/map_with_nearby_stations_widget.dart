@@ -45,7 +45,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
           }
           LocationData? locationData = snapshot.data;
           return FutureBuilder(
-              future: Api.getAllStops(),
+              future: Api.getAllStops2(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return Center(
@@ -133,8 +133,8 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
                     ),
                     child: Text(
                       LanguageHelper.getLanguageUsedInApp(context) == 'en'
-                          ? stop.stopDescriptionEng!
-                          : stop.stopDescription!,
+                          ? stop.stopDescriptionEng ?? 'no_description'.tr()
+                          : stop.stopDescription ?? 'no_description'.tr(),
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
