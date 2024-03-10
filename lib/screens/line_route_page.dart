@@ -32,42 +32,51 @@ class RoutePage extends StatelessWidget {
     for (var stop in stops) {
       markers.add(
         Marker(
-          width: MediaQuery.of(context).size.width * 0.50,
-          height: MediaQuery.of(context).size.height * 0.20,
+          width: 100,
+          height: 300,
           rotate: true,
+          alignment: Alignment.center,
           point: LatLng(double.parse(stop.stopLat), double.parse(stop.stopLng)),
-          child: InkWell(
-            enableFeedback: true,
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => StopPage(stop: stop),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(5.0),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(10.0),
+                  border: Border.all(color: Colors.black),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.grey.withOpacity(0.5),
+                      spreadRadius: 5,
+                      blurRadius: 7,
+                      offset: const Offset(0, 3), // changes position of shadow
+                    ),
+                  ],
                 ),
-              );
-            },
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(4.0, 2.0, 2.0, 4.0),
-                  child: Text(
-                    stop.stopDescription,
-                    softWrap: false,
-                    overflow: TextOverflow.ellipsis,
-                    maxLines: 1,
-                    style: const TextStyle(fontSize: 12),
-                  ),
+                child: Text(
+                  stop.stopDescription,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  maxLines: 1,
+                  style: const TextStyle(fontSize: 12),
                 ),
-                const Padding(
-                  padding: EdgeInsets.all(4.0),
-                  child: Icon(
-                    Icons.signpost_outlined,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              IconButton.filled(
+                icon: const Icon(Icons.follow_the_signs),
+                onPressed: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => StopPage(stop: stop),
+                    ),
+                  );
+                },
+              ),
+            ],
           ),
         ),
       );

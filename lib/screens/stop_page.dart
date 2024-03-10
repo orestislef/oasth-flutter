@@ -179,9 +179,22 @@ class _StopPageState extends State<StopPage> {
                 MarkerLayer(
                   markers: [
                     Marker(
+                      rotate: true,
+                      width: 40.0,
+                      height: 40.0,
                       point: LatLng(double.parse(widget.stop.stopLat),
                           double.parse(widget.stop.stopLng)),
-                      child: const Icon(Icons.location_on),
+                      child: Container(
+                        padding: const EdgeInsets.all(10.0),
+                        decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.blue.shade900),
+                        child: const Icon(
+                          Icons.follow_the_signs,
+                          size: 20,
+                          color: Colors.white,
+                        ),
+                      ),
                     ),
                   ],
                 ),
