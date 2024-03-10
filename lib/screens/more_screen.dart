@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 
+import '../widgets/language_toggle.dart';
+
 class CustomExpansionTile extends StatefulWidget {
   final String title;
   final String details;
@@ -127,6 +129,7 @@ class MorePage extends StatelessWidget {
 
   List<Widget> _buildList() {
     return [
+      LanguageToggleWidget(),
       CustomExpansionTile(
         title: 'about_app'.tr(),
         details: 'about_app_details'.tr(),
