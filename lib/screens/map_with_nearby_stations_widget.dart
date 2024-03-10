@@ -72,11 +72,13 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
     return FlutterMap(
       mapController: MapController(),
       options: MapOptions(
+        maxZoom: 18.0,
+        minZoom: 8.0,
         initialCenter: LatLng(
           locationData?.latitude ?? 40.629269,
           locationData?.longitude ?? 22.947412,
         ),
-        initialZoom: 17.0,
+        initialZoom: 16.0,
       ),
       children: [
         TileLayer(

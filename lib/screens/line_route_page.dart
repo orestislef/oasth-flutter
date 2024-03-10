@@ -132,33 +132,38 @@ class RoutePage extends StatelessWidget {
         );
       }
     }
-    return FlutterMap(
-      mapController: MapController(),
-      options: MapOptions(
-        applyPointerTranslucencyToLayers: true,
-        initialCameraFit: CameraFit.coordinates(
-          coordinates: points,
-          padding: const EdgeInsets.all(20.0),
-        ),
-      ),
-      children: [
-        TileLayer(
-          urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: const ['a', 'b', 'c'],
-        ),
-        PolylineLayer(polylines: [
-          Polyline(
-            gradientColors: [Colors.blue, Colors.red],
-            points: points,
-            strokeWidth: 5,
-            strokeJoin: StrokeJoin.round,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10.0),
+      child: FlutterMap(
+        mapController: MapController(),
+        options: MapOptions(
+          maxZoom: 18.0,
+          minZoom: 8.0,
+          applyPointerTranslucencyToLayers: true,
+          initialCameraFit: CameraFit.coordinates(
+            coordinates: points,
+            padding: const EdgeInsets.all(20.0),
           ),
-        ]),
-        MarkerLayer(
-          markers: markers,
-          alignment: Alignment.center,
         ),
-      ],
+        children: [
+          TileLayer(
+            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+            subdomains: const ['a', 'b', 'c'],
+          ),
+          PolylineLayer(polylines: [
+            Polyline(
+              gradientColors: [Colors.blue, Colors.red],
+              points: points,
+              strokeWidth: 5,
+              strokeJoin: StrokeJoin.round,
+            ),
+          ]),
+          MarkerLayer(
+            markers: markers,
+            alignment: Alignment.center,
+          ),
+        ],
+      ),
     );
   }
 }

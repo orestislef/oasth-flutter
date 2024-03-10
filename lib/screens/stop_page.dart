@@ -121,18 +121,25 @@ class _StopPageState extends State<StopPage> {
                             child: ListView.builder(
                               itemCount: stopArrivals.stopDetails.length,
                               itemBuilder: (BuildContext context, int index) {
-                                return ListTile(
-                                  leading: Text(
-                                    '| ${'Bus'.tr()}: ${stopArrivals.stopDetails[index].routeCode!} |',
-                                    style: const TextStyle(
-                                        color: Colors.amberAccent),
-                                  ),
-                                  title: Text(
-                                    '${'in'.tr()} ${stopArrivals.stopDetails[index].btime2!} ${'minutes'.tr()}',
-                                    style: const TextStyle(
-                                      color: Colors.amberAccent,
+                                return Column(
+                                  children: [
+                                    ListTile(
+                                      title: Text(
+                                        '${'bus'.tr()}: ${stopArrivals.stopDetails[index].routeCode!} ${'in'.tr()} ${stopArrivals.stopDetails[index].btime2!} ${'minutes'.tr()}',
+                                        style: const TextStyle(
+                                          color: Colors.amberAccent,
+                                        ),
+                                      ),
                                     ),
-                                  ),
+                                    index != stopArrivals.stopDetails.length - 1
+                                        ? const Divider(
+                                            color: Colors.amberAccent,
+                                            thickness: 0.5,
+                                            indent: 1.0,
+                                            endIndent: 10.0,
+                                          )
+                                        : Container(),
+                                  ],
                                 );
                               },
                             ),
@@ -161,44 +168,50 @@ class _StopPageState extends State<StopPage> {
           ),
           // Map with a marker
           Expanded(
-            child: FlutterMap(
-              mapController: MapController(),
-              options: MapOptions(
-                initialCenter: LatLng(
-                  double.parse(widget.stop.stopLat),
-                  double.parse(widget.stop.stopLng),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(10.0),
+              child: FlutterMap(
+                mapController: MapController(),
+                options: MapOptions(
+                  maxZoom: 18.0,
+                  minZoom: 8.0,
+                  initialCenter: LatLng(
+                    double.parse(widget.stop.stopLat),
+                    double.parse(widget.stop.stopLng),
+                  ),
+                  initialZoom: 15.0,
                 ),
-                initialZoom: 15.0,
-              ),
-              children: [
-                TileLayer(
-                  urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-                  subdomains: const ['a', 'b', 'c'],
-                  userAgentPackageName: 'com.oasth.oast',
-                ),
-                MarkerLayer(
-                  markers: [
-                    Marker(
-                      rotate: true,
-                      width: 40.0,
-                      height: 40.0,
-                      point: LatLng(double.parse(widget.stop.stopLat),
-                          double.parse(widget.stop.stopLng)),
-                      child: Container(
-                        padding: const EdgeInsets.all(10.0),
-                        decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.blue.shade900),
-                        child: const Icon(
-                          Icons.follow_the_signs,
-                          size: 20,
-                          color: Colors.white,
+                children: [
+                  TileLayer(
+                    urlTemplate:
+                        'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                    subdomains: const ['a', 'b', 'c'],
+                    userAgentPackageName: 'com.oasth.oast',
+                  ),
+                  MarkerLayer(
+                    markers: [
+                      Marker(
+                        rotate: true,
+                        width: 40.0,
+                        height: 40.0,
+                        point: LatLng(double.parse(widget.stop.stopLat),
+                            double.parse(widget.stop.stopLng)),
+                        child: Container(
+                          padding: const EdgeInsets.all(10.0),
+                          decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.blue.shade900),
+                          child: const Icon(
+                            Icons.follow_the_signs,
+                            size: 20,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              ],
+                    ],
+                  ),
+                ],
+              ),
             ),
           ),
         ],

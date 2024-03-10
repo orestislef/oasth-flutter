@@ -26,22 +26,18 @@ class NewsScreen extends StatelessWidget {
               color: Colors.blue.shade900,
               shadowColor: Colors.blue.shade900,
               child: ListTile(
-                title: Expanded(
-                  child: Text(news.news[index].title,
-                      style: const TextStyle(
-                          color: Colors.white, fontWeight: FontWeight.bold)),
-                ),
-                subtitle: Expanded(
-                  child: Column(
-                    children: [
-                      Text(news.news[index].summary,
-                          style: const TextStyle(color: Colors.white)),
-                      Text(
-                        formattedDate,
-                        style: const TextStyle(color: Colors.white),
-                      ),
-                    ],
-                  ),
+                title: Text(news.news[index].title,
+                    style: const TextStyle(
+                        color: Colors.white, fontWeight: FontWeight.bold)),
+                subtitle: Column(
+                  children: [
+                    Text(news.news[index].summary,
+                        style: const TextStyle(color: Colors.white)),
+                    Text(
+                      formattedDate,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                  ],
                 ),
               ),
             );
