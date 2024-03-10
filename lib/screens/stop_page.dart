@@ -44,8 +44,8 @@ class _StopPageState extends State<StopPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text(LanguageHelper.getLanguageUsedInApp(context) == 'en'
-            ? widget.stop.stopDescriptionEng
-            : widget.stop.stopDescription),
+            ? widget.stop.stopDescriptionEng!
+            : widget.stop.stopDescription!),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -59,7 +59,7 @@ class _StopPageState extends State<StopPage> {
                 Text(
                     '${'street'.tr()}: ${widget.stop.stopStreet ?? 'n_a'.tr()}'),
                 if (widget.stop.stopStreetEng != null &&
-                    widget.stop.stopStreetEng.isNotEmpty)
+                    widget.stop.stopStreetEng!.isNotEmpty)
                   Text(
                       '${'english_street'.tr()}: ${widget.stop.stopStreetEng ?? 'n_a'.tr()}'),
                 Text(
@@ -176,8 +176,8 @@ class _StopPageState extends State<StopPage> {
                   maxZoom: 18.0,
                   minZoom: 8.0,
                   initialCenter: LatLng(
-                    double.parse(widget.stop.stopLat),
-                    double.parse(widget.stop.stopLng),
+                    double.parse(widget.stop.stopLat!),
+                    double.parse(widget.stop.stopLng!),
                   ),
                   initialZoom: 15.0,
                 ),
@@ -194,8 +194,8 @@ class _StopPageState extends State<StopPage> {
                         rotate: true,
                         width: 40.0,
                         height: 40.0,
-                        point: LatLng(double.parse(widget.stop.stopLat),
-                            double.parse(widget.stop.stopLng)),
+                        point: LatLng(double.parse(widget.stop.stopLat!),
+                            double.parse(widget.stop.stopLng!)),
                         child: Container(
                           padding: const EdgeInsets.all(10.0),
                           decoration: BoxDecoration(

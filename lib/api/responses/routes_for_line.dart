@@ -21,11 +21,11 @@ class Route {
   String? routeDescriptionEng;
 
   static Route fromMap(Map<String, dynamic> map) {
-    Route routeForLineBean = Route();
-    routeForLineBean.routeCode = map['route_code'];
-    routeForLineBean.routeDescription = map['route_descr'];
-    routeForLineBean.routeDescriptionEng = map['route_descr_eng'];
-    return routeForLineBean;
+    Route routeForLine = Route();
+    routeForLine.routeCode = map['route_code'];
+    routeForLine.routeDescription = map['route_descr'];
+    routeForLine.routeDescriptionEng = map['route_descr_eng'];
+    return routeForLine;
   }
 
   Map toJson() => {

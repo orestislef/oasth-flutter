@@ -1,3 +1,4 @@
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 
@@ -53,12 +54,14 @@ class _CustomExpansionTileState extends State<CustomExpansionTile>
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(
-                        widget.title,
-                        style: const TextStyle(
-                          fontSize: 18.0,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
+                      Expanded(
+                        child: Text(
+                          widget.title,
+                          style: const TextStyle(
+                            fontSize: 18.0,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
                         ),
                       ),
                       Icon(
@@ -129,7 +132,7 @@ class MorePage extends StatelessWidget {
 
   List<Widget> _buildList() {
     return [
-      LanguageToggleWidget(),
+      const LanguageToggleWidget(),
       CustomExpansionTile(
         title: 'about_app'.tr(),
         details: 'about_app_details'.tr(),
@@ -145,6 +148,66 @@ class MorePage extends StatelessWidget {
       CustomExpansionTile(
         title: 'terms_and_conditions'.tr(),
         details: 'terms_and_conditions_details'.tr(),
+      ),
+      CustomExpansionTile(
+        title: 'faq1'.tr(),
+        details: 'faq1_details'.tr(),
+      ),
+      CustomExpansionTile(
+        title: 'faq2'.tr(),
+        details: 'faq2_details'.tr(),
+      ),
+      CustomExpansionTile(
+        title: 'faq3'.tr(),
+        details: 'faq3_details'.tr(),
+      ),
+      CustomExpansionTile(
+        title: 'faq4'.tr(),
+        details: 'faq4_details'.tr(),
+      ),
+      CustomExpansionTile(
+        title: 'faq5'.tr(),
+        details: 'faq5_details'.tr(),
+      ),
+      CustomExpansionTile(
+        title: 'faq6'.tr(),
+        details: 'faq6_details'.tr(),
+      ),
+      CustomExpansionTile(
+        title: 'faq7'.tr(),
+        details: 'faq7_details'.tr(),
+      ),
+      CustomExpansionTile(
+        title: 'faq8'.tr(),
+        details: 'faq8_details'.tr(),
+      ),
+      CustomExpansionTile(
+        title: 'faq9'.tr(),
+        details: 'faq9_details'.tr(),
+      ),
+      CustomExpansionTile(
+        title: 'faq10'.tr(),
+        details: 'faq10_details'.tr(),
+      ),
+      CustomExpansionTile(
+        title: 'faq11'.tr(),
+        details: 'faq11_details'.tr(),
+      ),
+      CustomExpansionTile(
+        title: 'faq12'.tr(),
+        details: 'faq12_details'.tr(),
+      ),
+      CustomExpansionTile(
+        title: 'faq13'.tr(),
+        details: 'faq13_details'.tr(),
+      ),
+      CustomExpansionTile(
+        title: 'faq14'.tr(),
+        details: 'faq14_details'.tr(),
+      ),
+      CustomExpansionTile(
+        title: 'faq15'.tr(),
+        details: 'faq15_details'.tr(),
       ),
     ];
   }

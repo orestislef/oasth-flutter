@@ -1,4 +1,5 @@
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/lines.dart';
@@ -54,18 +55,35 @@ class _StopsPageState extends State<StopsPage> {
           children: <Widget>[
             Center(child: Text('choose_station_hint'.tr())),
             const SizedBox(height: 16.0),
-            TextField(
-              keyboardType: TextInputType.number,
-              inputFormatters: InputFormattersHelper.getPhoneInputFormatter(),
-              textInputAction: TextInputAction.done,
-              maxLength: 5,
-              maxLines: 1,
-              onTapOutside: (_) => FocusScope.of(context).unfocus(),
-              controller: _textFieldController,
-              decoration: InputDecoration(
-                border: const OutlineInputBorder(),
-                labelText: 'station_code'.tr(),
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Expanded(
+                  child: TextField(
+                    keyboardType: TextInputType.number,
+                    inputFormatters:
+                        InputFormattersHelper.getPhoneInputFormatter(),
+                    textInputAction: TextInputAction.done,
+                    maxLength: 5,
+                    maxLines: 1,
+                    onTapOutside: (_) => FocusScope.of(context).unfocus(),
+                    controller: _textFieldController,
+                    decoration: InputDecoration(
+                      border: const OutlineInputBorder(),
+                      labelText: 'station_code'.tr(),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 10.0),
+                Center(
+                  child: IconButton(
+                      onPressed: () {
+                        _showStopCodeInfoDialog();
+                      },
+                      icon: const Icon(Icons.info)),
+                )
+              ],
             ),
             const SizedBox(height: 10.0),
             ElevatedButton(
@@ -380,16 +398,16 @@ class _StopsPageState extends State<StopsPage> {
                                 child: ListTile(
                                   leading: CircleAvatar(
                                     child: Text(snapshot
-                                        .data!.stops[index].routeStopOrder),
+                                        .data!.stops[index].routeStopOrder!),
                                   ),
                                   title: Text(
                                     LanguageHelper.getLanguageUsedInApp(
                                                 context) ==
                                             'en'
                                         ? snapshot.data!.stops[index]
-                                            .stopDescriptionEng
+                                            .stopDescriptionEng!
                                         : snapshot.data!.stops[index]
-                                            .stopDescriptionEng,
+                                            .stopDescriptionEng!,
                                     style: const TextStyle(color: Colors.white),
                                   ),
                                   onTap: () => Navigator.pop(
@@ -415,5 +433,32 @@ class _StopsPageState extends State<StopsPage> {
         );
       }
     }
+  }
+
+  void _showStopCodeInfoDialog() {
+    showModalBottomSheet(
+      context: context,
+      builder: _buildStopCodeInfoDialog,
+      isScrollControlled: true,
+      useSafeArea: true,
+    );
+  }
+
+  Widget _buildStopCodeInfoDialog(BuildContext context) {
+    return Scrollbar(
+      child: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: Column(mainAxisSize: MainAxisSize.min, children: <Widget>[
+            Text(
+              'stop_code_info'.tr(),
+              style: const TextStyle(fontSize: 20),
+            ),
+            Image.asset('assets/icons/stop_code_info1.png', width: 200),
+            Image.asset('assets/icons/stop_code_info2.png', width: 200),
+          ]),
+        ),
+      ),
+    );
   }
 }
