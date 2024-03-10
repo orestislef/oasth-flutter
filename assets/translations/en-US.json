@@ -43,5 +43,6 @@
   "location_permission_explain": "To get bus arrival information, please allow location permission in your device settings.",
   "yes": "Yes",
   "no": "No",
-  "stop_interval_hint" : "It will automatically update"
+  "stop_interval_hint": "It will automatically update",
+  "loading_nearby_stops": "Loading nearby stops... \nPlease wait...\nThis can take a few seconds."
 }

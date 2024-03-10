@@ -1,3 +1,4 @@
+import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
@@ -22,37 +23,36 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
     return FutureBuilder(
       future: LocationHelper.getUserLocation(),
       builder: (context, snapshot) {
-        if (snapshot.hasData) {
-          LocationData? locationData = snapshot.data;
-          if (locationData != null) {
-            return FutureBuilder(
-                future: Api.getAllStops(),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return _mapWithStations(
-                        stops: snapshot.data as List<Stop>,
-                        locationData: locationData);
-                  } else {
-                    return const Center(
-                      child: CircularProgressIndicator(),
-                    );
-                  }
-                });
-          }
-        } else {
+        if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(
-            child: CircularProgressIndicator(),
+            child: CircularProgressIndicator.adaptive(),
           );
         }
-        return const Center(
-          child: CircularProgressIndicator(),
-        );
+        LocationData? locationData = snapshot.data;
+        return FutureBuilder(
+            future: Api.getAllStops(),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return Center(
+                  child: Column(
+                    children: [
+                      const CircularProgressIndicator.adaptive(),
+                      const SizedBox(height: 10),
+                      Text('loading_nearby_stops'.tr()),
+                    ],
+                  ),
+                );
+              }
+              return _mapWithStations(
+                  stops: snapshot.data as List<Stop>,
+                  locationData: locationData);
+            });
       },
     );
   }
 
   Widget _mapWithStations(
-      {required List<Stop> stops, required LocationData locationData}) {
+      {required List<Stop> stops, required LocationData? locationData}) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(10),
       child: SizedBox(
@@ -61,8 +61,8 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
           mapController: MapController(),
           options: MapOptions(
             initialCenter: LatLng(
-              locationData.latitude!,
-              locationData.longitude!,
+              locationData?.latitude ?? 40.629269,
+              locationData?.longitude ?? 22.947412,
             ),
             initialZoom: 17.0,
           ),
@@ -82,12 +82,13 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
   }
 
   List<Marker> _buildMarkers(
-      {required List<Stop> stops, required LocationData locationData}) {
+      {required List<Stop> stops, required LocationData? locationData}) {
     List<Marker> markers = [];
     markers.add(
       Marker(
         rotate: true,
-        point: LatLng(locationData.latitude!, locationData.longitude!),
+        point: LatLng(locationData?.latitude ?? 40.629269,
+            locationData?.longitude ?? 22.947412),
         child: const Icon(
           Icons.circle,
           color: Colors.blue,
