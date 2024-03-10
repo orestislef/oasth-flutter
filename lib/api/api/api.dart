@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/cupertino.dart';
 import 'package:http/http.dart' as http;
 import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/line_name.dart';
@@ -16,6 +17,7 @@ import 'package:oasth/api/responses/stop_by_sip.dart';
 import 'package:oasth/api/responses/stop_details.dart';
 import 'package:oasth/api/responses/stop_name_xy.dart';
 import 'package:oasth/api/responses/web_stops.dart';
+import 'package:oasth/helpers/shared_preferences_helper.dart';
 
 import '../responses/news.dart';
 
@@ -43,6 +45,50 @@ const Map<String, String> header = {
 const String baseUrl = 'https://telematics.oasth.gr/api';
 
 class Api {
+  static Future<List<Stop>> getAllStops() async {
+    DateTime now = DateTime.now();
+    List<Stop> stops = [];
+    await SharedPreferencesHelper.init();
+    bool exists = await SharedPreferencesHelper.stopsListExists();
+    if (exists) {
+      String? stopsList = await SharedPreferencesHelper.getStopsList();
+      if (stopsList != null) {
+        stops = List<Stop>.from(
+          (jsonDecode(stopsList) as List<dynamic>?)
+                  ?.map((o) => Stop.fromMap(o)) ??
+              [],
+        );
+        return stops;
+      }
+    }
+
+    if (stops.isNotEmpty) {
+      DateTime now2 = DateTime.now();
+      debugPrint('getAllStops took ${now2.difference(now).inSeconds} s');
+      return stops;
+    }
+
+    Lines lines = await Api.webGetLines();
+    for (LineData line in lines.lines) {
+      RouteDetailAndStops routeDetailAndStops =
+          await Api.webGetRoutesDetailsAndStops(line.lineCode);
+      stops.addAll(routeDetailAndStops.stops);
+    }
+    //clear from duplicate stops
+    List<Stop> uniqueStops = [];
+    for (var stop in stops) {
+      if (!uniqueStops.any((element) => element.stopID == stop.stopID)) {
+        uniqueStops.add(stop);
+      }
+    }
+    DateTime now2 = DateTime.now();
+    debugPrint('getAllStops took ${now2.difference(now).inSeconds} s');
+
+    await SharedPreferencesHelper.clearStopsList();
+    await SharedPreferencesHelper.setStopsList(jsonEncode(uniqueStops));
+    return uniqueStops;
+  }
+
   static Future<News> getNews(String lang) async {
     final url = Uri.parse('$baseUrl/?act=getNews&lang=$lang');
 
@@ -138,7 +184,7 @@ class Api {
     }
   }
 
-  static Future<Line> webGetLines() async {
+  static Future<Lines> webGetLines() async {
     final url = Uri.parse('$baseUrl/?act=webGetLines');
 
     try {
@@ -147,7 +193,7 @@ class Api {
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
 
-        Line lines = Line.fromMap(data);
+        Lines lines = Lines.fromMap(data);
         return lines;
       } else {
         throw Exception('Failed to web Get Lines');
