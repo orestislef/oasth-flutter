@@ -17,10 +17,10 @@ class LinePage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(line.lineDescription),
+        title: Text(line.lineDescription!),
         actions: [
           FutureBuilder<RouteDetailAndStops>(
-            future: Api.webGetRoutesDetailsAndStops(line.lineCode),
+            future: Api.webGetRoutesDetailsAndStops(line.lineCode!),
             builder: (context, snapshot) {
               return IconButton(
                 icon: const Icon(Icons.map_rounded),
@@ -39,7 +39,7 @@ class LinePage extends StatelessWidget {
                         builder: (context) => RoutePage(
                           details: details,
                           stops: stops,
-                          routeCode: line.lineCode,
+                          routeCode: line.lineCode!,
                         ),
                       ),
                     );
@@ -52,7 +52,7 @@ class LinePage extends StatelessWidget {
       ),
       body: Center(
         child: FutureBuilder<RouteDetailAndStops>(
-          future: Api.webGetRoutesDetailsAndStops(line.lineCode),
+          future: Api.webGetRoutesDetailsAndStops(line.lineCode!),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return const Center(

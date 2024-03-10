@@ -18,6 +18,7 @@ import 'package:oasth/api/responses/stop_details.dart';
 import 'package:oasth/api/responses/stop_name_xy.dart';
 import 'package:oasth/api/responses/web_stops.dart';
 import 'package:oasth/helpers/shared_preferences_helper.dart';
+import 'package:oasth/api/responses/routes_for_line.dart' as rfl;
 
 import '../responses/news.dart';
 
@@ -45,8 +46,51 @@ const Map<String, String> header = {
 const String baseUrl = 'https://telematics.oasth.gr/api';
 
 class Api {
+  static Future<List<Stop>> getAllStops2() async {
+    List<Stop> stops = [];
+    await SharedPreferencesHelper.init();
+    bool exists = await SharedPreferencesHelper.stopsListExists();
+    if (exists) {
+      String? stopsList = await SharedPreferencesHelper.getStopsList();
+      if (stopsList != null) {
+        String? stopsList = await SharedPreferencesHelper.getStopsList();
+        if (stopsList != null) {
+          stops = List<Stop>.from(
+            (jsonDecode(stopsList) as List<dynamic>?)
+                ?.map((o) => Stop.fromMap(o)) ??
+                [],
+          );
+          return stops;
+        }
+      }
+    }
+
+    if (stops.isNotEmpty) {
+      return stops;
+    }
+    Lines lines = await Api.webGetLines();
+    for (LineData line in lines.lines) {
+      RoutesForLine routesForLine = await Api.getRoutesForLine(line.lineCode!);
+      for (rfl.Route route in routesForLine.routesForLine) {
+        WebStops webStops = await Api.webGetStops(route.routeCode!);
+        stops.addAll(webStops.stops);
+      }
+    }
+    //clear from duplicate stops
+    List<Stop> uniqueStops = [];
+    for (var stop in stops) {
+      if (!uniqueStops.any((element) => element.stopCode == stop.stopCode)) {
+        //maybe with stopID
+        uniqueStops.add(stop);
+      }
+    }
+
+    await SharedPreferencesHelper.clearStopsList();
+    await SharedPreferencesHelper.setStopsList(jsonEncode(uniqueStops));
+    return uniqueStops;
+  }
+
   static Future<List<Stop>> getAllStops() async {
-    DateTime now = DateTime.now();
     List<Stop> stops = [];
     await SharedPreferencesHelper.init();
     bool exists = await SharedPreferencesHelper.stopsListExists();
@@ -63,15 +107,13 @@ class Api {
     }
 
     if (stops.isNotEmpty) {
-      DateTime now2 = DateTime.now();
-      debugPrint('getAllStops took ${now2.difference(now).inSeconds} s');
       return stops;
     }
 
     Lines lines = await Api.webGetLines();
     for (LineData line in lines.lines) {
       RouteDetailAndStops routeDetailAndStops =
-          await Api.webGetRoutesDetailsAndStops(line.lineCode);
+          await Api.webGetRoutesDetailsAndStops(line.lineCode!);
       stops.addAll(routeDetailAndStops.stops);
     }
     //clear from duplicate stops
@@ -81,8 +123,6 @@ class Api {
         uniqueStops.add(stop);
       }
     }
-    DateTime now2 = DateTime.now();
-    debugPrint('getAllStops took ${now2.difference(now).inSeconds} s');
 
     await SharedPreferencesHelper.clearStopsList();
     await SharedPreferencesHelper.setStopsList(jsonEncode(uniqueStops));

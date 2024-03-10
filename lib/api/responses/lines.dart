@@ -16,11 +16,11 @@ class Lines {
 }
 
 class LineData {
-  late String lineCode;
-  late String lineID;
-  late String lineIDGR;
-  late String lineDescription;
-  late String lineDescriptionEng;
+  String? lineCode;
+  String? lineID;
+  String? lineIDGR;
+  String? lineDescription;
+  String? lineDescriptionEng;
 
   static LineData fromMap(Map<String, dynamic> map) {
     LineData lineData = LineData();
