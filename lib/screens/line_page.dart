@@ -6,6 +6,8 @@ import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/screens/line_route_page.dart';
 import 'package:oasth/screens/stop_page.dart';
 
+import '../helpers/language_helper.dart';
+
 class LinePage extends StatelessWidget {
   final LineData line;
 
@@ -66,9 +68,10 @@ class LinePage extends StatelessWidget {
                   itemCount: snapshot.data!.stops.length,
                   itemBuilder: (context, index) {
                     return ListTile(
-                      title: Text(snapshot.data!.stops[index].stopDescription),
-                      subtitle:
-                          Text(snapshot.data!.stops[index].stopDescriptionEng),
+                      title: Text(
+                          LanguageHelper.getLanguageUsedInApp(context) == 'en'
+                              ? snapshot.data!.stops[index].stopDescriptionEng!
+                              : snapshot.data!.stops[index].stopDescription!),
                       onTap: () {
                         final stop = snapshot.data!.stops[index];
                         Navigator.push(

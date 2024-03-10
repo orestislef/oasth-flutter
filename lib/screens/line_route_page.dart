@@ -5,6 +5,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
+import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/stop_page.dart';
 
 class RoutePage extends StatelessWidget {
@@ -36,7 +37,8 @@ class RoutePage extends StatelessWidget {
           height: 300,
           rotate: true,
           alignment: Alignment.center,
-          point: LatLng(double.parse(stop.stopLat), double.parse(stop.stopLng)),
+          point:
+              LatLng(double.parse(stop.stopLat!), double.parse(stop.stopLng!)),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             mainAxisAlignment: MainAxisAlignment.center,
@@ -58,7 +60,9 @@ class RoutePage extends StatelessWidget {
                   ],
                 ),
                 child: Text(
-                  stop.stopDescription,
+                  LanguageHelper.getLanguageUsedInApp(context) == 'en'
+                      ? stop.stopDescriptionEng!
+                      : stop.stopDescription!,
                   softWrap: false,
                   overflow: TextOverflow.ellipsis,
                   maxLines: 1,
@@ -89,7 +93,7 @@ class RoutePage extends StatelessWidget {
             )
           : null,
       body: FutureBuilder<BusLocation>(
-        future: Api.getBusLocation(routeCode),
+        future: Api.getBusLocations(routeCode),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
             BusLocation busLocation = snapshot.data!;

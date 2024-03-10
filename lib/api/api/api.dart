@@ -337,7 +337,7 @@ class Api {
     }
   }
 
-  static Future<BusLocation> getBusLocation(String p1) async {
+  static Future<BusLocation> getBusLocations(String p1) async {
     final url = Uri.parse('$baseUrl/?act=getBusLocation&p1=$p1');
 
     try {

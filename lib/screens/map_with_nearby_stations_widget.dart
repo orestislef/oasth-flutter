@@ -115,8 +115,8 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
             width: 200,
             rotate: true,
             point: LatLng(
-              double.parse(stop.stopLat),
-              double.parse(stop.stopLng),
+              double.parse(stop.stopLat!),
+              double.parse(stop.stopLng!),
             ),
             alignment: Alignment.center,
             child: Column(
@@ -133,8 +133,8 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
                     ),
                     child: Text(
                       LanguageHelper.getLanguageUsedInApp(context) == 'en'
-                          ? stop.stopDescriptionEng
-                          : stop.stopDescription,
+                          ? stop.stopDescriptionEng!
+                          : stop.stopDescription!,
                       textAlign: TextAlign.center,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,

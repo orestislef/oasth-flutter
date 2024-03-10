@@ -295,11 +295,11 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                           child: ListTile(
                                             leading: CircleAvatar(
                                               child: Text(routeDetailAndStops
-                                                  .stops[index].routeStopOrder),
+                                                  .stops[index].routeStopOrder!),
                                             ),
                                             title: Text(
                                                 routeDetailAndStops.stops[index]
-                                                    .stopDescription,
+                                                    .stopDescription!,
                                                 style: const TextStyle(
                                                     color: Colors.white)),
                                             subtitle: hasStopStreet

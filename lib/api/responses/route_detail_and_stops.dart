@@ -14,24 +14,24 @@ class RouteDetailAndStops {
   }
 
   Map<String, dynamic> toJson() => {
-    "details": details.map((e) => e.toJson()).toList(),
-    "stops": stops.map((e) => e.toJson()).toList(),
-  };
+        "details": details.map((e) => e.toJson()).toList(),
+        "stops": stops.map((e) => e.toJson()).toList(),
+      };
 }
 
 class Stop {
-  late String? stopCode;
-  late String stopID;
-  late String stopDescription;
-  late String stopDescriptionEng;
-  late String? stopStreet;
-  dynamic stopStreetEng;
-  late String stopHeading;
-  late String stopLat;
-  late String stopLng;
-  late String routeStopOrder;
-  late String stopType;
-  late String stopAmea;
+  String? stopCode;
+  String? stopID;
+  String? stopDescription;
+  String? stopDescriptionEng;
+  String?  stopStreet;
+  String?  stopStreetEng;
+  String? stopHeading;
+  String? stopLat;
+  String? stopLng;
+  String? routeStopOrder;
+  String? stopType;
+  String? stopAmea;
 
   static Stop fromMap(Map<String, dynamic> map) {
     Stop stops = Stop();
@@ -51,19 +51,19 @@ class Stop {
   }
 
   Map<String, dynamic> toJson() => {
-    "StopCode": stopCode,
-    "StopID": stopID,
-    "StopDescr": stopDescription,
-    "StopDescrEng": stopDescriptionEng,
-    "StopStreet": stopStreet,
-    "StopStreetEng": stopStreetEng,
-    "StopHeading": stopHeading,
-    "StopLat": stopLat,
-    "StopLng": stopLng,
-    "RouteStopOrder": routeStopOrder,
-    "StopType": stopType,
-    "StopAmea": stopAmea,
-  };
+        "StopCode": stopCode,
+        "StopID": stopID,
+        "StopDescr": stopDescription,
+        "StopDescrEng": stopDescriptionEng,
+        "StopStreet": stopStreet,
+        "StopStreetEng": stopStreetEng,
+        "StopHeading": stopHeading,
+        "StopLat": stopLat,
+        "StopLng": stopLng,
+        "RouteStopOrder": routeStopOrder,
+        "StopType": stopType,
+        "StopAmea": stopAmea,
+      };
 }
 
 class Details {
@@ -80,8 +80,8 @@ class Details {
   }
 
   Map<String, dynamic> toJson() => {
-    "routed_x": routedX,
-    "routed_y": routedY,
-    "routed_order": routedOrder,
-  };
+        "routed_x": routedX,
+        "routed_y": routedY,
+        "routed_order": routedOrder,
+      };
 }
