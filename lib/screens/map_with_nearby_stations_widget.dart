@@ -6,6 +6,7 @@ import 'package:location/location.dart';
 import 'package:oasth/api/api/api.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/helpers/location_helper.dart';
+import 'package:oasth/helpers/shared_preferences_helper.dart';
 import 'package:oasth/screens/stop_page.dart';
 
 import '../api/responses/route_detail_and_stops.dart';
@@ -48,13 +49,18 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
               future: Api.getAllStops2(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(
-                    child: Column(
-                      children: [
-                        const CircularProgressIndicator.adaptive(),
-                        const SizedBox(height: 10),
-                        Text('loading_nearby_stops'.tr()),
-                      ],
+                  return SafeArea(
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          const CircularProgressIndicator.adaptive(),
+                          const SizedBox(height: 10),
+                          Text('loading_nearby_stops'.tr()),
+                        ],
+                      ),
                     ),
                   );
                 }
