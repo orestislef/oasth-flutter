@@ -1,6 +1,8 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:easy_localization/easy_localization.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/home_page.dart';
 import 'package:oasth/screens/more_screen.dart';
@@ -16,15 +18,15 @@ class WelcomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          SafeArea(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
+              children: <Widget>[
                 Padding(
                   padding: const EdgeInsets.all(10.0),
                   child: Text(
@@ -208,116 +210,115 @@ class WelcomeScreen extends StatelessWidget {
                 ),
               ],
             ),
-            Expanded(
-              child: FutureBuilder(
-                  future:
-                      Api.getNews(LanguageHelper.getLanguageUsedInApp(context)),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(
-                        child: CircularProgressIndicator.adaptive(),
-                      );
-                    } else if (snapshot.hasError) {
-                      return Center(
-                        child: Text(snapshot.error.toString()),
-                      );
-                    }
-                    if (snapshot.hasData) {
-                      News news = snapshot.data!;
-                      return CarouselSlider(
-                        options: CarouselOptions(
-                          height: 200.0,
-                          aspectRatio: 16 / 9,
-                          viewportFraction: 0.8,
-                          initialPage: 0,
-                          enableInfiniteScroll: true,
-                          reverse: false,
-                          autoPlay: true,
-                          autoPlayInterval: const Duration(seconds: 3),
-                          autoPlayAnimationDuration:
-                              const Duration(milliseconds: 800),
-                          autoPlayCurve: Curves.fastOutSlowIn,
-                          enlargeCenterPage: true,
-                          scrollDirection: Axis.horizontal,
-                        ),
-                        items: news.news.map((i) {
-                          NewsData data = i;
-                          return Builder(
-                            builder: (BuildContext context) {
-                              return Padding(
-                                padding: const EdgeInsets.fromLTRB(
-                                    0.0, 20.0, 0.0, 20.0),
-                                child: SizedBox(
-                                  width: MediaQuery.of(context).size.width,
-                                  child: ElevatedButton(
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: Colors.blue.shade900,
-                                        foregroundColor: Colors.white,
-                                        elevation: 20.0,
-                                        shadowColor: Colors.blue.shade900,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(10.0),
-                                        ),
+          ),
+          FutureBuilder(
+              future: Api.getNews(LanguageHelper.getLanguageUsedInApp(context)),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(
+                    child: CircularProgressIndicator.adaptive(),
+                  );
+                } else if (snapshot.hasError) {
+                  return Center(
+                    child: Text(snapshot.error.toString()),
+                  );
+                }
+                if (snapshot.hasData) {
+                  News news = snapshot.data!;
+                  return Expanded(
+                    child: CarouselSlider(
+                      options: CarouselOptions(
+                        height: double.infinity,
+                        aspectRatio: 16 / 9,
+                        viewportFraction: 0.8,
+                        initialPage: 0,
+                        enableInfiniteScroll: true,
+                        reverse: false,
+                        autoPlay: true,
+                        autoPlayInterval: const Duration(seconds: 3),
+                        autoPlayAnimationDuration:
+                            const Duration(milliseconds: 800),
+                        autoPlayCurve: Curves.fastOutSlowIn,
+                        enlargeCenterPage: true,
+                        scrollDirection: Axis.horizontal,
+                      ),
+                      items: news.news.map((i) {
+                        NewsData data = i;
+                        return Builder(
+                          builder: (BuildContext context) {
+                            return Padding(
+                              padding: const EdgeInsets.fromLTRB(
+                                  0.0, 20.0, 0.0, 20.0),
+                              child: SizedBox(
+                                height: MediaQuery.of(context).size.height,
+                                width: MediaQuery.of(context).size.width,
+                                child: ElevatedButton(
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.blue.shade900,
+                                      foregroundColor: Colors.white,
+                                      elevation: 10.0,
+                                      shadowColor: Colors.blue.shade900,
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius:
+                                            BorderRadius.circular(10.0),
                                       ),
-                                      onPressed: () {
-                                        Navigator.push(
-                                          context,
-                                          MaterialPageRoute(
-                                            builder: (context) =>
-                                                NewsScreen(news: news),
-                                          ),
-                                        );
-                                      },
-                                      child: Column(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Row(
-                                            mainAxisAlignment:
-                                                MainAxisAlignment.start,
-                                            children: [
-                                              Image.network(
-                                                  'https://www.oasth.gr/wp-content/uploads/2023/04/cropped-logo.png',
-                                                  width: 30.0,
-                                                  height: 30.0),
-                                              const SizedBox(
-                                                width: 10.0,
-                                              ),
-                                              Expanded(
-                                                child: Text(data.title,
-                                                    maxLines: 1,
-                                                    style: const TextStyle(
-                                                      fontSize: 20.0,
-                                                      fontWeight:
-                                                          FontWeight.bold,
-                                                      overflow:
-                                                          TextOverflow.ellipsis,
-                                                    )),
-                                              ),
-                                            ],
-                                          ),
-                                          Text(
-                                            data.summary,
-                                            maxLines: 2,
-                                            style: const TextStyle(
-                                              fontSize: 15.0,
-                                              overflow: TextOverflow.ellipsis,
+                                    ),
+                                    onPressed: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (context) =>
+                                              NewsScreen(news: news),
+                                        ),
+                                      );
+                                    },
+                                    child: Column(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.start,
+                                          children: [
+                                            Image.network(
+                                                'https://www.oasth.gr/wp-content/uploads/2023/04/cropped-logo.png',
+                                                width: 30.0,
+                                                height: 30.0),
+                                            const SizedBox(
+                                              width: 10.0,
                                             ),
-                                          )
-                                        ],
-                                      )),
-                                ),
-                              );
-                            },
-                          );
-                        }).toList(),
-                      );
-                    }
-                    return Container();
-                  }),
-            ),
-          ],
-        ),
+                                            Expanded(
+                                              child: Text(data.title,
+                                                  maxLines: 1,
+                                                  style: const TextStyle(
+                                                    fontSize: 20.0,
+                                                    fontWeight: FontWeight.bold,
+                                                    overflow:
+                                                        TextOverflow.ellipsis,
+                                                  )),
+                                            ),
+                                          ],
+                                        ),
+                                        Text(
+                                          data.summary,
+                                          maxLines: 2,
+                                          style: const TextStyle(
+                                            fontSize: 15.0,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        )
+                                      ],
+                                    )),
+                              ),
+                            );
+                          },
+                        );
+                      }).toList(),
+                    ),
+                  );
+                }
+                return Container();
+              }),
+        ],
       ),
     );
   }
