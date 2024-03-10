@@ -1,8 +1,6 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:easy_localization/easy_localization.dart';
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/widgets.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/home_page.dart';
 import 'package:oasth/screens/more_screen.dart';

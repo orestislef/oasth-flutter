@@ -219,13 +219,8 @@ class _StopsPageState extends State<StopsPage> {
                                 itemCount: stopArrivals.stopDetails.length,
                                 itemBuilder: (BuildContext context, int index) {
                                   return ListTile(
-                                    leading: Text(
-                                      '| ${'bus'.tr()}: ${stopArrivals.stopDetails[index].routeCode!} |',
-                                      style: const TextStyle(
-                                          color: Colors.amberAccent),
-                                    ),
                                     title: Text(
-                                      'in ${stopArrivals.stopDetails[index].btime2!} minutes',
+                                      '${'bus'.tr()}: ${stopArrivals.stopDetails[index].routeCode!} ${'in'.tr()} ${stopArrivals.stopDetails[index].vehCode!} ${stopArrivals.stopDetails[index].btime2!} minutes',
                                       style: const TextStyle(
                                         color: Colors.amberAccent,
                                       ),
@@ -395,8 +390,7 @@ class _StopsPageState extends State<StopsPage> {
                                             .stopDescriptionEng
                                         : snapshot.data!.stops[index]
                                             .stopDescriptionEng,
-                                    style: const TextStyle(
-                                        color: Colors.white),
+                                    style: const TextStyle(color: Colors.white),
                                   ),
                                   onTap: () => Navigator.pop(
                                       context, snapshot.data!.stops[index]),
