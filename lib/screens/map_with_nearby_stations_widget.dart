@@ -11,7 +11,9 @@ import 'package:oasth/screens/stop_page.dart';
 import '../api/responses/route_detail_and_stops.dart';
 
 class MapWithNearbyStations extends StatefulWidget {
-  const MapWithNearbyStations({super.key});
+  const MapWithNearbyStations({super.key, this.hasBackButton = false});
+
+  final bool hasBackButton;
 
   @override
   State<MapWithNearbyStations> createState() => _MapWithNearbyStationsState();
@@ -20,64 +22,72 @@ class MapWithNearbyStations extends StatefulWidget {
 class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
   @override
   Widget build(BuildContext context) {
-    return FutureBuilder(
-      future: LocationHelper.getUserLocation(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(
-            child: CircularProgressIndicator.adaptive(),
-          );
-        }
-        LocationData? locationData = snapshot.data;
-        return FutureBuilder(
-            future: Api.getAllStops(),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return Center(
-                  child: Column(
-                    children: [
-                      const CircularProgressIndicator.adaptive(),
-                      const SizedBox(height: 10),
-                      Text('loading_nearby_stops'.tr()),
-                    ],
-                  ),
-                );
-              }
-              return _mapWithStations(
-                  stops: snapshot.data as List<Stop>,
-                  locationData: locationData);
-            });
-      },
+    return Scaffold(
+      floatingActionButtonLocation: FloatingActionButtonLocation.startTop,
+      floatingActionButton: widget.hasBackButton
+          ? FloatingActionButton.extended(
+              backgroundColor: Colors.blue.shade900,
+              onPressed: () {
+                Navigator.pop(context);
+              },
+              label: Text('back'.tr(),
+                  style: const TextStyle(color: Colors.white)),
+              icon: Icon(Icons.adaptive.arrow_back, color: Colors.white),
+            )
+          : null,
+      body: FutureBuilder(
+        future: LocationHelper.getUserLocation(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(
+              child: CircularProgressIndicator.adaptive(),
+            );
+          }
+          LocationData? locationData = snapshot.data;
+          return FutureBuilder(
+              future: Api.getAllStops(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return Center(
+                    child: Column(
+                      children: [
+                        const CircularProgressIndicator.adaptive(),
+                        const SizedBox(height: 10),
+                        Text('loading_nearby_stops'.tr()),
+                      ],
+                    ),
+                  );
+                }
+                return _mapWithStations(
+                    stops: snapshot.data as List<Stop>,
+                    locationData: locationData);
+              });
+        },
+      ),
     );
   }
 
   Widget _mapWithStations(
       {required List<Stop> stops, required LocationData? locationData}) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(10),
-      child: SizedBox(
-        height: 400,
-        child: FlutterMap(
-          mapController: MapController(),
-          options: MapOptions(
-            initialCenter: LatLng(
-              locationData?.latitude ?? 40.629269,
-              locationData?.longitude ?? 22.947412,
-            ),
-            initialZoom: 17.0,
-          ),
-          children: [
-            TileLayer(
-              urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-              subdomains: const ['a', 'b', 'c'],
-              userAgentPackageName: 'com.oasth.oast',
-            ),
-            MarkerLayer(
-              markers: _buildMarkers(stops: stops, locationData: locationData),
-            ),
-          ],
+    return FlutterMap(
+      mapController: MapController(),
+      options: MapOptions(
+        initialCenter: LatLng(
+          locationData?.latitude ?? 40.629269,
+          locationData?.longitude ?? 22.947412,
         ),
+        initialZoom: 17.0,
       ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          subdomains: const ['a', 'b', 'c'],
+          userAgentPackageName: 'com.oasth.oast',
+        ),
+        MarkerLayer(
+          markers: _buildMarkers(stops: stops, locationData: locationData),
+        ),
+      ],
     );
   }
 

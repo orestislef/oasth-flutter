@@ -35,19 +35,38 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                Padding(
-                  padding: const EdgeInsets.all(10.0),
-                  child: Text(
-                    'stations_nearby'.tr(),
-                    style: TextStyle(
-                      fontSize: 20.0,
-                      color: Colors.blue.shade600,
-                    ),
+                TextButton(
+                  onPressed: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const MapWithNearbyStations(
+                          hasBackButton: true,
+                        ),
+                      ),
+                    );
+                  },
+                  child: Row(
+                    children: <Widget>[
+                      Text(
+                        'stations_nearby'.tr(),
+                        style: TextStyle(
+                          fontSize: 20.0,
+                          color: Colors.blue.shade900,
+                        ),
+                      ),
+                      const SizedBox(width: 10.0),
+                      Icon(Icons.zoom_out_map, color: Colors.blue.shade900),
+                    ],
                   ),
                 ),
                 const Padding(
                   padding: EdgeInsets.all(10.0),
-                  child: MapWithNearbyStations(),
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.all(Radius.circular(10.0)),
+                    child:
+                        SizedBox(height: 400, child: MapWithNearbyStations()),
+                  ),
                 ),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceAround,
