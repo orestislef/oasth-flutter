@@ -249,9 +249,9 @@ class _StopsPageState extends State<StopsPage> {
     }
   }
 
-  Widget _buildLines(BuildContext context, AsyncSnapshot<Line> snapshot) {
+  Widget _buildLines(BuildContext context, AsyncSnapshot<Lines> snapshot) {
     if (snapshot.hasData) {
-      Line line = snapshot.data!;
+      Lines line = snapshot.data!;
       List<LineData> lines = line.lines;
 
       return Scrollbar(
@@ -318,15 +318,23 @@ class _StopsPageState extends State<StopsPage> {
                           itemBuilder: (context, index) {
                             bool isOdd = index % 2 == 0;
                             return Card(
-                              color: isOdd ? null : Colors.blueGrey.shade300,
+                              color: isOdd
+                                  ? Colors.blue.shade800
+                                  : Colors.blue.shade900,
                               child: ListTile(
                                 leading: Icon(Icons.circle,
                                     color:
                                         ColorGenerator(index).generateColor()),
-                                title: Text(routesForLine
-                                    .routesForLine[index].routeDescription!),
-                                subtitle: Text(routesForLine
-                                    .routesForLine[index].routeDescriptionEng!),
+                                title: Text(
+                                    LanguageHelper.getLanguageUsedInApp(
+                                                context) ==
+                                            'en'
+                                        ? routesForLine.routesForLine[index]
+                                            .routeDescriptionEng!
+                                        : routesForLine.routesForLine[index]
+                                            .routeDescription!,
+                                    style:
+                                        const TextStyle(color: Colors.white)),
                                 onTap: () => Navigator.pop(context,
                                     routesForLine.routesForLine[index]),
                               ),
@@ -371,16 +379,25 @@ class _StopsPageState extends State<StopsPage> {
                             itemBuilder: (context, index) {
                               bool isOdd = index % 2 == 0;
                               return Card(
-                                color: isOdd ? null : Colors.blueGrey.shade300,
+                                color: isOdd
+                                    ? Colors.blue.shade800
+                                    : Colors.blue.shade900,
                                 child: ListTile(
                                   leading: CircleAvatar(
                                     child: Text(snapshot
                                         .data!.stops[index].routeStopOrder),
                                   ),
-                                  title: Text(snapshot
-                                      .data!.stops[index].stopDescription),
-                                  subtitle: Text(snapshot
-                                      .data!.stops[index].stopDescriptionEng),
+                                  title: Text(
+                                    LanguageHelper.getLanguageUsedInApp(
+                                                context) ==
+                                            'en'
+                                        ? snapshot.data!.stops[index]
+                                            .stopDescriptionEng
+                                        : snapshot.data!.stops[index]
+                                            .stopDescriptionEng,
+                                    style: const TextStyle(
+                                        color: Colors.white),
+                                  ),
                                   onTap: () => Navigator.pop(
                                       context, snapshot.data!.stops[index]),
                                 ),

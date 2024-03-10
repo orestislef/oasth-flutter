@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/stop_details.dart';
+import 'package:oasth/helpers/language_helper.dart';
 
 class StopPage extends StatefulWidget {
   const StopPage({super.key, required this.stop});
@@ -42,7 +43,9 @@ class _StopPageState extends State<StopPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.stop.stopDescription),
+        title: Text(LanguageHelper.getLanguageUsedInApp(context) == 'en'
+            ? widget.stop.stopDescriptionEng
+            : widget.stop.stopDescription),
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -54,9 +57,7 @@ class _StopPageState extends State<StopPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                    '${'english_description'.tr()}: ${widget.stop.stopDescriptionEng}'),
-                Text(
-                    '${'street'.tr()}: ${widget.stop.stopStreet ?? 'n_a'.tr()}}'),
+                    '${'street'.tr()}: ${widget.stop.stopStreet ?? 'n_a'.tr()}'),
                 if (widget.stop.stopStreetEng != null &&
                     widget.stop.stopStreetEng.isNotEmpty)
                   Text(
@@ -66,6 +67,14 @@ class _StopPageState extends State<StopPage> {
                 Text(
                     '${'stop_amea'.tr()}: ${widget.stop.stopAmea == '0' ? '❌' : '✔️'}'),
                 const SizedBox(height: 10.0),
+                SizedBox(
+                  width: double.infinity,
+                  child: Text(
+                    'stop_interval_hint'.tr(),
+                    style: const TextStyle(fontWeight: FontWeight.w300),
+                    textAlign: TextAlign.right,
+                  ),
+                ),
                 Container(
                   decoration: BoxDecoration(
                     color: Colors.black87,
@@ -114,7 +123,7 @@ class _StopPageState extends State<StopPage> {
                               itemBuilder: (BuildContext context, int index) {
                                 return ListTile(
                                   leading: Text(
-                                    '| Bus: ${stopArrivals.stopDetails[index].routeCode!} |',
+                                    '| ${'Bus'.tr()}: ${stopArrivals.stopDetails[index].routeCode!} |',
                                     style: const TextStyle(
                                         color: Colors.amberAccent),
                                   ),

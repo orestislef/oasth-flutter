@@ -1,8 +1,8 @@
-class Line {
+class Lines {
   late List<LineData> lines;
 
-  static Line fromMap(List<dynamic> map) {
-    Line line = Line();
+  static Lines fromMap(List<dynamic> map) {
+    Lines line = Lines();
     line.lines = [];
     for (int i = 0; i < map.length; i++) {
       line.lines.add(LineData.fromMap(map[i]));
@@ -23,13 +23,13 @@ class LineData {
   late String lineDescriptionEng;
 
   static LineData fromMap(Map<String, dynamic> map) {
-    LineData objBean = LineData();
-    objBean.lineCode = map['LineCode'];
-    objBean.lineID = map['LineID'];
-    objBean.lineIDGR = map['LineIDGR'];
-    objBean.lineDescription = map['LineDescr'];
-    objBean.lineDescriptionEng = map['LineDescrEng'];
-    return objBean;
+    LineData lineData = LineData();
+    lineData.lineCode = map['LineCode'];
+    lineData.lineID = map['LineID'];
+    lineData.lineIDGR = map['LineIDGR'];
+    lineData.lineDescription = map['LineDescr'];
+    lineData.lineDescriptionEng = map['LineDescrEng'];
+    return lineData;
   }
 
   Map toJson() => {
