@@ -12,10 +12,9 @@ import 'package:oasth/screens/stop_page.dart';
 import 'line_route_page.dart';
 
 class LineInfoPage extends StatefulWidget {
-  LineInfoPage({super.key, required this.linesWithMasterLineInfo});
+  const LineInfoPage({super.key, required this.linesWithMasterLineInfo});
 
   final LineWithMasterLineInfo linesWithMasterLineInfo;
-  int selectedDirectionIndex = 0;
 
   @override
   State<LineInfoPage> createState() => _LineInfoPageState();
@@ -23,6 +22,14 @@ class LineInfoPage extends StatefulWidget {
 
 class _LineInfoPageState extends State<LineInfoPage> {
   final ScrollController _scrollController = ScrollController();
+
+  late int _selectedDirectionIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedDirectionIndex = 0;
+  }
 
   @override
   void dispose() {
@@ -217,8 +224,7 @@ class _LineInfoPageState extends State<LineInfoPage> {
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
                       itemBuilder: (context, index) {
-                        bool isTheSelected =
-                            widget.selectedDirectionIndex == index;
+                        bool isTheSelected = _selectedDirectionIndex == index;
                         bool isOdd = index % 2 == 0;
                         return Column(
                           children: <Widget>[
@@ -244,7 +250,7 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                 onTap: routesForLine.routesForLine.length > 1
                                     ? () {
                                         setState(() {
-                                          widget.selectedDirectionIndex = index;
+                                          _selectedDirectionIndex = index;
                                         });
                                       }
                                     : null,
@@ -258,7 +264,7 @@ class _LineInfoPageState extends State<LineInfoPage> {
                       const SizedBox(height: 10.0),
                       FutureBuilder(
                           future: Api.webGetRoutesDetailsAndStops(routesForLine
-                              .routesForLine[widget.selectedDirectionIndex]
+                              .routesForLine[_selectedDirectionIndex]
                               .routeCode!),
                           builder: (context, snapshot) {
                             if (snapshot.connectionState ==
@@ -295,7 +301,8 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                           child: ListTile(
                                             leading: CircleAvatar(
                                               child: Text(routeDetailAndStops
-                                                  .stops[index].routeStopOrder!),
+                                                  .stops[index]
+                                                  .routeStopOrder!),
                                             ),
                                             title: Text(
                                                 routeDetailAndStops.stops[index]
@@ -355,7 +362,7 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                         hasAppBar: false,
                                         routeCode: routesForLine
                                             .routesForLine[
-                                                widget.selectedDirectionIndex]
+                                                _selectedDirectionIndex]
                                             .routeCode!,
                                       ),
                                     ),
