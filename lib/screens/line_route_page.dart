@@ -156,6 +156,7 @@ class RoutePage extends StatelessWidget {
           ),
           PolylineLayer(polylines: [
             Polyline(
+              useStrokeWidthInMeter: true,
               gradientColors: [Colors.blue, Colors.red],
               points: points,
               strokeWidth: 5,

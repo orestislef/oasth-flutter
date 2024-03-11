@@ -349,8 +349,8 @@ class _LineInfoPageState extends State<LineInfoPage> {
                                         );
                                       }),
                                   const SizedBox(height: 10.0),
-                                  const Text('Map',
-                                      style: TextStyle(fontSize: 20)),
+                                  Text('map_with_line_info'.tr(),
+                                      style: const TextStyle(fontSize: 20)),
                                   SizedBox(
                                     height: 500.0,
                                     width: double.infinity,

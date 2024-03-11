@@ -84,6 +84,7 @@
   "faq14_details": "You can submit it in person to the Secretary of OASTH, or send it to the address of OASTH (Al. Papanastasiou 90, 54644 Thessaloniki) or to the email address oasth@oasth.gr. \n\nComplaints should be submitted in writing, with the details of the complainant and a description of the complaints.",
   "faq15": "I am a person with disabilities, how can I schedule my service with the specially adapted buses of OASTH?",
   "faq15_details": "You are served according to the Regulations for the Service of People with Disabilities. More information here. Contact numbers for information regarding the conditions and procedure of service, as well as for service scheduling, are 2310 933930 and 2310 952638, from 07:30 to 21:30 every day.",
-  "stop_code_info" : "The application operates based on a system of unique five-digit numbers (stop codes) corresponding to each OASTH bus stop. This code is depicted on the signs adjacent to each bus stop (see photo 1 & 2). Alternatively, you may quickly and easily find the code for any bus stop on the organisation’s website; go to the “Tools” menu, select “Bus Line Information” and you will find all the stops each bus line makes with the corresponding five-digit code (IVR).",
-  "no_description" : "No description"
+  "stop_code_info": "The application operates based on a system of unique five-digit numbers (stop codes) corresponding to each OASTH bus stop. This code is depicted on the signs adjacent to each bus stop (see photo 1 & 2). Alternatively, you may quickly and easily find the code for any bus stop on the organisation’s website; go to the “Tools” menu, select “Bus Line Information” and you will find all the stops each bus line makes with the corresponding five-digit code (IVR).",
+  "no_description": "No description",
+  "map_with_line_info": "Map (starts with Blue, ends with Red)"
 }
