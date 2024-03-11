@@ -1,12 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 import 'package:oasth/api/api/api.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/helpers/location_helper.dart';
-import 'package:oasth/helpers/shared_preferences_helper.dart';
 import 'package:oasth/screens/stop_page.dart';
 
 import '../api/responses/route_detail_and_stops.dart';
@@ -75,8 +75,9 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
 
   Widget _mapWithStations(
       {required List<Stop> stops, required LocationData? locationData}) {
+    MapController mapController = MapController();
     return FlutterMap(
-      mapController: MapController(),
+      mapController: mapController,
       options: MapOptions(
         maxZoom: 18.0,
         minZoom: 8.0,
@@ -92,8 +93,29 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
           subdomains: const ['a', 'b', 'c'],
           userAgentPackageName: 'com.oasth.oast',
         ),
-        MarkerLayer(
-          markers: _buildMarkers(stops: stops, locationData: locationData),
+        MarkerClusterLayerWidget(
+          options: MarkerClusterLayerOptions(
+            rotate: true,
+            maxZoom: 18.0,
+            size: const Size(40, 40),
+            markers: _buildMarkers(stops: stops, locationData: locationData),
+            builder: (BuildContext context, List<Marker> markers) {
+              return markers.isNotEmpty
+                  ? Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.blue.withOpacity(0.5),
+                      ),
+                      child: Center(
+                        child: Text(
+                          _buildClusterMarkerCount(markers.length),
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                      ),
+                    )
+                  : const SizedBox.shrink();
+            },
+          ),
         ),
       ],
     );
@@ -186,4 +208,17 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
       ),
     );
   }
+
+  String _buildClusterMarkerCount(int length) {
+    if (length <= 1000) {
+      return length.toString();
+    } else if (length <= 10000) {
+      return '~${length ~/ 1000}k';
+    } else if (length <= 1000000) {
+      return '~${(length ~/ 1000).toStringAsFixed(0)}k';
+    }
+
+    return '999k+';
+  }
+
 }
