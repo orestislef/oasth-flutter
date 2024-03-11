@@ -119,12 +119,13 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
                   ? Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.blue.withOpacity(0.5),
+                        color: Colors.blue[900]?.withOpacity(0.7),
                       ),
                       child: Center(
                         child: Text(
                           _buildClusterMarkerCount(markers.length),
-                          style: const TextStyle(fontSize: 16),
+                          style: const TextStyle(
+                              fontSize: 16, color: Colors.white),
                         ),
                       ),
                     )
