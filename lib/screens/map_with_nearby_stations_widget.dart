@@ -80,6 +80,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
     return FlutterMap(
       mapController: mapController,
       options: MapOptions(
+       initialRotation: locationData?.heading ?? 0.0,
         maxZoom: 18.0,
         minZoom: 8.0,
         initialCenter: LatLng(
