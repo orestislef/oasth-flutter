@@ -95,8 +95,8 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
           userAgentPackageName: 'com.oasth.oast',
         ),
         CurrentLocationLayer(
-          alignPositionOnUpdate: AlignOnUpdate.always,
-          alignDirectionOnUpdate: AlignOnUpdate.never,
+          alignPositionOnUpdate: AlignOnUpdate.once,
+          alignDirectionOnUpdate: AlignOnUpdate.once,
           style: const LocationMarkerStyle(
             marker: DefaultLocationMarker(
               child: Icon(
