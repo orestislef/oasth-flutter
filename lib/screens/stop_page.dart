@@ -4,6 +4,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:maps_launcher/maps_launcher.dart';
 import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/stop_details.dart';
@@ -196,15 +197,22 @@ class _StopPageState extends State<StopPage> {
                         height: 40.0,
                         point: LatLng(double.parse(widget.stop.stopLat!),
                             double.parse(widget.stop.stopLng!)),
-                        child: Container(
-                          padding: const EdgeInsets.all(10.0),
-                          decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: Colors.blue.shade900),
-                          child: const Icon(
-                            Icons.follow_the_signs,
-                            size: 20,
-                            color: Colors.white,
+                        child: InkWell(
+                          onTap: () {
+                            MapsLauncher.launchCoordinates(
+                                double.parse(widget.stop.stopLat!),
+                                double.parse(widget.stop.stopLng!));
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(10.0),
+                            decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                color: Colors.blue.shade900),
+                            child: const Icon(
+                              Icons.follow_the_signs,
+                              size: 20,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
