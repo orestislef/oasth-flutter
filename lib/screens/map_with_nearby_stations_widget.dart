@@ -1,6 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
@@ -93,12 +94,26 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
           subdomains: const ['a', 'b', 'c'],
           userAgentPackageName: 'com.oasth.oast',
         ),
+        CurrentLocationLayer(
+          alignPositionOnUpdate: AlignOnUpdate.always,
+          alignDirectionOnUpdate: AlignOnUpdate.never,
+          style: const LocationMarkerStyle(
+            marker: DefaultLocationMarker(
+              child: Icon(
+                Icons.navigation,
+                color: Colors.white,
+              ),
+            ),
+            markerSize: Size(40, 40),
+            markerDirection: MarkerDirection.heading,
+          ),
+        ),
         MarkerClusterLayerWidget(
           options: MarkerClusterLayerOptions(
             rotate: true,
             maxZoom: 18.0,
             size: const Size(40, 40),
-            markers: _buildMarkers(stops: stops, locationData: locationData),
+            markers: _buildMarkers(stops: stops),
             builder: (BuildContext context, List<Marker> markers) {
               return markers.isNotEmpty
                   ? Container(
@@ -121,21 +136,8 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
     );
   }
 
-  List<Marker> _buildMarkers(
-      {required List<Stop> stops, required LocationData? locationData}) {
+  List<Marker> _buildMarkers({required List<Stop> stops}) {
     List<Marker> markers = [];
-    markers.add(
-      Marker(
-        rotate: true,
-        point: LatLng(locationData?.latitude ?? 40.629269,
-            locationData?.longitude ?? 22.947412),
-        child: const Icon(
-          Icons.circle,
-          color: Colors.blue,
-          size: 30,
-        ),
-      ),
-    );
     for (var stop in stops) {
       markers.add(
         Marker(
@@ -220,5 +222,4 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
 
     return '999k+';
   }
-
 }
