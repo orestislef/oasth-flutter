@@ -149,9 +149,8 @@ class _StopsPageState extends State<StopsPage> {
                                   ? Colors.blue.shade800
                                   : Colors.blue.shade900,
                               child: ListTile(
-                                leading: Icon(
-                                  Icons.circle,
-                                  color: ColorGenerator(index).generateColor(),
+                                leading: CircleAvatar(
+                                  child: Text(routesForStop.routesForStop![index].lineID!),
                                 ),
                                 title: Text(
                                     LanguageHelper.getLanguageUsedInApp(
