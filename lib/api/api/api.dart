@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/line_name.dart';
@@ -8,6 +9,7 @@ import 'package:oasth/api/responses/lines_and_routes_for_m_land_l_code.dart';
 import 'package:oasth/api/responses/lines_with_ml_info.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/routes.dart';
+import 'package:oasth/api/responses/routes_for_line.dart' as rfl;
 import 'package:oasth/api/responses/routes_for_line.dart';
 import 'package:oasth/api/responses/routes_for_stop.dart';
 import 'package:oasth/api/responses/sched_lines.dart';
@@ -17,7 +19,8 @@ import 'package:oasth/api/responses/stop_details.dart';
 import 'package:oasth/api/responses/stop_name_xy.dart';
 import 'package:oasth/api/responses/web_stops.dart';
 import 'package:oasth/helpers/shared_preferences_helper.dart';
-import 'package:oasth/api/responses/routes_for_line.dart' as rfl;
+import 'package:oasth/helpers/string_helper.dart';
+import 'package:oasth/helpers/text_broadcaster.dart';
 
 import '../responses/news.dart';
 
@@ -52,37 +55,52 @@ class Api {
     if (exists) {
       String? stopsList = await SharedPreferencesHelper.getStopsList();
       if (stopsList != null) {
-        String? stopsList = await SharedPreferencesHelper.getStopsList();
-        if (stopsList != null) {
-          stops = List<Stop>.from(
-            (jsonDecode(stopsList) as List<dynamic>?)
-                ?.map((o) => Stop.fromMap(o)) ??
-                [],
-          );
-          return stops;
-        }
+        stops = List<Stop>.from(
+          (jsonDecode(stopsList) as List<dynamic>?)
+                  ?.map((o) => Stop.fromMap(o)) ??
+              [],
+        );
       }
     }
 
     if (stops.isNotEmpty) {
       return stops;
     }
+
     Lines lines = await Api.webGetLines();
+    int loadedStops = 0;
+    int totalStops = 16019; // Total number of stops
+    int totalBytesDownloaded = 0;
+    DateTime startTime = DateTime.now();
+
     for (LineData line in lines.lines) {
       RoutesForLine routesForLine = await Api.getRoutesForLine(line.lineCode!);
       for (rfl.Route route in routesForLine.routesForLine) {
         WebStops webStops = await Api.webGetStops(route.routeCode!);
         stops.addAll(webStops.stops);
+        loadedStops += webStops.stops.length;
+        totalBytesDownloaded += webStops.stops.fold<int>(0,
+            (previous, stop) => previous + utf8.encode(stop.toString()).length);
+
+        // Calculate and show progress
+        DateTime currentTime = DateTime.now();
+        Duration elapsedTime = currentTime.difference(startTime);
+        double estimatedTimeRemainingSeconds =
+            (elapsedTime.inSeconds / loadedStops) * (totalStops - loadedStops);
+        double percentage = loadedStops / totalStops * 100;
+        debugPrint('Progress: $percentage%');
+        String progressMessage =
+            '${percentage.toStringAsFixed(2)}% (${totalBytesDownloaded ~/ 1024} KB)'
+            '\n${StringHelper.formatSeconds(estimatedTimeRemainingSeconds.toInt())}';
+        if (kDebugMode) {
+          progressMessage += '\n$loadedStops/$totalStops';
+        }
+        TextBroadcaster.addText(progressMessage);
       }
     }
-    //clear from duplicate stops
-    List<Stop> uniqueStops = [];
-    for (var stop in stops) {
-      if (!uniqueStops.any((element) => element.stopCode == stop.stopCode)) {
-        //maybe with stopID
-        uniqueStops.add(stop);
-      }
-    }
+
+    // Clear duplicates
+    List<Stop> uniqueStops = stops.toSet().toList();
 
     await SharedPreferencesHelper.clearStopsList();
     await SharedPreferencesHelper.setStopsList(jsonEncode(uniqueStops));
