@@ -8,6 +8,7 @@ import 'package:location/location.dart';
 import 'package:oasth/api/api/api.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/helpers/location_helper.dart';
+import 'package:oasth/helpers/text_broadcaster.dart';
 import 'package:oasth/screens/stop_page.dart';
 
 import '../api/responses/route_detail_and_stops.dart';
@@ -50,18 +51,24 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
               future: Api.getAllStops2(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
-                  return SafeArea(
-                    child: Center(
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          const CircularProgressIndicator.adaptive(),
-                          const SizedBox(height: 10),
-                          Text('loading_nearby_stops'.tr()),
-                        ],
-                      ),
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: <Widget>[
+                        const CircularProgressIndicator.adaptive(),
+                        const SizedBox(height: 10),
+                        Text('loading_nearby_stops'.tr(),
+                            textAlign: TextAlign.start),
+                        const SizedBox(height: 10),
+                        StreamBuilder<String>(
+                            stream: TextBroadcaster.getTextStream(),
+                            builder: (context, snapshot) {
+                              return Text(
+                                snapshot.data ?? '',
+                                textAlign: TextAlign.start,
+                              );
+                            }),
+                      ],
                     ),
                   );
                 }
@@ -80,7 +87,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
     return FlutterMap(
       mapController: mapController,
       options: MapOptions(
-       initialRotation: locationData?.heading ?? 0.0,
+        initialRotation: locationData?.heading ?? 0.0,
         maxZoom: 18.0,
         minZoom: 8.0,
         initialCenter: LatLng(
