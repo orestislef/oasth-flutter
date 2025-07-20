@@ -40,27 +40,23 @@ class LocationHelper {
   Future<dynamic> explainLocationPermission({required BuildContext context}) {
     return showAdaptiveDialog(
       context: context,
-      builder: _buildDialog(),
+      builder: (context) => _buildDialog(context),
     );
   }
 
-  _buildDialog() {
-    return Builder(
-      builder: (context) {
-        return AlertDialog(
-          title: Text('location_permission_explain'.tr()),
-          actions: [
-            TextButton(
-              child: Text('no'.tr()),
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-            TextButton(
-              child: Text('yes'.tr()),
-              onPressed: () => Navigator.of(context).pop(true),
-            ),
-          ],
-        );
-      },
+  Widget _buildDialog(BuildContext context) {
+    return AlertDialog(
+      title: Text('location_permission_explain'.tr()),
+      actions: [
+        TextButton(
+          child: Text('no'.tr()),
+          onPressed: () => Navigator.of(context).pop(false),
+        ),
+        TextButton(
+          child: Text('yes'.tr()),
+          onPressed: () => Navigator.of(context).pop(true),
+        ),
+      ],
     );
   }
 }
