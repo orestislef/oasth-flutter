@@ -1,10 +1,6 @@
 # 🚌 OASTH - Thessaloniki Public Transport App
 
 <p align="center">
-  <img src="assets/icons/app_icon.png" alt="OASTH App Logo" width="120" height="120">
-</p>
-
-<p align="center">
   <strong>Your smart companion for public transport in Thessaloniki</strong>
 </p>
 
@@ -49,9 +45,10 @@ lib/
 
 - **API Layer**: Optimized HTTP client with caching and retry mechanisms
 - **State Management**: StatefulWidget with proper resource management
-- **Localization**: Easy Localization for Greek/English support
+- **Localization**: Easy Localization with flag assets for language switching
 - **Maps Integration**: Flutter Map with real-time data overlay
 - **Navigation**: Material Design bottom navigation
+- **Help System**: Visual guides with info images for stop code usage
 
 ## 🚀 Features Breakdown
 
@@ -173,21 +170,34 @@ flutter run
    - Configure timeout settings in `ApiConfig`
 
 2. **Localization Setup**
-   - Translation files located in `assets/translations/`
-   - Supported languages: `en.json`, `el.json`
+   - Translation files: `assets/translations/en.json`, `assets/translations/el.json`
+   - Language flags: `assets/icons/english_flag.png`, `assets/icons/greek_flag.png`
 
-3. **Maps Setup**
+3. **Help System Assets**
+   - Stop code help images: `assets/icons/stop_code_info1.png`, `assets/icons/stop_code_info2.png`
+   - Used in the "More" section for user guidance
+
+4. **Maps Setup**
    - Configure map tiles URL in map widgets
    - Set up location permissions in platform files
 
-## 📱 Screenshots
+## 🗂️ Assets Structure
 
-<p align="center">
-  <img src="screenshots/welcome_screen.png" alt="Welcome Screen" width="200">
-  <img src="screenshots/lines_browser.png" alt="Lines Browser" width="200">
-  <img src="screenshots/stop_details.png" alt="Stop Details" width="200">
-  <img src="screenshots/route_map.png" alt="Route Map" width="200">
-</p>
+### Icons & Images
+```
+assets/icons/
+├── english_flag.png    # Language selector - English
+├── greek_flag.png      # Language selector - Greek  
+├── stop_code_info1.png # Help image - Stop code example 1
+└── stop_code_info2.png # Help image - Stop code example 2
+```
+
+### Translations
+```
+assets/translations/
+├── en.json            # English translations
+└── el.json            # Greek translations
+```
 
 ## 🔧 API Integration
 
@@ -219,8 +229,8 @@ GET /?act=webGetRoutesDetailsAndStops&p1={routeCode}
 ## 🌐 Localization
 
 ### Supported Languages
-- **🇬🇷 Greek (el)** - Primary language
-- **🇺🇸 English (en)** - Full translation support
+- **🇬🇷 Greek (el)** - Primary language with `greek_flag.png`
+- **🇺🇸 English (en)** - Full translation support with `english_flag.png`
 
 ### Adding New Languages
 
