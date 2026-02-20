@@ -5,7 +5,11 @@
       "Bash(grep:*)",
       "Bash(java -version:*)",
       "Bash(git checkout:*)",
-      "Bash(flutter create:*)"
+      "Bash(flutter create:*)",
+      "Bash(git add:*)",
+      "Bash(dart run:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ]
   }
 }

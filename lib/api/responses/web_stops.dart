@@ -1,19 +1,17 @@
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 
-class WebStops{
+class WebStops {
   final List<Stop> stops;
 
-  WebStops({required this.stops});
+  const WebStops({required this.stops});
 
   factory WebStops.fromMap(List<dynamic> data) {
-    List<Stop> stops = [];
-    for (var stop in data) {
-      stops.add(Stop.fromMap(stop));
-    }
-    return WebStops(stops: stops);
+    return WebStops(
+      stops: data.map((e) => Stop.fromMap(e)).toList(),
+    );
   }
 
-  Map<String, dynamic> toJson() => {
-    "stops": stops.map((e) => e.toJson()).toList(),
-  };
+  Map<String, dynamic> toMap() => {
+        'stops': stops.map((e) => e.toMap()).toList(),
+      };
 }

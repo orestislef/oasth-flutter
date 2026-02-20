@@ -5,7 +5,7 @@ import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
-import 'package:oasth/api/api/api.dart';
+import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/helpers/location_helper.dart';
 import 'package:oasth/helpers/text_broadcaster.dart';
@@ -23,6 +23,7 @@ class MapWithNearbyStations extends StatefulWidget {
 }
 
 class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
+  final _repo = OasthRepository();
   final MapController _mapController = MapController();
   LocationData? _userLocation;
   List<Stop> _allStops = [];
@@ -31,7 +32,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
   bool _isLoadingLocation = true;
   bool _isLoadingStops = true;
   String? _errorMessage;
-  double _searchRadius = 1000; // meters
+  double _searchRadius = 1000;
 
   @override
   void initState() {
@@ -60,13 +61,13 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
       });
 
       final location = await LocationHelper.getUserLocation();
-      
+
       if (mounted) {
         setState(() {
           _userLocation = location;
           _isLoadingLocation = false;
         });
-        
+
         if (location != null) {
           _updateNearbyStops();
         }
@@ -88,14 +89,14 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
         _errorMessage = null;
       });
 
-      final stops = await Api.getAllStops2();
-      
+      final stops = await _repo.getAllStops();
+
       if (mounted) {
         setState(() {
           _allStops = stops;
           _isLoadingStops = false;
         });
-        
+
         _updateNearbyStops();
       }
     } catch (e) {
@@ -115,24 +116,20 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
     final distance = const Distance();
 
     _nearbyStops = _allStops.where((stop) {
-      final stopLatLng = LatLng(
-        double.parse(stop.stopLat!),
-        double.parse(stop.stopLng!),
-      );
+      final stopLatLng = LatLng(stop.stopLat, stop.stopLng);
       return distance.as(LengthUnit.Meter, userLatLng, stopLatLng) <= _searchRadius;
     }).toList();
 
-    // Sort by distance
     _nearbyStops.sort((a, b) {
       final distanceA = distance.as(
         LengthUnit.Meter,
         userLatLng,
-        LatLng(double.parse(a.stopLat!), double.parse(a.stopLng!)),
+        LatLng(a.stopLat, a.stopLng),
       );
       final distanceB = distance.as(
         LengthUnit.Meter,
         userLatLng,
-        LatLng(double.parse(b.stopLat!), double.parse(b.stopLng!)),
+        LatLng(b.stopLat, b.stopLng),
       );
       return distanceA.compareTo(distanceB);
     });
@@ -155,7 +152,6 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
     });
   }
 
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -175,7 +171,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
 
   PreferredSizeWidget? _buildAppBar(BuildContext context) {
     if (!widget.hasBackButton) return null;
-    
+
     return AppBar(
       title: Text('nearby_stops_map'.tr()),
       elevation: 0,
@@ -213,9 +209,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
           subdomains: const ['a', 'b', 'c'],
           userAgentPackageName: 'com.oasth.oast',
-          errorTileCallback: (tile, error, stackTrace) {
-            // Handle tile loading errors gracefully
-          },
+          errorTileCallback: (tile, error, stackTrace) {},
         ),
         if (_userLocation != null)
           CurrentLocationLayer(
@@ -258,7 +252,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
 
   Widget _buildTopControls(BuildContext context) {
     if (widget.hasBackButton) return const SizedBox.shrink();
-    
+
     return Positioned(
       top: MediaQuery.of(context).padding.top + 16,
       left: 16,
@@ -294,7 +288,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
             ),
             const SizedBox(width: 4),
             Text(
-              _showOnlyNearby 
+              _showOnlyNearby
                   ? 'nearby_only'.tr(namedArgs: {'count': _nearbyStops.length.toString()})
                   : 'all_stops'.tr(namedArgs: {'count': _allStops.length.toString()}),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -309,8 +303,8 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
                 padding: const EdgeInsets.all(4),
                 child: Icon(
                   _showOnlyNearby ? Icons.toggle_on : Icons.toggle_off,
-                  color: _showOnlyNearby 
-                      ? Theme.of(context).primaryColor 
+                  color: _showOnlyNearby
+                      ? Theme.of(context).primaryColor
                       : Theme.of(context).disabledColor,
                 ),
               ),
@@ -334,7 +328,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
                 const CircularProgressIndicator.adaptive(),
                 const SizedBox(height: 16),
                 Text(
-                  _isLoadingLocation 
+                  _isLoadingLocation
                       ? 'getting_location'.tr()
                       : 'loading_nearby_stops'.tr(),
                   style: Theme.of(context).textTheme.titleMedium,
@@ -346,7 +340,6 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
                   builder: (context, snapshot) {
                     return Text(
                       snapshot.data ?? 'please_wait'.tr(),
-                      
                       textAlign: TextAlign.center,
                     );
                   },
@@ -431,12 +424,12 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
           heroTag: "filter",
           onPressed: _toggleNearbyFilter,
           tooltip: _showOnlyNearby ? 'show_all_stops'.tr() : 'show_nearby_only'.tr(),
-          backgroundColor: _showOnlyNearby 
-              ? Theme.of(context).primaryColor 
+          backgroundColor: _showOnlyNearby
+              ? Theme.of(context).primaryColor
               : Theme.of(context).cardColor,
           child: Icon(
             _showOnlyNearby ? Icons.location_on : Icons.location_off,
-            color: _showOnlyNearby 
+            color: _showOnlyNearby
                 ? Theme.of(context).colorScheme.onPrimary
                 : Theme.of(context).primaryColor,
           ),
@@ -458,15 +451,12 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
 
   Marker _buildStopMarker(Stop stop) {
     final isNearby = _nearbyStops.contains(stop);
-    
+
     return Marker(
       height: 60,
       width: 160,
       rotate: false,
-      point: LatLng(
-        double.parse(stop.stopLat!),
-        double.parse(stop.stopLng!),
-      ),
+      point: LatLng(stop.stopLat, stop.stopLng),
       alignment: Alignment.center,
       child: GestureDetector(
         onTap: () => _onPressMarker(stop: stop),
@@ -479,7 +469,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
                 color: Theme.of(context).cardColor,
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(
-                  color: isNearby 
+                  color: isNearby
                       ? Theme.of(context).primaryColor
                       : Theme.of(context).dividerColor,
                   width: isNearby ? 2 : 1,
@@ -494,14 +484,14 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
               ),
               child: Text(
                 LanguageHelper.getLanguageUsedInApp(context) == 'en'
-                    ? stop.stopDescriptionEng ?? 'no_description'.tr()
-                    : stop.stopDescription ?? 'no_description'.tr(),
+                    ? stop.stopDescriptionEng.isNotEmpty ? stop.stopDescriptionEng : 'no_description'.tr()
+                    : stop.stopDescription.isNotEmpty ? stop.stopDescription : 'no_description'.tr(),
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                   fontWeight: FontWeight.w600,
-                  color: isNearby 
+                  color: isNearby
                       ? Theme.of(context).primaryColor
                       : null,
                 ),
@@ -512,7 +502,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: isNearby 
+                color: isNearby
                     ? Theme.of(context).primaryColor
                     : Theme.of(context).cardColor,
                 shape: BoxShape.circle,
@@ -531,7 +521,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
               child: Icon(
                 Icons.directions_bus,
                 size: 16,
-                color: isNearby 
+                color: isNearby
                     ? Theme.of(context).colorScheme.onPrimary
                     : Theme.of(context).primaryColor,
               ),
@@ -544,7 +534,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
 
   Widget _buildClusterMarker(BuildContext context, List<Marker> markers) {
     if (markers.isEmpty) return const SizedBox.shrink();
-    
+
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,

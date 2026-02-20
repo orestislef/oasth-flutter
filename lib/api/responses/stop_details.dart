@@ -1,39 +1,41 @@
 class StopArrivals {
-  List<StopDetails> stopDetails = [];
+  final List<StopDetails> stopDetails;
 
-  StopArrivals({required this.stopDetails});
+  const StopArrivals({required this.stopDetails});
 
   factory StopArrivals.fromMap(List<dynamic> map) {
     return StopArrivals(
-      stopDetails: List<StopDetails>.from(
-        map.map((stopDetail) => StopDetails.fromMap(stopDetail)),
-      ),
+      stopDetails: map.map((e) => StopDetails.fromMap(e)).toList(),
     );
   }
+
+  Map<String, dynamic> toMap() => {
+        'stopDetails': stopDetails.map((e) => e.toMap()).toList(),
+      };
 }
 
 class StopDetails {
-  String? btime2;
-  String? routeCode;
-  String? vehCode;
+  final String btime2;
+  final String routeCode;
+  final String vehCode;
 
-  StopDetails({
-    this.btime2,
-    this.routeCode,
-    this.vehCode,
+  const StopDetails({
+    required this.btime2,
+    required this.routeCode,
+    required this.vehCode,
   });
 
   factory StopDetails.fromMap(Map<String, dynamic> map) {
     return StopDetails(
-      btime2: map['btime2'],
-      routeCode: map['route_code'],
-      vehCode: map['veh_code'],
+      btime2: map['btime2']?.toString() ?? '',
+      routeCode: map['route_code']?.toString() ?? '',
+      vehCode: map['veh_code']?.toString() ?? '',
     );
   }
 
-  Map<String, dynamic> toJson() => {
-    "btime2": btime2,
-    "route_code": routeCode,
-    "veh_code": vehCode,
-  };
+  Map<String, dynamic> toMap() => {
+        'btime2': btime2,
+        'route_code': routeCode,
+        'veh_code': vehCode,
+      };
 }

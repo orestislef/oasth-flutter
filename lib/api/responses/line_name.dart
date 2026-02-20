@@ -1,39 +1,41 @@
 class LineName {
-  List<LineNameData> lineNames;
+  final List<LineNameData> lineNames;
 
-  LineName({required this.lineNames});
+  const LineName({required this.lineNames});
 
   factory LineName.fromMap(List<dynamic> data) {
-    List<LineNameData> lines = [];
-    for (var i = 0; i < data.length; i++) {
-      lines.add(LineNameData.fromMap(data[i]));
-    }
-    return LineName(lineNames: lines);
+    return LineName(
+      lineNames: data.map((e) => LineNameData.fromMap(e)).toList(),
+    );
   }
+
+  Map<String, dynamic> toMap() => {
+        'lineNames': lineNames.map((e) => e.toMap()).toList(),
+      };
 }
 
 class LineNameData {
-  String? lineDescription;
-  String? lineDescriptionEng;
-  String? lineId;
+  final String lineDescription;
+  final String lineDescriptionEng;
+  final String lineId;
 
-  LineNameData(
-      {required this.lineDescription,
-      required this.lineDescriptionEng,
-      required this.lineId});
+  const LineNameData({
+    required this.lineDescription,
+    required this.lineDescriptionEng,
+    required this.lineId,
+  });
 
   factory LineNameData.fromMap(Map<String, dynamic> data) {
     return LineNameData(
-        lineDescription: data['line_descr'],
-        lineDescriptionEng: data['line_descr_eng'],
-        lineId: data['line_id']);
+      lineDescription: data['line_descr']?.toString() ?? '',
+      lineDescriptionEng: data['line_descr_eng']?.toString() ?? '',
+      lineId: data['line_id']?.toString() ?? '',
+    );
   }
 
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = <String, dynamic>{};
-    data['line_descr'] = lineDescription;
-    data['line_descr_eng'] = lineDescriptionEng;
-    data['line_id'] = lineId;
-    return data;
-  }
+  Map<String, dynamic> toMap() => {
+        'line_descr': lineDescription,
+        'line_descr_eng': lineDescriptionEng,
+        'line_id': lineId,
+      };
 }

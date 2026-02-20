@@ -1,44 +1,52 @@
 class LinesAndRoutesForMLandLCode {
-  late List<LinesAndRoutesForMLandLCodeData> linesAndRoutesForMlandLcodes;
+  final List<LinesAndRoutesForMLandLCodeData> linesAndRoutesForMlandLcodes;
 
-  static LinesAndRoutesForMLandLCode fromMap(List<dynamic> map) {
-    LinesAndRoutesForMLandLCode linesAndRoutesForMLandLCode = LinesAndRoutesForMLandLCode();
-    linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes = [];
-    for (int i = 0; i < map.length; i++) {
-      linesAndRoutesForMLandLCode.linesAndRoutesForMlandLcodes
-          .add(LinesAndRoutesForMLandLCodeData.fromMap(map[i]));
-    }
-    return linesAndRoutesForMLandLCode;
+  const LinesAndRoutesForMLandLCode(
+      {required this.linesAndRoutesForMlandLcodes});
+
+  factory LinesAndRoutesForMLandLCode.fromMap(List<dynamic> map) {
+    return LinesAndRoutesForMLandLCode(
+      linesAndRoutesForMlandLcodes:
+          map.map((e) => LinesAndRoutesForMLandLCodeData.fromMap(e)).toList(),
+    );
   }
 
-  Map toJson() => {
-        "lines_and_routes_for_mland_lcodes": linesAndRoutesForMlandLcodes,
+  Map<String, dynamic> toMap() => {
+        'lines_and_routes_for_mland_lcodes':
+            linesAndRoutesForMlandLcodes.map((e) => e.toMap()).toList(),
       };
 }
 
 class LinesAndRoutesForMLandLCodeData {
-  String? lineCode;
-  String? lineId;
-  String? lineIdGr;
-  String? lineDescr;
-  String? lineDescrEng;
+  final String lineCode;
+  final String lineId;
+  final String lineIdGr;
+  final String lineDescr;
+  final String lineDescrEng;
 
-  static LinesAndRoutesForMLandLCodeData fromMap(Map<String, dynamic> map) {
-    LinesAndRoutesForMLandLCodeData linesAndRoutesForMLandLCodeBean =
-        LinesAndRoutesForMLandLCodeData();
-    linesAndRoutesForMLandLCodeBean.lineCode = map['line_code'];
-    linesAndRoutesForMLandLCodeBean.lineId = map['line_id'];
-    linesAndRoutesForMLandLCodeBean.lineIdGr = map['line_id_gr'];
-    linesAndRoutesForMLandLCodeBean.lineDescr = map['line_descr'];
-    linesAndRoutesForMLandLCodeBean.lineDescrEng = map['line_descr_eng'];
-    return linesAndRoutesForMLandLCodeBean;
+  const LinesAndRoutesForMLandLCodeData({
+    required this.lineCode,
+    required this.lineId,
+    required this.lineIdGr,
+    required this.lineDescr,
+    required this.lineDescrEng,
+  });
+
+  factory LinesAndRoutesForMLandLCodeData.fromMap(Map<String, dynamic> map) {
+    return LinesAndRoutesForMLandLCodeData(
+      lineCode: map['line_code']?.toString() ?? '',
+      lineId: map['line_id']?.toString() ?? '',
+      lineIdGr: map['line_id_gr']?.toString() ?? '',
+      lineDescr: map['line_descr']?.toString() ?? '',
+      lineDescrEng: map['line_descr_eng']?.toString() ?? '',
+    );
   }
 
-  Map toJson() => {
-        "line_code": lineCode,
-        "line_id": lineId,
-        "line_id_gr": lineIdGr,
-        "line_descr": lineDescr,
-        "line_descr_eng": lineDescrEng,
+  Map<String, dynamic> toMap() => {
+        'line_code': lineCode,
+        'line_id': lineId,
+        'line_id_gr': lineIdGr,
+        'line_descr': lineDescr,
+        'line_descr_eng': lineDescrEng,
       };
 }

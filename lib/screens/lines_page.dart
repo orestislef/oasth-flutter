@@ -1,7 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/lines_with_ml_info.dart';
+import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/line_info_page.dart';
 
@@ -13,13 +13,13 @@ class LinesPage extends StatefulWidget {
 }
 
 class _LinesPageState extends State<LinesPage> {
+  final _repo = OasthRepository();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
-  
+
   List<LineWithMasterLineInfo> _allLines = [];
   List<LineWithMasterLineInfo> _displayedLines = [];
-  final List<LineWithMasterLineInfo> _favoriteLines = []; // You can persist this
-  
+
   bool _isLoading = true;
   bool _hasError = false;
   String _errorMessage = '';
@@ -47,11 +47,11 @@ class _LinesPageState extends State<LinesPage> {
         _hasError = false;
       });
 
-      final lines = await Api.webGetLinesWithMLInfo();
-      
+      final lines = await _repo.getLinesWithMLInfo();
+
       if (mounted) {
         setState(() {
-          _allLines = lines.linesWithMasterLineInfo;
+          _allLines = lines;
           _isLoading = false;
         });
         _applyFiltersAndSort();
@@ -71,41 +71,38 @@ class _LinesPageState extends State<LinesPage> {
   void _applyFiltersAndSort() {
     List<LineWithMasterLineInfo> filteredLines = _allLines;
 
-    // Apply search filter
     if (_searchQuery.isNotEmpty) {
       filteredLines = filteredLines.where((line) {
         final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-            ? line.lineDescriptionEng ?? line.lineDescription ?? ''
-            : line.lineDescription ?? line.lineDescriptionEng ?? '';
-        
+            ? line.lineDescriptionEng.isNotEmpty ? line.lineDescriptionEng : line.lineDescription
+            : line.lineDescription.isNotEmpty ? line.lineDescription : line.lineDescriptionEng;
+
         return description.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-               line.lineId!.toLowerCase().contains(_searchQuery.toLowerCase());
+               line.lineId.toLowerCase().contains(_searchQuery.toLowerCase());
       }).toList();
     }
 
-    // Apply favorites filter
     if (_showFavoritesOnly) {
-      filteredLines = filteredLines.where((line) => 
-          _favoriteLines.any((fav) => fav.lineId == line.lineId)).toList();
+      filteredLines = filteredLines.where((line) =>
+          _repo.favorites.isFavorite(line.lineId)).toList();
     }
 
-    // Apply sorting
     switch (_sortType) {
       case LinesSortType.lineNumber:
         filteredLines.sort((a, b) {
-          final aNum = int.tryParse(a.lineId!) ?? 999;
-          final bNum = int.tryParse(b.lineId!) ?? 999;
+          final aNum = int.tryParse(a.lineId) ?? 999;
+          final bNum = int.tryParse(b.lineId) ?? 999;
           return aNum.compareTo(bNum);
         });
         break;
       case LinesSortType.alphabetical:
         filteredLines.sort((a, b) {
           final aDesc = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-              ? a.lineDescriptionEng ?? a.lineDescription ?? ''
-              : a.lineDescription ?? a.lineDescriptionEng ?? '';
+              ? a.lineDescriptionEng.isNotEmpty ? a.lineDescriptionEng : a.lineDescription
+              : a.lineDescription.isNotEmpty ? a.lineDescription : a.lineDescriptionEng;
           final bDesc = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-              ? b.lineDescriptionEng ?? b.lineDescription ?? ''
-              : b.lineDescription ?? b.lineDescriptionEng ?? '';
+              ? b.lineDescriptionEng.isNotEmpty ? b.lineDescriptionEng : b.lineDescription
+              : b.lineDescription.isNotEmpty ? b.lineDescription : b.lineDescriptionEng;
           return aDesc.compareTo(bDesc);
         });
         break;
@@ -123,20 +120,14 @@ class _LinesPageState extends State<LinesPage> {
     _applyFiltersAndSort();
   }
 
-  void _toggleFavorite(LineWithMasterLineInfo line) {
-    setState(() {
-      final index = _favoriteLines.indexWhere((fav) => fav.lineId == line.lineId);
-      if (index >= 0) {
-        _favoriteLines.removeAt(index);
-      } else {
-        _favoriteLines.add(line);
-      }
-    });
-    // Here you would typically save favorites to persistent storage
+  void _toggleFavorite(LineWithMasterLineInfo line) async {
+    await _repo.favorites.toggleFavorite(line.lineId);
+    setState(() {});
+    if (_showFavoritesOnly) _applyFiltersAndSort();
   }
 
   bool _isFavorite(LineWithMasterLineInfo line) {
-    return _favoriteLines.any((fav) => fav.lineId == line.lineId);
+    return _repo.favorites.isFavorite(line.lineId);
   }
 
   void _scrollToTop() {
@@ -276,7 +267,7 @@ class _LinesPageState extends State<LinesPage> {
 
   Widget _buildResultsInfo(BuildContext context) {
     if (_searchQuery.isEmpty && !_showFavoritesOnly) return const SizedBox.shrink();
-    
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -334,7 +325,6 @@ class _LinesPageState extends State<LinesPage> {
           const SizedBox(height: 8),
           Text(
             'please_wait_loading_routes'.tr(),
-           
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
               color: Theme.of(context).hintColor,
             ),
@@ -371,7 +361,6 @@ class _LinesPageState extends State<LinesPage> {
               _errorMessage,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
                 color: Theme.of(context).hintColor,
-     
               ),
               textAlign: TextAlign.center,
               maxLines: 3,
@@ -403,7 +392,7 @@ class _LinesPageState extends State<LinesPage> {
             ),
             const SizedBox(height: 24),
             Text(
-              _showFavoritesOnly 
+              _showFavoritesOnly
                   ? 'no_favorite_lines'.tr()
                   : _searchQuery.isNotEmpty
                       ? 'no_lines_found'.tr()
@@ -465,8 +454,8 @@ class _LinesPageState extends State<LinesPage> {
   Widget _buildLineCard(BuildContext context, LineWithMasterLineInfo line, int index) {
     final isFavorite = _isFavorite(line);
     final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-        ? line.lineDescriptionEng ?? line.lineDescription ?? 'no_description'.tr()
-        : line.lineDescription ?? line.lineDescriptionEng ?? 'no_description'.tr();
+        ? line.lineDescriptionEng.isNotEmpty ? line.lineDescriptionEng : line.lineDescription
+        : line.lineDescription.isNotEmpty ? line.lineDescription : line.lineDescriptionEng;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -490,7 +479,7 @@ class _LinesPageState extends State<LinesPage> {
                 ),
                 child: Center(
                   child: Text(
-                    line.lineId!,
+                    line.lineId,
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -527,8 +516,8 @@ class _LinesPageState extends State<LinesPage> {
                   IconButton(
                     icon: Icon(
                       isFavorite ? Icons.favorite : Icons.favorite_border,
-                      color: isFavorite 
-                          ? Theme.of(context).colorScheme.error 
+                      color: isFavorite
+                          ? Theme.of(context).colorScheme.error
                           : Theme.of(context).disabledColor,
                     ),
                     onPressed: () => _toggleFavorite(line),

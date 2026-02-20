@@ -1,38 +1,49 @@
 class BusLocation {
-  late List<BusLocationData> busLocation;
+  final List<BusLocationData> busLocation;
 
-  static BusLocation fromMap(List<dynamic> map) {
-    BusLocation busLocation = BusLocation();
-    busLocation.busLocation = [];
-    for (int i = 0; i < map.length; i++) {
-      busLocation.busLocation.add(BusLocationData.fromMap(map[i]));
-    }
-    return busLocation;
+  const BusLocation({required this.busLocation});
+
+  factory BusLocation.fromMap(List<dynamic> map) {
+    return BusLocation(
+      busLocation: map.map((e) => BusLocationData.fromMap(e)).toList(),
+    );
   }
+
+  Map<String, dynamic> toMap() => {
+        'busLocation': busLocation.map((e) => e.toMap()).toList(),
+      };
 }
 
 class BusLocationData {
-  String? vehNo;
-  String? csDate;
-  String? csLat;
-  String? csLng;
-  String? routeCode;
+  final String vehNo;
+  final String csDate;
+  final double csLat;
+  final double csLng;
+  final String routeCode;
 
-  static BusLocationData fromMap(Map<String, dynamic> map) {
-    BusLocationData busLocation = BusLocationData();
-    busLocation.vehNo = map['VEH_NO'];
-    busLocation.csDate = map['CS_DATE'];
-    busLocation.csLat = map['CS_LAT'];
-    busLocation.csLng = map['CS_LNG'];
-    busLocation.routeCode = map['ROUTE_CODE'];
-    return busLocation;
+  const BusLocationData({
+    required this.vehNo,
+    required this.csDate,
+    required this.csLat,
+    required this.csLng,
+    required this.routeCode,
+  });
+
+  factory BusLocationData.fromMap(Map<String, dynamic> map) {
+    return BusLocationData(
+      vehNo: map['VEH_NO']?.toString() ?? '',
+      csDate: map['CS_DATE']?.toString() ?? '',
+      csLat: double.tryParse(map['CS_LAT']?.toString() ?? '') ?? 0.0,
+      csLng: double.tryParse(map['CS_LNG']?.toString() ?? '') ?? 0.0,
+      routeCode: map['ROUTE_CODE']?.toString() ?? '',
+    );
   }
 
-  Map toJson() => {
-        "VEH_NO": vehNo,
-        "CS_DATE": csDate,
-        "CS_LAT": csLat,
-        "CS_LNG": csLng,
-        "ROUTE_CODE": routeCode
+  Map<String, dynamic> toMap() => {
+        'VEH_NO': vehNo,
+        'CS_DATE': csDate,
+        'CS_LAT': csLat.toString(),
+        'CS_LNG': csLng.toString(),
+        'ROUTE_CODE': routeCode,
       };
 }

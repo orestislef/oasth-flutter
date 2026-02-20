@@ -1,13 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/lines.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
-import 'package:oasth/api/responses/routes_for_line.dart' as rfl;
+import 'package:oasth/api/responses/routes_for_line.dart';
 import 'package:oasth/api/responses/routes_for_stop.dart';
-import 'package:oasth/api/responses/stop_by_sip.dart';
 import 'package:oasth/api/responses/stop_details.dart';
 import 'package:oasth/api/responses/stop_name_xy.dart';
+import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/color_generator_helper.dart';
 import 'package:oasth/helpers/input_formatters_helper.dart';
 import 'package:oasth/helpers/language_helper.dart';
@@ -21,6 +20,7 @@ class StopsPage extends StatefulWidget {
 }
 
 class _StopsPageState extends State<StopsPage> {
+  final _repo = OasthRepository();
   final TextEditingController _textFieldController = TextEditingController();
   bool _isButtonEnabled = false;
 
@@ -101,8 +101,8 @@ class _StopsPageState extends State<StopsPage> {
             Text('or_choose_line'.tr()),
             const SizedBox(height: 10.0),
             Expanded(
-                child: FutureBuilder(
-                    future: Api.webGetLines(), builder: _buildLines)),
+                child: FutureBuilder<List<LineData>>(
+                    future: _repo.getLines(), builder: _buildLines)),
           ],
         ),
       ),
@@ -113,13 +113,13 @@ class _StopsPageState extends State<StopsPage> {
     required BuildContext context,
     required String stopCode,
   }) async {
-    StopBySip stopBySip = await Api.getStopBySIP(stopCode);
+    final stopBySip = await _repo.getStopBySIP(stopCode);
     if (!context.mounted) return;
     RouteForStop? routeForStop = await showModalBottomSheet(
         context: context,
         builder: (context) {
-          return FutureBuilder(
-              future: Api.getRoutesForStop(stopBySip.id!),
+          return FutureBuilder<List<RouteForStop>>(
+              future: _repo.getRoutesForStop(stopBySip.id),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(
@@ -127,8 +127,8 @@ class _StopsPageState extends State<StopsPage> {
                 } else if (snapshot.hasError) {
                   return Center(child: Text('${snapshot.error}'));
                 }
-                RoutesForStop routesForStop = snapshot.data!;
-                if (routesForStop.routesForStop!.isEmpty) {
+                final routes = snapshot.data!;
+                if (routes.isEmpty) {
                   return Center(child: Text('no_line_info'.tr()));
                 }
 
@@ -142,7 +142,7 @@ class _StopsPageState extends State<StopsPage> {
                     ),
                     Expanded(
                       child: ListView.builder(
-                          itemCount: routesForStop.routesForStop!.length,
+                          itemCount: routes.length,
                           itemBuilder: (context, index) {
                             bool isOdd = index % 2 == 0;
                             return Card(
@@ -151,19 +151,18 @@ class _StopsPageState extends State<StopsPage> {
                                   : Colors.blue.shade900,
                               child: ListTile(
                                 leading: CircleAvatar(
-                                  child: Text(routesForStop.routesForStop![index].lineID!),
+                                  child: Text(routes[index].lineID),
                                 ),
                                 title: Text(
                                     LanguageHelper.getLanguageUsedInApp(
                                                 context) ==
                                             'en'
-                                        ? '${routesForStop.routesForStop![index].lineDescriptionEng}'
-                                        : '${routesForStop.routesForStop![index].lineDescription}',
+                                        ? routes[index].lineDescriptionEng
+                                        : routes[index].lineDescription,
                                     style:
                                         const TextStyle(color: Colors.white)),
                                 onTap: () {
-                                  Navigator.pop(context,
-                                      routesForStop.routesForStop![index]);
+                                  Navigator.pop(context, routes[index]);
                                 },
                               ),
                             );
@@ -183,8 +182,8 @@ class _StopsPageState extends State<StopsPage> {
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
                 const SizedBox(height: 16),
-                FutureBuilder(
-                    future: Api.getStopNameAndXY(stopBySip.id!),
+                FutureBuilder<List<StopNameXy>>(
+                    future: _repo.getStopNameAndXY(stopBySip.id),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(
@@ -192,9 +191,9 @@ class _StopsPageState extends State<StopsPage> {
                       } else if (snapshot.hasError) {
                         return Center(child: Text('${snapshot.error}'));
                       }
-                      StopsNameXy stopsNameXy = snapshot.data!;
+                      final stopsNameXy = snapshot.data!;
                       return Text(
-                        '${stopsNameXy.stopsNameXy.first.stopDescr!} - ($stopCode)',
+                        '${stopsNameXy.first.stopDescr} - ($stopCode)',
                         style: const TextStyle(fontSize: 20.0),
                       );
                     }),
@@ -217,12 +216,12 @@ class _StopsPageState extends State<StopsPage> {
                   ),
                   height: MediaQuery.of(context).size.height * 0.20,
                   width: double.infinity,
-                  child: FutureBuilder(
-                      future: Api.getStopArrivals(stopBySip.id!),
+                  child: FutureBuilder<List<StopDetails>>(
+                      future: _repo.getStopArrivals(stopBySip.id),
                       builder: (context, snapshot) {
                         if (snapshot.hasData) {
-                          StopArrivals stopArrivals = snapshot.data!;
-                          if (stopArrivals.stopDetails.isEmpty) {
+                          final arrivals = snapshot.data!;
+                          if (arrivals.isEmpty) {
                             return Center(
                               child: Text(
                                 'no_stop_details'.tr(),
@@ -234,11 +233,11 @@ class _StopsPageState extends State<StopsPage> {
                           } else {
                             return Scrollbar(
                               child: ListView.builder(
-                                itemCount: stopArrivals.stopDetails.length,
+                                itemCount: arrivals.length,
                                 itemBuilder: (BuildContext context, int index) {
                                   return ListTile(
                                     title: Text(
-                                      '${'bus'.tr()}: ${stopArrivals.stopDetails[index].routeCode!} ${'in'.tr()} ${stopArrivals.stopDetails[index].vehCode!} ${stopArrivals.stopDetails[index].btime2!} minutes',
+                                      '${'bus'.tr()}: ${arrivals[index].routeCode} ${'in'.tr()} ${arrivals[index].vehCode} ${arrivals[index].btime2} minutes',
                                       style: const TextStyle(
                                         color: Colors.amberAccent,
                                       ),
@@ -262,10 +261,9 @@ class _StopsPageState extends State<StopsPage> {
     }
   }
 
-  Widget _buildLines(BuildContext context, AsyncSnapshot<Lines> snapshot) {
+  Widget _buildLines(BuildContext context, AsyncSnapshot<List<LineData>> snapshot) {
     if (snapshot.hasData) {
-      Lines line = snapshot.data!;
-      List<LineData> lines = line.lines;
+      List<LineData> lines = snapshot.data!;
 
       return Scrollbar(
         child: ListView.builder(
@@ -276,12 +274,12 @@ class _StopsPageState extends State<StopsPage> {
             return Card(
               color: isOdd ? Colors.blue.shade800 : Colors.blue.shade900,
               child: ListTile(
-                leading: Text(line.lineID!,
+                leading: Text(line.lineID,
                     style: const TextStyle(color: Colors.white)),
                 title: Text(
                   LanguageHelper.getLanguageUsedInApp(context) == 'en'
-                      ? line.lineDescriptionEng!
-                      : line.lineDescription!,
+                      ? line.lineDescriptionEng
+                      : line.lineDescription,
                   style: const TextStyle(color: Colors.white),
                 ),
                 onTap: () => _onPressedOnStop(context, line),
@@ -299,75 +297,61 @@ class _StopsPageState extends State<StopsPage> {
 
   void _onPressedOnStop(BuildContext context, LineData line) async {
     debugPrint('line: ${line.lineID}');
-    rfl.RoutesForLine routesForLine = await Api.getRoutesForLine(line.lineCode!);
+    List<LineRoute> routesForLine = await _repo.getRoutesForLine(line.lineCode);
     if (!context.mounted) return;
 
-    rfl.Route? route = await showModalBottomSheet(
+    LineRoute? route = await showModalBottomSheet(
         context: context,
         builder: (context) {
-          return FutureBuilder(
-              future: Api.getRoutesForLine(line.lineCode!),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(
-                    child: CircularProgressIndicator.adaptive(),
-                  );
-                }
-                if (snapshot.hasError) {
-                  return Center(child: Text('${snapshot.error}'));
-                }
-                return Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: <Widget>[
-                    const SizedBox(height: 16),
-                    Text(
-                      'choose_line'.tr(),
-                      style: const TextStyle(fontSize: 20),
-                    ),
-                    const SizedBox(height: 10),
-                    Expanded(
-                      child: Scrollbar(
-                        child: ListView.builder(
-                          itemCount: routesForLine.routesForLine.length,
-                          itemBuilder: (context, index) {
-                            bool isOdd = index % 2 == 0;
-                            return Card(
-                              color: isOdd
-                                  ? Colors.blue.shade800
-                                  : Colors.blue.shade900,
-                              child: ListTile(
-                                leading: Icon(Icons.circle,
-                                    color:
-                                        ColorGenerator(index).generateColor()),
-                                title: Text(
-                                    LanguageHelper.getLanguageUsedInApp(
-                                                context) ==
-                                            'en'
-                                        ? routesForLine.routesForLine[index]
-                                            .routeDescriptionEng!
-                                        : routesForLine.routesForLine[index]
-                                            .routeDescription!,
-                                    style:
-                                        const TextStyle(color: Colors.white)),
-                                onTap: () => Navigator.pop(context,
-                                    routesForLine.routesForLine[index]),
-                              ),
-                            );
-                          },
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              const SizedBox(height: 16),
+              Text(
+                'choose_line'.tr(),
+                style: const TextStyle(fontSize: 20),
+              ),
+              const SizedBox(height: 10),
+              Expanded(
+                child: Scrollbar(
+                  child: ListView.builder(
+                    itemCount: routesForLine.length,
+                    itemBuilder: (context, index) {
+                      bool isOdd = index % 2 == 0;
+                      return Card(
+                        color: isOdd
+                            ? Colors.blue.shade800
+                            : Colors.blue.shade900,
+                        child: ListTile(
+                          leading: Icon(Icons.circle,
+                              color:
+                                  ColorGenerator(index).generateColor()),
+                          title: Text(
+                              LanguageHelper.getLanguageUsedInApp(
+                                          context) ==
+                                      'en'
+                                  ? routesForLine[index].routeDescriptionEng
+                                  : routesForLine[index].routeDescription,
+                              style:
+                                  const TextStyle(color: Colors.white)),
+                          onTap: () => Navigator.pop(context,
+                              routesForLine[index]),
                         ),
-                      ),
-                    ),
-                  ],
-                );
-              });
+                      );
+                    },
+                  ),
+                ),
+              ),
+            ],
+          );
         });
     if (route != null) {
       if (!context.mounted) return;
       Stop? stop = await showModalBottomSheet(
           context: context,
           builder: (context) {
-            return FutureBuilder(
-                future: Api.webGetStops(route.routeCode!),
+            return FutureBuilder<List<Stop>>(
+                future: _repo.getStopsForRoute(route.routeCode),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
                     return const Center(
@@ -377,6 +361,7 @@ class _StopsPageState extends State<StopsPage> {
                   if (snapshot.hasError) {
                     return Center(child: Text('${snapshot.error}'));
                   }
+                  final stops = snapshot.data!;
                   return Column(
                     children: <Widget>[
                       const SizedBox(height: 16),
@@ -390,7 +375,7 @@ class _StopsPageState extends State<StopsPage> {
                       Expanded(
                         child: Scrollbar(
                           child: ListView.builder(
-                            itemCount: snapshot.data!.stops.length,
+                            itemCount: stops.length,
                             itemBuilder: (context, index) {
                               bool isOdd = index % 2 == 0;
                               return Card(
@@ -399,21 +384,18 @@ class _StopsPageState extends State<StopsPage> {
                                     : Colors.blue.shade900,
                                 child: ListTile(
                                   leading: CircleAvatar(
-                                    child: Text(snapshot
-                                        .data!.stops[index].routeStopOrder!),
+                                    child: Text(stops[index].routeStopOrder),
                                   ),
                                   title: Text(
                                     LanguageHelper.getLanguageUsedInApp(
                                                 context) ==
                                             'en'
-                                        ? snapshot.data!.stops[index]
-                                            .stopDescriptionEng!
-                                        : snapshot.data!.stops[index]
-                                            .stopDescriptionEng!,
+                                        ? stops[index].stopDescriptionEng
+                                        : stops[index].stopDescription,
                                     style: const TextStyle(color: Colors.white),
                                   ),
                                   onTap: () => Navigator.pop(
-                                      context, snapshot.data!.stops[index]),
+                                      context, stops[index]),
                                 ),
                               );
                             },

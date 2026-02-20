@@ -5,9 +5,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:maps_launcher/maps_launcher.dart';
-import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/stop_details.dart';
+import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/language_helper.dart';
 
 class StopPage extends StatefulWidget {
@@ -20,8 +20,9 @@ class StopPage extends StatefulWidget {
 }
 
 class _StopPageState extends State<StopPage> {
-  late Timer _timer;
-  late Future<StopArrivals> _futureStopArrivals;
+  final _repo = OasthRepository();
+  Timer? _timer;
+  late Future<List<StopDetails>> _futureStopArrivals;
   final MapController _mapController = MapController();
   bool _isRefreshing = false;
 
@@ -34,14 +35,14 @@ class _StopPageState extends State<StopPage> {
 
   @override
   void dispose() {
-    _timer.cancel();
+    _timer?.cancel();
     _mapController.dispose();
     super.dispose();
   }
 
   void _loadStopArrivals() {
     setState(() {
-      _futureStopArrivals = Api.getStopArrivals(widget.stop.stopCode!);
+      _futureStopArrivals = _repo.getStopArrivals(widget.stop.stopCode);
     });
   }
 
@@ -55,16 +56,15 @@ class _StopPageState extends State<StopPage> {
 
   Future<void> _refreshArrivals() async {
     if (_isRefreshing) return;
-    
+
     setState(() {
       _isRefreshing = true;
     });
-    
+
     _loadStopArrivals();
-    
-    // Add a small delay to show the refresh animation
+
     await Future.delayed(const Duration(milliseconds: 500));
-    
+
     if (mounted) {
       setState(() {
         _isRefreshing = false;
@@ -75,9 +75,11 @@ class _StopPageState extends State<StopPage> {
   void _openInMaps() {
     try {
       MapsLauncher.launchCoordinates(
-        double.parse(widget.stop.stopLat!),
-        double.parse(widget.stop.stopLng!),
-        widget.stop.stopDescription ?? 'Bus Stop',
+        widget.stop.stopLat,
+        widget.stop.stopLng,
+        widget.stop.stopDescription.isNotEmpty
+            ? widget.stop.stopDescription
+            : 'Bus Stop',
       );
     } catch (e) {
       _showErrorSnackBar('failed_to_open_maps'.tr());
@@ -105,13 +107,17 @@ class _StopPageState extends State<StopPage> {
     return AppBar(
       title: Text(
         LanguageHelper.getLanguageUsedInApp(context) == 'en'
-            ? widget.stop.stopDescriptionEng ?? widget.stop.stopDescription ?? 'stop_details'.tr()
-            : widget.stop.stopDescription ?? widget.stop.stopDescriptionEng ?? 'stop_details'.tr(),
+            ? widget.stop.stopDescriptionEng.isNotEmpty
+                ? widget.stop.stopDescriptionEng
+                : widget.stop.stopDescription
+            : widget.stop.stopDescription.isNotEmpty
+                ? widget.stop.stopDescription
+                : widget.stop.stopDescriptionEng,
         overflow: TextOverflow.ellipsis,
       ),
       actions: [
         IconButton(
-          icon: _isRefreshing 
+          icon: _isRefreshing
               ? SizedBox(
                   width: 20,
                   height: 20,
@@ -149,8 +155,8 @@ class _StopPageState extends State<StopPage> {
                 Text(
                   'stop_information'.tr(),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
               ],
             ),
@@ -159,29 +165,37 @@ class _StopPageState extends State<StopPage> {
               context,
               Icons.location_on,
               'street'.tr(),
-              widget.stop.stopStreet ?? 'n_a'.tr(),
+              widget.stop.stopStreet.isNotEmpty
+                  ? widget.stop.stopStreet
+                  : 'n_a'.tr(),
             ),
-            if (widget.stop.stopStreetEng != null && widget.stop.stopStreetEng!.isNotEmpty)
+            if (widget.stop.stopStreetEng.isNotEmpty)
               _buildInfoRow(
                 context,
                 Icons.translate,
                 'english_street'.tr(),
-                widget.stop.stopStreetEng!,
+                widget.stop.stopStreetEng,
               ),
             _buildInfoRow(
               context,
               Icons.numbers,
               'route_stop_order'.tr(),
-              widget.stop.routeStopOrder ?? 'n_a'.tr(),
+              widget.stop.routeStopOrder.isNotEmpty
+                  ? widget.stop.routeStopOrder
+                  : 'n_a'.tr(),
             ),
             _buildInfoRow(
               context,
               Icons.accessible,
               'accessibility'.tr(),
-              widget.stop.stopAmea == '0' ? 'not_accessible'.tr() : 'accessible'.tr(),
-              trailing: widget.stop.stopAmea == '0' 
-                  ? Icon(Icons.close, color: Theme.of(context).colorScheme.error)
-                  : Icon(Icons.check, color: Theme.of(context).colorScheme.primary),
+              widget.stop.stopAmea == '0'
+                  ? 'not_accessible'.tr()
+                  : 'accessible'.tr(),
+              trailing: widget.stop.stopAmea == '0'
+                  ? Icon(Icons.close,
+                      color: Theme.of(context).colorScheme.error)
+                  : Icon(Icons.check,
+                      color: Theme.of(context).colorScheme.primary),
             ),
           ],
         ),
@@ -213,9 +227,9 @@ class _StopPageState extends State<StopPage> {
                 Text(
                   label,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w500,
-                    color: Theme.of(context).hintColor,
-                  ),
+                        fontWeight: FontWeight.w500,
+                        color: Theme.of(context).hintColor,
+                      ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -251,15 +265,15 @@ class _StopPageState extends State<StopPage> {
                   Text(
                     'live_arrivals'.tr(),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                   const Spacer(),
                   Text(
                     'updates_every_10s'.tr(),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).hintColor,
-                    ),
+                          color: Theme.of(context).hintColor,
+                        ),
                   ),
                 ],
               ),
@@ -275,21 +289,21 @@ class _StopPageState extends State<StopPage> {
   }
 
   Widget _buildArrivalsContent(BuildContext context) {
-    return FutureBuilder<StopArrivals>(
+    return FutureBuilder<List<StopDetails>>(
       future: _futureStopArrivals,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return _buildLoadingState(context);
         }
-        
+
         if (snapshot.hasError) {
           return _buildErrorState(context, snapshot.error.toString());
         }
-        
-        if (!snapshot.hasData || snapshot.data!.stopDetails.isEmpty) {
+
+        if (!snapshot.hasData || snapshot.data!.isEmpty) {
           return _buildEmptyArrivalsState(context);
         }
-        
+
         return _buildArrivalsList(context, snapshot.data!);
       },
     );
@@ -308,7 +322,6 @@ class _StopPageState extends State<StopPage> {
           const SizedBox(height: 16),
           Text(
             'loading_arrivals'.tr(),
-            
             style: Theme.of(context).textTheme.titleMedium,
           ),
         ],
@@ -318,10 +331,10 @@ class _StopPageState extends State<StopPage> {
 
   Widget _buildErrorState(BuildContext context, String error) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.error_outline,
@@ -332,20 +345,18 @@ class _StopPageState extends State<StopPage> {
             Text(
               'error_loading_arrivals'.tr(),
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.error,
-              ),
+                    color: Theme.of(context).colorScheme.error,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 8),
             Text(
               error,
-            
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).hintColor,
-         
-              ),
+                    color: Theme.of(context).hintColor,
+                  ),
               textAlign: TextAlign.center,
-              maxLines: 3,
+              maxLines: 4,
               overflow: TextOverflow.ellipsis,
             ),
             const SizedBox(height: 16),
@@ -362,10 +373,10 @@ class _StopPageState extends State<StopPage> {
 
   Widget _buildEmptyArrivalsState(BuildContext context) {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               Icons.schedule_outlined,
@@ -382,8 +393,8 @@ class _StopPageState extends State<StopPage> {
             Text(
               'check_back_later'.tr(),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).hintColor,
-              ),
+                    color: Theme.of(context).hintColor,
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -392,51 +403,50 @@ class _StopPageState extends State<StopPage> {
     );
   }
 
-  Widget _buildArrivalsList(BuildContext context, StopArrivals stopArrivals) {
+  Widget _buildArrivalsList(BuildContext context, List<StopDetails> arrivals) {
     return ListView.separated(
       padding: const EdgeInsets.all(16),
-      itemCount: stopArrivals.stopDetails.length,
+      itemCount: arrivals.length,
       separatorBuilder: (context, index) => const Divider(height: 1),
       itemBuilder: (context, index) {
-        final arrival = stopArrivals.stopDetails[index];
-        return _buildArrivalCard(context, arrival);
+        return _buildArrivalCard(context, arrivals[index]);
       },
     );
   }
 
   Widget _buildArrivalCard(BuildContext context, StopDetails arrival) {
-    final minutes = int.tryParse(arrival.btime2 ?? '0') ?? 0;
+    final minutes = int.tryParse(arrival.btime2) ?? 0;
     final isImminent = minutes <= 2;
     final isSoon = minutes <= 5;
-    
+
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
       leading: Container(
         width: 40,
         height: 40,
         decoration: BoxDecoration(
-          color: isImminent 
+          color: isImminent
               ? Theme.of(context).colorScheme.error.withValues(alpha: .1)
-              : isSoon 
+              : isSoon
                   ? Theme.of(context).colorScheme.primary.withValues(alpha: .1)
                   : Theme.of(context).cardColor,
           borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isImminent 
+            color: isImminent
                 ? Theme.of(context).colorScheme.error
-                : isSoon 
+                : isSoon
                     ? Theme.of(context).colorScheme.primary
                     : Theme.of(context).dividerColor,
           ),
         ),
         child: Center(
           child: Text(
-            arrival.routeCode ?? 'N/A',
+            arrival.routeCode,
             style: TextStyle(
               fontWeight: FontWeight.bold,
-              color: isImminent 
+              color: isImminent
                   ? Theme.of(context).colorScheme.error
-                  : isSoon 
+                  : isSoon
                       ? Theme.of(context).colorScheme.primary
                       : Theme.of(context).textTheme.bodyMedium?.color,
             ),
@@ -444,29 +454,29 @@ class _StopPageState extends State<StopPage> {
         ),
       ),
       title: Text(
-        '${'bus'.tr()} ${arrival.vehCode ?? 'N/A'}',
+        '${'bus'.tr()} ${arrival.vehCode}',
         style: Theme.of(context).textTheme.titleMedium?.copyWith(
-          fontWeight: FontWeight.w500,
-        ),
+              fontWeight: FontWeight.w500,
+            ),
       ),
       subtitle: Text(
-        minutes == 0 
+        minutes == 0
             ? 'arriving_now'.tr()
             : '${'in'.tr()} $minutes ${'minutes'.tr()}',
         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-          color: isImminent 
-              ? Theme.of(context).colorScheme.error
-              : isSoon 
-                  ? Theme.of(context).colorScheme.primary
-                  : null,
-          fontWeight: isImminent ? FontWeight.w600 : null,
-        ),
+              color: isImminent
+                  ? Theme.of(context).colorScheme.error
+                  : isSoon
+                      ? Theme.of(context).colorScheme.primary
+                      : null,
+              fontWeight: isImminent ? FontWeight.w600 : null,
+            ),
       ),
       trailing: Icon(
         isImminent ? Icons.warning : Icons.access_time,
-        color: isImminent 
+        color: isImminent
             ? Theme.of(context).colorScheme.error
-            : isSoon 
+            : isSoon
                 ? Theme.of(context).colorScheme.primary
                 : Theme.of(context).primaryColor.withValues(alpha: .6),
       ),
@@ -494,8 +504,8 @@ class _StopPageState extends State<StopPage> {
                   Text(
                     'stop_location'.tr(),
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.w600,
-                    ),
+                          fontWeight: FontWeight.w600,
+                        ),
                   ),
                   const Spacer(),
                   TextButton.icon(
@@ -517,61 +527,10 @@ class _StopPageState extends State<StopPage> {
   }
 
   Widget _buildMap(BuildContext context) {
-    try {
-      final lat = double.parse(widget.stop.stopLat!);
-      final lng = double.parse(widget.stop.stopLng!);
-      
-      return FlutterMap(
-        mapController: _mapController,
-        options: MapOptions(
-          maxZoom: 18.0,
-          minZoom: 8.0,
-          initialCenter: LatLng(lat, lng),
-          initialZoom: 16.0,
-          interactionOptions: const InteractionOptions(
-            flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-          ),
-        ),
-        children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            subdomains: const ['a', 'b', 'c'],
-            userAgentPackageName: 'com.oasth.oast',
-          ),
-          MarkerLayer(
-            markers: [
-              Marker(
-                rotate: false,
-                width: 50.0,
-                height: 50.0,
-                point: LatLng(lat, lng),
-                child: GestureDetector(
-                  onTap: _openInMaps,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      color: Theme.of(context).primaryColor,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Theme.of(context).shadowColor.withValues(alpha: .3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      Icons.directions_bus,
-                      size: 28,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ],
-      );
-    } catch (e) {
+    final lat = widget.stop.stopLat;
+    final lng = widget.stop.stopLng;
+
+    if (lat == 0.0 && lng == 0.0) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -590,6 +549,58 @@ class _StopPageState extends State<StopPage> {
         ),
       );
     }
+
+    return FlutterMap(
+      mapController: _mapController,
+      options: MapOptions(
+        maxZoom: 18.0,
+        minZoom: 8.0,
+        initialCenter: LatLng(lat, lng),
+        initialZoom: 16.0,
+        interactionOptions: const InteractionOptions(
+          flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+        ),
+      ),
+      children: [
+        TileLayer(
+          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+          subdomains: const ['a', 'b', 'c'],
+          userAgentPackageName: 'com.oasth.oast',
+        ),
+        MarkerLayer(
+          markers: [
+            Marker(
+              rotate: false,
+              width: 50.0,
+              height: 50.0,
+              point: LatLng(lat, lng),
+              child: GestureDetector(
+                onTap: _openInMaps,
+                child: Container(
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Theme.of(context).primaryColor,
+                    boxShadow: [
+                      BoxShadow(
+                        color:
+                            Theme.of(context).shadowColor.withValues(alpha: .3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    Icons.directions_bus,
+                    size: 28,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
   }
 
   Widget _buildFloatingActionButtons(BuildContext context) {
@@ -600,7 +611,7 @@ class _StopPageState extends State<StopPage> {
           heroTag: "refresh",
           onPressed: _isRefreshing ? null : _refreshArrivals,
           tooltip: 'refresh_arrivals'.tr(),
-          child: _isRefreshing 
+          child: _isRefreshing
               ? SizedBox(
                   width: 20,
                   height: 20,
@@ -626,7 +637,7 @@ class _StopPageState extends State<StopPage> {
 
   void _showErrorSnackBar(String message) {
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),

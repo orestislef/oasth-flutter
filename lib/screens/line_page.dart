@@ -1,7 +1,8 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:oasth/api/api/api.dart';
+import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/lines.dart';
+import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/screens/line_route_page.dart';
 import 'package:oasth/screens/stop_page.dart';
@@ -18,21 +19,27 @@ class LinePage extends StatefulWidget {
 }
 
 class _LinePageState extends State<LinePage> {
+  final _repo = OasthRepository();
   final ScrollController _scrollController = ScrollController();
   final TextEditingController _searchController = TextEditingController();
-  
+
   RouteDetailAndStops? _routeData;
   List<Stop> _filteredStops = [];
+  List<BusLocationData> _busLocations = [];
   String _searchQuery = '';
   bool _isLoading = true;
   bool _hasError = false;
   String _errorMessage = '';
-  bool _isFavorite = false; // You can persist this
+  bool _isFavorite = false;
+  bool _isBusLoading = false;
+  String? _busErrorMessage;
 
   @override
   void initState() {
     super.initState();
+    _isFavorite = _repo.favorites.isFavorite(widget.line.lineID);
     _loadRouteData();
+    _loadBusLocations();
   }
 
   @override
@@ -49,8 +56,8 @@ class _LinePageState extends State<LinePage> {
         _hasError = false;
       });
 
-      final data = await Api.webGetRoutesDetailsAndStops(widget.line.lineCode!);
-      
+      final data = await _repo.getRouteDetailsAndStops(widget.line.lineCode);
+
       if (mounted) {
         setState(() {
           _routeData = data;
@@ -69,28 +76,61 @@ class _LinePageState extends State<LinePage> {
     }
   }
 
+  Future<void> _loadBusLocations() async {
+    if (_isBusLoading) return;
+    setState(() {
+      _isBusLoading = true;
+      _busErrorMessage = null;
+    });
+
+    try {
+      final buses = await _repo.getBusLocations(widget.line.lineCode);
+      if (!mounted) return;
+      setState(() {
+        _busLocations = buses;
+      });
+    } catch (error) {
+      if (!mounted) return;
+      setState(() {
+        _busErrorMessage = error.toString();
+      });
+    } finally {
+      if (!mounted) return;
+      setState(() {
+        _isBusLoading = false;
+      });
+    }
+  }
+
   void _filterStops(String query) {
     if (_routeData == null) return;
-    
+
     setState(() {
       _searchQuery = query;
       if (query.isEmpty) {
         _filteredStops = _routeData!.stops;
       } else {
         _filteredStops = _routeData!.stops.where((stop) {
-          final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-              ? stop.stopDescriptionEng ?? stop.stopDescription ?? ''
-              : stop.stopDescription ?? stop.stopDescriptionEng ?? '';
-          
+          final description =
+              LanguageHelper.getLanguageUsedInApp(context) == 'en'
+                  ? stop.stopDescriptionEng.isNotEmpty
+                      ? stop.stopDescriptionEng
+                      : stop.stopDescription
+                  : stop.stopDescription.isNotEmpty
+                      ? stop.stopDescription
+                      : stop.stopDescriptionEng;
+
           return description.toLowerCase().contains(query.toLowerCase()) ||
-                 stop.stopCode?.toLowerCase().contains(query.toLowerCase()) == true;
+              stop.stopCode.toLowerCase().contains(query.toLowerCase());
         }).toList();
       }
     });
   }
 
   void _navigateToRoute() {
-    if (_routeData == null || _routeData!.details.isEmpty || _routeData!.stops.isEmpty) {
+    if (_routeData == null ||
+        _routeData!.details.isEmpty ||
+        _routeData!.stops.isEmpty) {
       _showInfoSnackBar('route_data_not_available'.tr());
       return;
     }
@@ -101,7 +141,7 @@ class _LinePageState extends State<LinePage> {
         builder: (context) => RoutePage(
           details: _routeData!.details,
           stops: _routeData!.stops,
-          routeCode: widget.line.lineCode!,
+          routeCode: widget.line.lineCode,
           routeName: widget.line.lineDescription,
           lineId: widget.line.lineID,
         ),
@@ -109,12 +149,16 @@ class _LinePageState extends State<LinePage> {
     );
   }
 
-  void _toggleFavorite() {
+  Future<void> _toggleFavorite() async {
+    final isNowFavorite =
+        await _repo.favorites.toggleFavorite(widget.line.lineID);
+    if (!mounted) return;
     setState(() {
-      _isFavorite = !_isFavorite;
+      _isFavorite = isNowFavorite;
     });
-    // Here you would typically save to persistent storage
-    _showInfoSnackBar(_isFavorite ? 'added_to_favorites'.tr() : 'removed_from_favorites'.tr());
+    _showInfoSnackBar(_isFavorite
+        ? 'added_to_favorites'.tr()
+        : 'removed_from_favorites'.tr());
   }
 
   void _scrollToTop() {
@@ -145,8 +189,12 @@ class _LinePageState extends State<LinePage> {
 
   PreferredSizeWidget _buildAppBar(BuildContext context) {
     final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-        ? widget.line.lineDescriptionEng ?? widget.line.lineDescription ?? 'line_details'.tr()
-        : widget.line.lineDescription ?? widget.line.lineDescriptionEng ?? 'line_details'.tr();
+        ? widget.line.lineDescriptionEng.isNotEmpty
+            ? widget.line.lineDescriptionEng
+            : widget.line.lineDescription
+        : widget.line.lineDescription.isNotEmpty
+            ? widget.line.lineDescription
+            : widget.line.lineDescriptionEng;
 
     return AppBar(
       title: Text(
@@ -160,7 +208,9 @@ class _LinePageState extends State<LinePage> {
             color: _isFavorite ? Theme.of(context).colorScheme.error : null,
           ),
           onPressed: _toggleFavorite,
-          tooltip: _isFavorite ? 'remove_from_favorites'.tr() : 'add_to_favorites'.tr(),
+          tooltip: _isFavorite
+              ? 'remove_from_favorites'.tr()
+              : 'add_to_favorites'.tr(),
         ),
         IconButton(
           icon: const Icon(Icons.map_rounded),
@@ -190,7 +240,7 @@ class _LinePageState extends State<LinePage> {
             ),
             child: Center(
               child: Text(
-                widget.line.lineID!,
+                widget.line.lineID,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
                   fontSize: 20,
@@ -205,10 +255,10 @@ class _LinePageState extends State<LinePage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'line_number'.tr(namedArgs: {'number': widget.line.lineID!}),
+                  'line_number'.tr(namedArgs: {'number': widget.line.lineID}),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const SizedBox(height: 4),
                 if (_routeData != null)
@@ -217,8 +267,12 @@ class _LinePageState extends State<LinePage> {
                       'count': _routeData!.stops.length.toString(),
                     }),
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      color: Theme.of(context).textTheme.bodyMedium?.color?.withAlpha(178),
-                    ),
+                          color: Theme.of(context)
+                              .textTheme
+                              .bodyMedium
+                              ?.color
+                              ?.withAlpha(178),
+                        ),
                   ),
               ],
             ),
@@ -258,8 +312,10 @@ class _LinePageState extends State<LinePage> {
   }
 
   Widget _buildResultsInfo(BuildContext context) {
-    if (_searchQuery.isEmpty || _routeData == null) return const SizedBox.shrink();
-    
+    if (_searchQuery.isEmpty || _routeData == null) {
+      return const SizedBox.shrink();
+    }
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -276,9 +332,9 @@ class _LinePageState extends State<LinePage> {
               'total': _routeData!.stops.length.toString(),
             }),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).primaryColor,
-              fontWeight: FontWeight.w500,
-            ),
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
         ],
       ),
@@ -320,8 +376,12 @@ class _LinePageState extends State<LinePage> {
           Text(
             'please_wait_loading_stops'.tr(),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).textTheme.bodyMedium?.color?.withAlpha(178),
-            ),
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.color
+                      ?.withAlpha(178),
+                ),
             textAlign: TextAlign.center,
           ),
         ],
@@ -345,17 +405,21 @@ class _LinePageState extends State<LinePage> {
             Text(
               'failed_to_load_stops'.tr(),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.error,
-              ),
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
               _errorMessage,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).textTheme.bodyMedium?.color?.withAlpha(178),
-              ),
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.color
+                        ?.withAlpha(178),
+                  ),
               textAlign: TextAlign.center,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
@@ -388,16 +452,20 @@ class _LinePageState extends State<LinePage> {
             Text(
               'no_stops_found'.tr(),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+                    fontWeight: FontWeight.w600,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
               'line_has_no_stops'.tr(),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).textTheme.bodyLarge?.color?.withAlpha(178),
-              ),
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.color
+                        ?.withAlpha(178),
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -422,16 +490,20 @@ class _LinePageState extends State<LinePage> {
             Text(
               'no_stops_match_search'.tr(),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+                    fontWeight: FontWeight.w600,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
               'try_different_search_terms'.tr(),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).textTheme.bodyLarge?.color?.withAlpha(178),
-              ),
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodyLarge
+                        ?.color
+                        ?.withAlpha(178),
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -453,18 +525,192 @@ class _LinePageState extends State<LinePage> {
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
-      itemCount: _filteredStops.length,
+      itemCount: _filteredStops.length + 1,
       itemBuilder: (context, index) {
-        final stop = _filteredStops[index];
-        return _buildStopCard(context, stop, index);
+        if (index == 0) {
+          return _buildLiveBusesCard(context);
+        }
+
+        final stop = _filteredStops[index - 1];
+        return _buildStopCard(context, stop, index - 1);
       },
+    );
+  }
+
+  Widget _buildLiveBusesCard(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.only(bottom: 16),
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.directions_bus,
+                  color: Theme.of(context).primaryColor,
+                  size: 20,
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  'live_buses'.tr(),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const Spacer(),
+                IconButton(
+                  onPressed: _isBusLoading ? null : _loadBusLocations,
+                  icon: _isBusLoading
+                      ? SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              Theme.of(context).primaryColor,
+                            ),
+                          ),
+                        )
+                      : const Icon(Icons.refresh),
+                  tooltip: 'refresh_arrivals'.tr(),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            if (_isBusLoading && _busLocations.isEmpty)
+              Text(
+                'loading'.tr(),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.color
+                          ?.withAlpha(178),
+                    ),
+              )
+            else if (_busErrorMessage != null)
+              _buildBusError(context)
+            else if (_busLocations.isEmpty)
+              Text(
+                'no_live_buses'.tr(),
+                style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.color
+                          ?.withAlpha(178),
+                    ),
+              )
+            else
+              _buildBusList(context),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBusError(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'bus_location_error'.tr(),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).colorScheme.error,
+                fontWeight: FontWeight.w600,
+              ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _busErrorMessage ?? '',
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).hintColor,
+              ),
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+        ),
+        const SizedBox(height: 8),
+        OutlinedButton.icon(
+          onPressed: _loadBusLocations,
+          icon: const Icon(Icons.refresh),
+          label: Text('retry'.tr()),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildBusList(BuildContext context) {
+    return Column(
+      children: _busLocations.map((bus) {
+        final lastUpdate = bus.csDate.isNotEmpty ? bus.csDate : 'n_a'.tr();
+        return Padding(
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withAlpha(20),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: Theme.of(context).primaryColor.withAlpha(60),
+                  ),
+                ),
+                child: Center(
+                  child: Text(
+                    bus.vehNo.isNotEmpty ? bus.vehNo : 'bus'.tr(),
+                    style: TextStyle(
+                      fontWeight: FontWeight.w700,
+                      fontSize: 12,
+                      color: Theme.of(context).primaryColor,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      '${'route_code'.tr()}: ${bus.routeCode}',
+                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      '${'last_update'.tr()}: $lastUpdate',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context).hintColor,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.gps_fixed,
+                size: 18,
+                color: Theme.of(context).primaryColor.withAlpha(178),
+              ),
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 
   Widget _buildStopCard(BuildContext context, Stop stop, int index) {
     final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-        ? stop.stopDescriptionEng ?? stop.stopDescription ?? 'unknown_stop'.tr()
-        : stop.stopDescription ?? stop.stopDescriptionEng ?? 'unknown_stop'.tr();
+        ? stop.stopDescriptionEng.isNotEmpty
+            ? stop.stopDescriptionEng
+            : stop.stopDescription
+        : stop.stopDescription.isNotEmpty
+            ? stop.stopDescription
+            : stop.stopDescriptionEng;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -488,7 +734,9 @@ class _LinePageState extends State<LinePage> {
                 ),
                 child: Center(
                   child: Text(
-                    stop.routeStopOrder ?? '${index + 1}',
+                    stop.routeStopOrder.isNotEmpty
+                        ? stop.routeStopOrder
+                        : '${index + 1}',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
@@ -505,44 +753,56 @@ class _LinePageState extends State<LinePage> {
                     Text(
                       description,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                            fontWeight: FontWeight.w600,
+                          ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        if (stop.stopCode != null) ...[
+                        if (stop.stopCode.isNotEmpty) ...[
                           Icon(
                             Icons.qr_code,
                             size: 14,
-                            color: Theme.of(context).textTheme.bodySmall?.color?.withAlpha(178),
+                            color: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.color
+                                ?.withAlpha(178),
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            stop.stopCode!,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: Theme.of(context).textTheme.bodySmall?.color?.withAlpha(178),
-                            ),
+                            stop.stopCode,
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .textTheme
+                                          .bodySmall
+                                          ?.color
+                                          ?.withAlpha(178),
+                                    ),
                           ),
                           const SizedBox(width: 12),
                         ],
                         Icon(
                           Icons.accessible,
                           size: 14,
-                          color: stop.stopAmea == '0' 
+                          color: stop.stopAmea == '0'
                               ? Theme.of(context).colorScheme.error
                               : Theme.of(context).colorScheme.primary,
                         ),
                         const SizedBox(width: 4),
                         Text(
-                          stop.stopAmea == '0' ? 'not_accessible'.tr() : 'accessible'.tr(),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: stop.stopAmea == '0' 
-                                ? Theme.of(context).colorScheme.error
-                                : Theme.of(context).colorScheme.primary,
-                          ),
+                          stop.stopAmea == '0'
+                              ? 'not_accessible'.tr()
+                              : 'accessible'.tr(),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: stop.stopAmea == '0'
+                                        ? Theme.of(context).colorScheme.error
+                                        : Theme.of(context).colorScheme.primary,
+                                  ),
                         ),
                       ],
                     ),
@@ -580,7 +840,7 @@ class _LinePageState extends State<LinePage> {
 
   void _showInfoSnackBar(String message) {
     if (!mounted) return;
-    
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),

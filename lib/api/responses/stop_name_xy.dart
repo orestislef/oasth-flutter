@@ -1,48 +1,57 @@
 class StopsNameXy {
-  late List<StopNameXy> stopsNameXy;
+  final List<StopNameXy> stopsNameXy;
 
-  static StopsNameXy fromMap(List<dynamic> map) {
-    StopsNameXy stopsNameXy = StopsNameXy();
-    stopsNameXy.stopsNameXy = [];
-    for (int i = 0; i < map.length; i++) {
-      stopsNameXy.stopsNameXy.add(StopNameXy.fromMap(map[i]));
-    }
-    return stopsNameXy;
+  const StopsNameXy({required this.stopsNameXy});
+
+  factory StopsNameXy.fromMap(List<dynamic> map) {
+    return StopsNameXy(
+      stopsNameXy: map.map((e) => StopNameXy.fromMap(e)).toList(),
+    );
   }
 
-  Map toJson() => {
-        "stopsNameXy": stopsNameXy,
+  Map<String, dynamic> toMap() => {
+        'stopsNameXy': stopsNameXy.map((e) => e.toMap()).toList(),
       };
 }
 
 class StopNameXy {
-  String? stopDescr;
-  String? stopDescrMatrixEng;
-  String? stopLat;
-  String? stopLng;
-  String? stopHeading;
-  String? stopId;
-  String? isTerminal;
+  final String stopDescr;
+  final String stopDescrMatrixEng;
+  final double stopLat;
+  final double stopLng;
+  final String stopHeading;
+  final String stopId;
+  final String isTerminal;
 
-  static StopNameXy fromMap(Map<String, dynamic> map) {
-    StopNameXy stopNameXyBean = StopNameXy();
-    stopNameXyBean.stopDescr = map['stop_descr'];
-    stopNameXyBean.stopDescrMatrixEng = map['stop_descr_matrix_eng'];
-    stopNameXyBean.stopLat = map['stop_lat'];
-    stopNameXyBean.stopLng = map['stop_lng'];
-    stopNameXyBean.stopHeading = map['stop_heading'];
-    stopNameXyBean.stopId = map['stop_id'];
-    stopNameXyBean.isTerminal = map['isTerminal'];
-    return stopNameXyBean;
+  const StopNameXy({
+    required this.stopDescr,
+    required this.stopDescrMatrixEng,
+    required this.stopLat,
+    required this.stopLng,
+    required this.stopHeading,
+    required this.stopId,
+    required this.isTerminal,
+  });
+
+  factory StopNameXy.fromMap(Map<String, dynamic> map) {
+    return StopNameXy(
+      stopDescr: map['stop_descr']?.toString() ?? '',
+      stopDescrMatrixEng: map['stop_descr_matrix_eng']?.toString() ?? '',
+      stopLat: double.tryParse(map['stop_lat']?.toString() ?? '') ?? 0.0,
+      stopLng: double.tryParse(map['stop_lng']?.toString() ?? '') ?? 0.0,
+      stopHeading: map['stop_heading']?.toString() ?? '',
+      stopId: map['stop_id']?.toString() ?? '',
+      isTerminal: map['isTerminal']?.toString() ?? '',
+    );
   }
 
-  Map toJson() => {
-        "stop_descr": stopDescr,
-        "stop_descr_matrix_eng": stopDescrMatrixEng,
-        "stop_lat": stopLat,
-        "stop_lng": stopLng,
-        "stop_heading": stopHeading,
-        "stop_id": stopId,
-        "isTerminal": isTerminal,
+  Map<String, dynamic> toMap() => {
+        'stop_descr': stopDescr,
+        'stop_descr_matrix_eng': stopDescrMatrixEng,
+        'stop_lat': stopLat.toString(),
+        'stop_lng': stopLng.toString(),
+        'stop_heading': stopHeading,
+        'stop_id': stopId,
+        'isTerminal': isTerminal,
       };
 }

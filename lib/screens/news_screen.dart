@@ -4,7 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:oasth/api/responses/news.dart';
 
 class NewsScreen extends StatefulWidget {
-  final News news;
+  final List<NewsData> news;
 
   const NewsScreen({super.key, required this.news});
 
@@ -20,7 +20,7 @@ class _NewsScreenState extends State<NewsScreen> {
   @override
   void initState() {
     super.initState();
-    _filteredNews = widget.news.news;
+    _filteredNews = widget.news;
   }
 
   @override
@@ -33,9 +33,9 @@ class _NewsScreenState extends State<NewsScreen> {
     setState(() {
       _searchQuery = query;
       if (query.isEmpty) {
-        _filteredNews = widget.news.news;
+        _filteredNews = widget.news;
       } else {
-        _filteredNews = widget.news.news.where((newsItem) {
+        _filteredNews = widget.news.where((newsItem) {
           return newsItem.title.toLowerCase().contains(query.toLowerCase()) ||
                  newsItem.summary.toLowerCase().contains(query.toLowerCase());
         }).toList();
@@ -128,7 +128,7 @@ class _NewsScreenState extends State<NewsScreen> {
           Text(
             'showing_results'.tr(namedArgs: {
               'count': _filteredNews.length.toString(),
-              'total': widget.news.news.length.toString(),
+              'total': widget.news.length.toString(),
             }),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
               color: Theme.of(context).primaryColor,

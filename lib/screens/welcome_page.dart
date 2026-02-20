@@ -6,8 +6,8 @@ import 'package:oasth/screens/home_page.dart';
 import 'package:oasth/screens/more_screen.dart';
 import 'package:oasth/screens/news_screen.dart';
 
-import '../api/api/api.dart';
 import '../api/responses/news.dart';
+import '../data/oasth_repository.dart';
 import 'map_with_nearby_stations_widget.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -254,23 +254,23 @@ class WelcomeScreen extends StatelessWidget {
         const SizedBox(height: 16),
         SizedBox(
           height: 220,
-          child: FutureBuilder<News>(
-            future: Api.getNews(LanguageHelper.getLanguageUsedInApp(context)),
+          child: FutureBuilder<List<NewsData>>(
+            future: OasthRepository().getNews(LanguageHelper.getLanguageUsedInApp(context)),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
                   child: CircularProgressIndicator.adaptive(),
                 );
               }
-              
+
               if (snapshot.hasError) {
                 return _buildErrorState(context, snapshot.error.toString());
               }
-              
-              if (!snapshot.hasData || snapshot.data!.news.isEmpty) {
+
+              if (!snapshot.hasData || snapshot.data!.isEmpty) {
                 return _buildEmptyNewsState(context);
               }
-              
+
               return _buildNewsCarousel(context, snapshot.data!);
             },
           ),
@@ -280,26 +280,26 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNewsCarousel(BuildContext context, News news) {
+  Widget _buildNewsCarousel(BuildContext context, List<NewsData> newsList) {
     return CarouselSlider(
       options: CarouselOptions(
         height: 220,
         viewportFraction: 0.85,
-        enableInfiniteScroll: news.news.length > 1,
-        autoPlay: news.news.length > 1,
+        enableInfiniteScroll: newsList.length > 1,
+        autoPlay: newsList.length > 1,
         autoPlayInterval: const Duration(seconds: 4),
         autoPlayAnimationDuration: const Duration(milliseconds: 800),
         autoPlayCurve: Curves.fastOutSlowIn,
         enlargeCenterPage: true,
         scrollDirection: Axis.horizontal,
       ),
-      items: news.news.map((newsData) {
-        return _buildNewsCard(context, newsData, news);
+      items: newsList.map((newsData) {
+        return _buildNewsCard(context, newsData, newsList);
       }).toList(),
     );
   }
 
-  Widget _buildNewsCard(BuildContext context, NewsData newsData, News allNews) {
+  Widget _buildNewsCard(BuildContext context, NewsData newsData, List<NewsData> allNews) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8),
       child: InkWell(
@@ -477,7 +477,7 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  void _navigateToNewsScreen(BuildContext context, News news) {
+  void _navigateToNewsScreen(BuildContext context, List<NewsData> news) {
     Navigator.push(
       context,
       MaterialPageRoute(

@@ -1,41 +1,51 @@
 class ScheduleDaysMasterLine {
-  late List<MasterLineData> scheduleDaysMasterLine;
+  final List<MasterLineData> scheduleDaysMasterLine;
 
-  static ScheduleDaysMasterLine fromMap(List<dynamic> map) {
-    ScheduleDaysMasterLine scheduleDaysMasterLine = ScheduleDaysMasterLine();
-    scheduleDaysMasterLine.scheduleDaysMasterLine = [];
-    for (int i = 0; i < map.length; i++) {
-      scheduleDaysMasterLine.scheduleDaysMasterLine
-          .add(MasterLineData.fromMap(map[i]));
-    }
-    return scheduleDaysMasterLine;
+  const ScheduleDaysMasterLine({required this.scheduleDaysMasterLine});
+
+  factory ScheduleDaysMasterLine.fromMap(List<dynamic> map) {
+    return ScheduleDaysMasterLine(
+      scheduleDaysMasterLine:
+          map.map((e) => MasterLineData.fromMap(e)).toList(),
+    );
   }
 
-  Map toJson() => {"schedule_days_masterline": scheduleDaysMasterLine};
+  Map<String, dynamic> toMap() => {
+        'schedule_days_masterline':
+            scheduleDaysMasterLine.map((e) => e.toMap()).toList(),
+      };
 }
 
 class MasterLineData {
-  String? scheduleDescription;
-  String? scheduleDescriptionEng;
-  String? scheduleCode;
-  String? computed3;
-  String? computed4;
+  final String scheduleDescription;
+  final String scheduleDescriptionEng;
+  final String scheduleCode;
+  final String computed3;
+  final String computed4;
 
-  static MasterLineData fromMap(Map<String, dynamic> map) {
-    MasterLineData objBean = MasterLineData();
-    objBean.scheduleDescription = map['sdc_descr'];
-    objBean.scheduleDescriptionEng = map['sdc_descr_eng'];
-    objBean.scheduleCode = map['sdc_code'];
-    objBean.computed3 = map['computed3'];
-    objBean.computed4 = map['computed4'];
-    return objBean;
+  const MasterLineData({
+    required this.scheduleDescription,
+    required this.scheduleDescriptionEng,
+    required this.scheduleCode,
+    required this.computed3,
+    required this.computed4,
+  });
+
+  factory MasterLineData.fromMap(Map<String, dynamic> map) {
+    return MasterLineData(
+      scheduleDescription: map['sdc_descr']?.toString() ?? '',
+      scheduleDescriptionEng: map['sdc_descr_eng']?.toString() ?? '',
+      scheduleCode: map['sdc_code']?.toString() ?? '',
+      computed3: map['computed3']?.toString() ?? '',
+      computed4: map['computed4']?.toString() ?? '',
+    );
   }
 
-  Map toJson() => {
-        "sdc_descr": scheduleDescription,
-        "sdc_descr_eng": scheduleDescriptionEng,
-        "sdc_code": scheduleCode,
-        "computed3": computed3,
-        "computed4": computed4
+  Map<String, dynamic> toMap() => {
+        'sdc_descr': scheduleDescription,
+        'sdc_descr_eng': scheduleDescriptionEng,
+        'sdc_code': scheduleCode,
+        'computed3': computed3,
+        'computed4': computed4,
       };
 }
