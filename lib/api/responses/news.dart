@@ -1,47 +1,45 @@
 class News {
-  late final List<NewsData> news;
+  final List<NewsData> news;
 
-  News({
-    required this.news,
-  });
+  const News({required this.news});
 
-  News.fromJson(List<dynamic> json) {
-    news = json.map((e) => NewsData.fromJson(e)).toList();
+  factory News.fromMap(List<dynamic> data) {
+    return News(
+      news: data.map((e) => NewsData.fromMap(e)).toList(),
+    );
   }
 
-  Map<String, dynamic> toJson() {
-    final data = <String, dynamic>{};
-    data['news'] = news.map((e) => e.toJson()).toList();
-    return data;
-  }
+  Map<String, dynamic> toMap() => {
+        'news': news.map((e) => e.toMap()).toList(),
+      };
 }
 
 class NewsData {
-  NewsData({
-    required this.title,
+  final String id;
+  final String title;
+  final String summary;
+  final String createdAt;
+
+  const NewsData({
     required this.id,
+    required this.title,
     required this.summary,
     required this.createdAt,
   });
 
-  late final String id;
-  late final String title;
-  late final String summary;
-  late final String createdAt;
-
-  NewsData.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    title = json['title'];
-    summary = json['summary'];
-    createdAt = json['createdAt'];
+  factory NewsData.fromMap(Map<String, dynamic> map) {
+    return NewsData(
+      id: map['id']?.toString() ?? '',
+      title: map['title']?.toString() ?? '',
+      summary: map['summary']?.toString() ?? '',
+      createdAt: map['createdAt']?.toString() ?? '',
+    );
   }
 
-  Map<String, dynamic> toJson() {
-    final data = <String, dynamic>{};
-    data['id'] = id;
-    data['title'] = title;
-    data['summary'] = summary;
-    data['created_at'] = createdAt;
-    return data;
-  }
+  Map<String, dynamic> toMap() => {
+        'id': id,
+        'title': title,
+        'summary': summary,
+        'createdAt': createdAt,
+      };
 }

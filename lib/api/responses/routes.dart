@@ -1,41 +1,49 @@
 class Routes {
-  List<Route>? routes;
+  final List<RouteData> routes;
 
-  static Routes fromMap(List<dynamic> map) {
-    Routes routes = Routes();
-    routes.routes = List<Route>.from(
-      (map).map((o) => Route.fromMap(o)),
+  const Routes({required this.routes});
+
+  factory Routes.fromMap(List<dynamic> map) {
+    return Routes(
+      routes: map.map((o) => RouteData.fromMap(o)).toList(),
     );
-    return routes;
   }
 
-  Map<String, dynamic> toJson() => {
-        "routes": routes?.map((e) => e.toJson()).toList(),
+  Map<String, dynamic> toMap() => {
+        'routes': routes.map((e) => e.toMap()).toList(),
       };
 }
 
-class Route {
-  String? routeCode;
-  String? lineCode;
-  String? routeDescription;
-  String? routeType;
-  String? routeDistance;
+class RouteData {
+  final String routeCode;
+  final String lineCode;
+  final String routeDescription;
+  final String routeType;
+  final String routeDistance;
 
-  static Route fromMap(Map<String, dynamic> map) {
-    Route route = Route();
-    route.routeCode = map['RouteCode'];
-    route.lineCode = map['LineCode'];
-    route.routeDescription = map['RouteDescr'];
-    route.routeType = map['RouteType'];
-    route.routeDistance = map['RouteDistance'];
-    return route;
+  const RouteData({
+    required this.routeCode,
+    required this.lineCode,
+    required this.routeDescription,
+    required this.routeType,
+    required this.routeDistance,
+  });
+
+  factory RouteData.fromMap(Map<String, dynamic> map) {
+    return RouteData(
+      routeCode: map['RouteCode']?.toString() ?? '',
+      lineCode: map['LineCode']?.toString() ?? '',
+      routeDescription: map['RouteDescr']?.toString() ?? '',
+      routeType: map['RouteType']?.toString() ?? '',
+      routeDistance: map['RouteDistance']?.toString() ?? '',
+    );
   }
 
-  Map<String, dynamic> toJson() => {
-        "RouteCode": routeCode,
-        "LineCode": lineCode,
-        "RouteDescr": routeDescription,
-        "RouteType": routeType,
-        "RouteDistance": routeDistance,
+  Map<String, dynamic> toMap() => {
+        'RouteCode': routeCode,
+        'LineCode': lineCode,
+        'RouteDescr': routeDescription,
+        'RouteType': routeType,
+        'RouteDistance': routeDistance,
       };
 }

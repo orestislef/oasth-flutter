@@ -1,42 +1,49 @@
 class Lines {
-  late List<LineData> lines;
+  final List<LineData> lines;
 
-  static Lines fromMap(List<dynamic> map) {
-    Lines line = Lines();
-    line.lines = [];
-    for (int i = 0; i < map.length; i++) {
-      line.lines.add(LineData.fromMap(map[i]));
-    }
-    return line;
+  const Lines({required this.lines});
+
+  factory Lines.fromMap(List<dynamic> map) {
+    return Lines(
+      lines: map.map((e) => LineData.fromMap(e)).toList(),
+    );
   }
 
-  Map toJson() => {
-        "lines": lines,
+  Map<String, dynamic> toMap() => {
+        'lines': lines.map((e) => e.toMap()).toList(),
       };
 }
 
 class LineData {
-  String? lineCode;
-  String? lineID;
-  String? lineIDGR;
-  String? lineDescription;
-  String? lineDescriptionEng;
+  final String lineCode;
+  final String lineID;
+  final String lineIDGR;
+  final String lineDescription;
+  final String lineDescriptionEng;
 
-  static LineData fromMap(Map<String, dynamic> map) {
-    LineData lineData = LineData();
-    lineData.lineCode = map['LineCode'];
-    lineData.lineID = map['LineID'];
-    lineData.lineIDGR = map['LineIDGR'];
-    lineData.lineDescription = map['LineDescr'];
-    lineData.lineDescriptionEng = map['LineDescrEng'];
-    return lineData;
+  const LineData({
+    required this.lineCode,
+    required this.lineID,
+    required this.lineIDGR,
+    required this.lineDescription,
+    required this.lineDescriptionEng,
+  });
+
+  factory LineData.fromMap(Map<String, dynamic> map) {
+    return LineData(
+      lineCode: map['LineCode']?.toString() ?? '',
+      lineID: map['LineID']?.toString() ?? '',
+      lineIDGR: map['LineIDGR']?.toString() ?? '',
+      lineDescription: map['LineDescr']?.toString() ?? '',
+      lineDescriptionEng: map['LineDescrEng']?.toString() ?? '',
+    );
   }
 
-  Map toJson() => {
-        "LineCode": lineCode,
-        "LineID": lineID,
-        "LineIDGR": lineIDGR,
-        "LineDescr": lineDescription,
-        "LineDescrEng": lineDescriptionEng,
+  Map<String, dynamic> toMap() => {
+        'LineCode': lineCode,
+        'LineID': lineID,
+        'LineIDGR': lineIDGR,
+        'LineDescr': lineDescription,
+        'LineDescrEng': lineDescriptionEng,
       };
 }

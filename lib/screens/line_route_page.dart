@@ -3,9 +3,9 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
+import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/stop_page.dart';
 
@@ -32,9 +32,10 @@ class RoutePage extends StatefulWidget {
 }
 
 class _RoutePageState extends State<RoutePage> {
+  final _repo = OasthRepository();
   final MapController _mapController = MapController();
   Timer? _busLocationTimer;
-  BusLocation? _currentBusLocation;
+  List<BusLocationData> _currentBusLocations = [];
   bool _isLoadingBuses = true;
   bool _showStopLabels = true;
   bool _showBuses = true;
@@ -60,10 +61,7 @@ class _RoutePageState extends State<RoutePage> {
 
   void _initializeRoute() {
     _routePoints = widget.details
-        .map((detail) => LatLng(
-              double.parse(detail.routedY),
-              double.parse(detail.routedX),
-            ))
+        .map((detail) => LatLng(detail.routedY, detail.routedX))
         .toList();
 
     _stopMarkers = widget.stops.map((stop) => _buildStopMarker(stop)).toList();
@@ -80,13 +78,13 @@ class _RoutePageState extends State<RoutePage> {
 
   Future<void> _loadBusLocations() async {
     try {
-      final busLocation = await Api.getBusLocations(widget.routeCode);
+      final busLocations = await _repo.getBusLocations(widget.routeCode);
       if (mounted) {
         setState(() {
-          _currentBusLocation = busLocation;
+          _currentBusLocations = busLocations;
           _isLoadingBuses = false;
           _hasError = false;
-          _busMarkers = _buildBusMarkers(busLocation);
+          _busMarkers = _buildBusMarkers(busLocations);
         });
       }
     } catch (e) {
@@ -99,19 +97,16 @@ class _RoutePageState extends State<RoutePage> {
     }
   }
 
-  List<Marker> _buildBusMarkers(BusLocation busLocation) {
-    if (busLocation.busLocation.isEmpty) return [];
+  List<Marker> _buildBusMarkers(List<BusLocationData> busLocations) {
+    if (busLocations.isEmpty) return [];
 
-    return busLocation.busLocation.map((bus) {
+    return busLocations.map((bus) {
       return Marker(
         width: 40,
         height: 40,
         rotate: false,
         alignment: Alignment.center,
-        point: LatLng(
-          double.parse(bus.csLat!),
-          double.parse(bus.csLng!),
-        ),
+        point: LatLng(bus.csLat, bus.csLng),
         child: Container(
           decoration: BoxDecoration(
             color: Theme.of(context).colorScheme.secondary,
@@ -144,10 +139,7 @@ class _RoutePageState extends State<RoutePage> {
       height: _showStopLabels ? 80 : 32,
       rotate: false,
       alignment: Alignment.center,
-      point: LatLng(
-        double.parse(stop.stopLat!),
-        double.parse(stop.stopLng!),
-      ),
+      point: LatLng(stop.stopLat, stop.stopLng),
       child: GestureDetector(
         onTap: () => _navigateToStop(stop),
         child: _showStopLabels
@@ -159,8 +151,8 @@ class _RoutePageState extends State<RoutePage> {
 
   Widget _buildLabeledStopMarker(Stop stop) {
     final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-        ? stop.stopDescriptionEng ?? stop.stopDescription ?? 'unknown_stop'.tr()
-        : stop.stopDescription ?? stop.stopDescriptionEng ?? 'unknown_stop'.tr();
+        ? stop.stopDescriptionEng.isNotEmpty ? stop.stopDescriptionEng : stop.stopDescription
+        : stop.stopDescription.isNotEmpty ? stop.stopDescription : stop.stopDescriptionEng;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -343,8 +335,8 @@ class _RoutePageState extends State<RoutePage> {
     ];
 
     return ClipRRect(
-      borderRadius: widget.hasAppBar 
-          ? BorderRadius.zero 
+      borderRadius: widget.hasAppBar
+          ? BorderRadius.zero
           : const BorderRadius.all(Radius.circular(12)),
       child: FlutterMap(
         mapController: _mapController,
@@ -390,7 +382,7 @@ class _RoutePageState extends State<RoutePage> {
 
   Widget _buildTopControls(BuildContext context) {
     if (widget.hasAppBar) return const SizedBox.shrink();
-    
+
     return Positioned(
       top: MediaQuery.of(context).padding.top + 16,
       left: 16,
@@ -440,8 +432,8 @@ class _RoutePageState extends State<RoutePage> {
                     padding: const EdgeInsets.all(4),
                     child: Icon(
                       _showStopLabels ? Icons.toggle_on : Icons.toggle_off,
-                      color: _showStopLabels 
-                          ? Theme.of(context).primaryColor 
+                      color: _showStopLabels
+                          ? Theme.of(context).primaryColor
                           : Theme.of(context).disabledColor,
                     ),
                   ),
@@ -477,8 +469,8 @@ class _RoutePageState extends State<RoutePage> {
                     padding: const EdgeInsets.all(4),
                     child: Icon(
                       _showBuses ? Icons.toggle_on : Icons.toggle_off,
-                      color: _showBuses 
-                          ? Theme.of(context).primaryColor 
+                      color: _showBuses
+                          ? Theme.of(context).primaryColor
                           : Theme.of(context).disabledColor,
                     ),
                   ),
@@ -548,12 +540,12 @@ class _RoutePageState extends State<RoutePage> {
           heroTag: "toggle_labels",
           onPressed: _toggleStopLabels,
           tooltip: _showStopLabels ? 'hide_stop_labels'.tr() : 'show_stop_labels'.tr(),
-          backgroundColor: _showStopLabels 
-              ? Theme.of(context).primaryColor 
+          backgroundColor: _showStopLabels
+              ? Theme.of(context).primaryColor
               : Theme.of(context).cardColor,
           child: Icon(
             Icons.label,
-            color: _showStopLabels 
+            color: _showStopLabels
                 ? Theme.of(context).colorScheme.onPrimary
                 : Theme.of(context).primaryColor,
           ),
@@ -563,12 +555,12 @@ class _RoutePageState extends State<RoutePage> {
           heroTag: "toggle_buses",
           onPressed: _toggleBusVisibility,
           tooltip: _showBuses ? 'hide_buses'.tr() : 'show_buses'.tr(),
-          backgroundColor: _showBuses 
-              ? Theme.of(context).primaryColor 
+          backgroundColor: _showBuses
+              ? Theme.of(context).primaryColor
               : Theme.of(context).cardColor,
           child: Icon(
             Icons.directions_bus,
-            color: _showBuses 
+            color: _showBuses
                 ? Theme.of(context).colorScheme.onPrimary
                 : Theme.of(context).primaryColor,
           ),
@@ -623,8 +615,8 @@ class _RoutePageState extends State<RoutePage> {
                           _buildInfoRow(context, 'line_number'.tr(), widget.lineId ?? 'N/A'),
                           _buildInfoRow(context, 'route_code'.tr(), widget.routeCode),
                           _buildInfoRow(context, 'total_stops'.tr(), widget.stops.length.toString()),
-                          _buildInfoRow(context, 'active_buses'.tr(), 
-                              _currentBusLocation?.busLocation.length.toString() ?? '0'),
+                          _buildInfoRow(context, 'active_buses'.tr(),
+                              _currentBusLocations.length.toString()),
                         ],
                       ),
                       const SizedBox(height: 24),
@@ -632,11 +624,11 @@ class _RoutePageState extends State<RoutePage> {
                         context,
                         'map_legend'.tr(),
                         [
-                          _buildLegendItem(context, Icons.location_on, 'bus_stops'.tr(), 
+                          _buildLegendItem(context, Icons.location_on, 'bus_stops'.tr(),
                               Theme.of(context).primaryColor),
-                          _buildLegendItem(context, Icons.directions_bus, 'live_buses'.tr(), 
+                          _buildLegendItem(context, Icons.directions_bus, 'live_buses'.tr(),
                               Theme.of(context).colorScheme.secondary),
-                          _buildLegendItem(context, Icons.timeline, 'route_path'.tr(), 
+                          _buildLegendItem(context, Icons.timeline, 'route_path'.tr(),
                               Theme.of(context).primaryColor),
                         ],
                       ),

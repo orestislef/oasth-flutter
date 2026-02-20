@@ -19,7 +19,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late PageController _pageController;
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
-  
+
   final List<_NavigationItem> _navigationItems = [];
 
   bool _navigationInitialized = false;
@@ -60,6 +60,13 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void _initializeNavigationItems() {
     _navigationItems.addAll([
       _NavigationItem(
+        icon: Icons.directions_outlined,
+        activeIcon: Icons.directions,
+        label: 'best_route'.tr(),
+        page: const BestRoutePage(),
+        color: const Color(0xFF4CAF50),
+      ),
+      _NavigationItem(
         icon: Icons.route_outlined,
         activeIcon: Icons.route,
         label: 'lines'.tr(),
@@ -71,28 +78,21 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         activeIcon: Icons.location_on,
         label: 'stations'.tr(),
         page: const StopsPage(),
-        color: const Color(0xFF2196F3), // Blue
-      ),
-      _NavigationItem(
-        icon: Icons.directions_outlined,
-        activeIcon: Icons.directions,
-        label: 'best_route'.tr(),
-        page: const BestRoutePage(),
-        color: const Color(0xFF4CAF50), // Green
+        color: const Color(0xFF2196F3),
       ),
     ]);
   }
 
   void _onTabSelected(int index) {
     if (_currentIndex == index) return;
-    
+
     // Haptic feedback
     HapticFeedback.lightImpact();
-    
+
     setState(() {
       _currentIndex = index;
     });
-    
+
     _pageController.animateToPage(
       index,
       duration: const Duration(milliseconds: 300),
@@ -146,8 +146,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
             Text(
               currentItem.label,
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
           ],
         ),
@@ -194,9 +194,8 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
               duration: const Duration(milliseconds: 200),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? item.color.withAlpha(25)
-                    : Colors.transparent,
+                color:
+                    isSelected ? item.color.withAlpha(25) : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: AnimatedSwitcher(
@@ -206,7 +205,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
                   key: ValueKey('${index}_$isSelected'),
                   color: isSelected
                       ? item.color
-                      : Theme.of(context).textTheme.bodyMedium?.color?.withAlpha(153),
+                      : Theme.of(context)
+                          .textTheme
+                          .bodyMedium
+                          ?.color
+                          ?.withAlpha(153),
                   size: 24,
                 ),
               ),
@@ -300,8 +303,8 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
                     Text(
                       'search_tips'.tr(),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                   ],
                 ),
@@ -332,7 +335,8 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
     );
   }
 
-  Widget _buildSearchTip(BuildContext context, IconData icon, String title, String example) {
+  Widget _buildSearchTip(
+      BuildContext context, IconData icon, String title, String example) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -351,15 +355,19 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   example,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).textTheme.bodySmall?.color?.withAlpha(153),
-                  ),
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodySmall
+                            ?.color
+                            ?.withAlpha(153),
+                      ),
                 ),
               ],
             ),
@@ -390,8 +398,12 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
           Text(
             'implement_search_logic'.tr(),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).textTheme.bodyMedium?.color?.withAlpha(153),
-            ),
+                  color: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.color
+                      ?.withAlpha(153),
+                ),
             textAlign: TextAlign.center,
           ),
         ],

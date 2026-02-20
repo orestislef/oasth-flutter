@@ -1,36 +1,41 @@
 class RoutesForLine {
-  late List<Route> routesForLine;
+  final List<LineRoute> routesForLine;
 
-  static RoutesForLine fromMap(List<dynamic> map) {
-    RoutesForLine routeForLine = RoutesForLine();
-    routeForLine.routesForLine = [];
-    for (int i = 0; i < map.length; i++) {
-      routeForLine.routesForLine.add(Route.fromMap(map[i]));
-    }
-    return routeForLine;
+  const RoutesForLine({required this.routesForLine});
+
+  factory RoutesForLine.fromMap(List<dynamic> map) {
+    return RoutesForLine(
+      routesForLine: map.map((e) => LineRoute.fromMap(e)).toList(),
+    );
   }
 
-  Map toJson() => {
-        "routes": routesForLine,
+  Map<String, dynamic> toMap() => {
+        'routes': routesForLine.map((e) => e.toMap()).toList(),
       };
 }
 
-class Route {
-  String? routeCode;
-  String? routeDescription;
-  String? routeDescriptionEng;
+class LineRoute {
+  final String routeCode;
+  final String routeDescription;
+  final String routeDescriptionEng;
 
-  static Route fromMap(Map<String, dynamic> map) {
-    Route routeForLine = Route();
-    routeForLine.routeCode = map['route_code'];
-    routeForLine.routeDescription = map['route_descr'];
-    routeForLine.routeDescriptionEng = map['route_descr_eng'];
-    return routeForLine;
+  const LineRoute({
+    required this.routeCode,
+    required this.routeDescription,
+    required this.routeDescriptionEng,
+  });
+
+  factory LineRoute.fromMap(Map<String, dynamic> map) {
+    return LineRoute(
+      routeCode: map['route_code']?.toString() ?? '',
+      routeDescription: map['route_descr']?.toString() ?? '',
+      routeDescriptionEng: map['route_descr_eng']?.toString() ?? '',
+    );
   }
 
-  Map toJson() => {
-        "route_code": routeCode,
-        "route_descr": routeDescription,
-        "route_descr_eng": routeDescriptionEng,
+  Map<String, dynamic> toMap() => {
+        'route_code': routeCode,
+        'route_descr': routeDescription,
+        'route_descr_eng': routeDescriptionEng,
       };
 }

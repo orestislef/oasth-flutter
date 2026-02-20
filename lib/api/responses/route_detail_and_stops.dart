@@ -1,87 +1,122 @@
 class RouteDetailAndStops {
-  late List<Details> details;
-  late List<Stop> stops;
+  final List<Details> details;
+  final List<Stop> stops;
 
-  static RouteDetailAndStops fromMap(Map<String, dynamic> map) {
-    RouteDetailAndStops routeDetailAndStops = RouteDetailAndStops();
-    routeDetailAndStops.details = List<Details>.from(
-      (map['details'] as List<dynamic>?)?.map((o) => Details.fromMap(o)) ?? [],
+  const RouteDetailAndStops({required this.details, required this.stops});
+
+  factory RouteDetailAndStops.fromMap(Map<String, dynamic> map) {
+    return RouteDetailAndStops(
+      details: (map['details'] as List<dynamic>?)
+              ?.map((o) => Details.fromMap(o))
+              .toList() ??
+          [],
+      stops: (map['stops'] as List<dynamic>?)
+              ?.map((o) => Stop.fromMap(o))
+              .toList() ??
+          [],
     );
-    routeDetailAndStops.stops = List<Stop>.from(
-      (map['stops'] as List<dynamic>?)?.map((o) => Stop.fromMap(o)) ?? [],
-    );
-    return routeDetailAndStops;
   }
 
-  Map<String, dynamic> toJson() => {
-        "details": details.map((e) => e.toJson()).toList(),
-        "stops": stops.map((e) => e.toJson()).toList(),
+  Map<String, dynamic> toMap() => {
+        'details': details.map((e) => e.toMap()).toList(),
+        'stops': stops.map((e) => e.toMap()).toList(),
       };
 }
 
 class Stop {
-  String? stopCode;
-  String? stopID;
-  String? stopDescription;
-  String? stopDescriptionEng;
-  String?  stopStreet;
-  String?  stopStreetEng;
-  String? stopHeading;
-  String? stopLat;
-  String? stopLng;
-  String? routeStopOrder;
-  String? stopType;
-  String? stopAmea;
+  final String stopCode;
+  final String stopID;
+  final String stopDescription;
+  final String stopDescriptionEng;
+  final String stopStreet;
+  final String stopStreetEng;
+  final String stopHeading;
+  final double stopLat;
+  final double stopLng;
+  final String routeStopOrder;
+  final String stopType;
+  final String stopAmea;
 
-  static Stop fromMap(Map<String, dynamic> map) {
-    Stop stops = Stop();
-    stops.stopCode = map['StopCode'];
-    stops.stopID = map['StopID'];
-    stops.stopDescription = map['StopDescr'];
-    stops.stopDescriptionEng = map['StopDescrEng'];
-    stops.stopStreet = map['StopStreet'];
-    stops.stopStreetEng = map['StopStreetEng'];
-    stops.stopHeading = map['StopHeading'];
-    stops.stopLat = map['StopLat'];
-    stops.stopLng = map['StopLng'];
-    stops.routeStopOrder = map['RouteStopOrder'];
-    stops.stopType = map['StopType'];
-    stops.stopAmea = map['StopAmea'];
-    return stops;
+  const Stop({
+    required this.stopCode,
+    required this.stopID,
+    required this.stopDescription,
+    required this.stopDescriptionEng,
+    required this.stopStreet,
+    required this.stopStreetEng,
+    required this.stopHeading,
+    required this.stopLat,
+    required this.stopLng,
+    required this.routeStopOrder,
+    required this.stopType,
+    required this.stopAmea,
+  });
+
+  factory Stop.fromMap(Map<String, dynamic> map) {
+    return Stop(
+      stopCode: map['StopCode']?.toString() ?? '',
+      stopID: map['StopID']?.toString() ?? '',
+      stopDescription: map['StopDescr']?.toString() ?? '',
+      stopDescriptionEng: map['StopDescrEng']?.toString() ?? '',
+      stopStreet: map['StopStreet']?.toString() ?? '',
+      stopStreetEng: map['StopStreetEng']?.toString() ?? '',
+      stopHeading: map['StopHeading']?.toString() ?? '',
+      stopLat: double.tryParse(map['StopLat']?.toString() ?? '') ?? 0.0,
+      stopLng: double.tryParse(map['StopLng']?.toString() ?? '') ?? 0.0,
+      routeStopOrder: map['RouteStopOrder']?.toString() ?? '',
+      stopType: map['StopType']?.toString() ?? '',
+      stopAmea: map['StopAmea']?.toString() ?? '',
+    );
   }
 
-  Map<String, dynamic> toJson() => {
-        "StopCode": stopCode,
-        "StopID": stopID,
-        "StopDescr": stopDescription,
-        "StopDescrEng": stopDescriptionEng,
-        "StopStreet": stopStreet,
-        "StopStreetEng": stopStreetEng,
-        "StopHeading": stopHeading,
-        "StopLat": stopLat,
-        "StopLng": stopLng,
-        "RouteStopOrder": routeStopOrder,
-        "StopType": stopType,
-        "StopAmea": stopAmea,
+  Map<String, dynamic> toMap() => {
+        'StopCode': stopCode,
+        'StopID': stopID,
+        'StopDescr': stopDescription,
+        'StopDescrEng': stopDescriptionEng,
+        'StopStreet': stopStreet,
+        'StopStreetEng': stopStreetEng,
+        'StopHeading': stopHeading,
+        'StopLat': stopLat.toString(),
+        'StopLng': stopLng.toString(),
+        'RouteStopOrder': routeStopOrder,
+        'StopType': stopType,
+        'StopAmea': stopAmea,
       };
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) || other is Stop && stopCode == other.stopCode;
+
+  @override
+  int get hashCode => stopCode.hashCode;
+
+  @override
+  String toString() => 'Stop($stopCode: $stopDescription)';
 }
 
 class Details {
-  late String routedX;
-  late String routedY;
-  late String routedOrder;
+  final double routedX;
+  final double routedY;
+  final String routedOrder;
 
-  static Details fromMap(Map<String, dynamic> map) {
-    Details details = Details();
-    details.routedX = map['routed_x'];
-    details.routedY = map['routed_y'];
-    details.routedOrder = map['routed_order'];
-    return details;
+  const Details({
+    required this.routedX,
+    required this.routedY,
+    required this.routedOrder,
+  });
+
+  factory Details.fromMap(Map<String, dynamic> map) {
+    return Details(
+      routedX: double.tryParse(map['routed_x']?.toString() ?? '') ?? 0.0,
+      routedY: double.tryParse(map['routed_y']?.toString() ?? '') ?? 0.0,
+      routedOrder: map['routed_order']?.toString() ?? '',
+    );
   }
 
-  Map<String, dynamic> toJson() => {
-        "routed_x": routedX,
-        "routed_y": routedY,
-        "routed_order": routedOrder,
+  Map<String, dynamic> toMap() => {
+        'routed_x': routedX.toString(),
+        'routed_y': routedY.toString(),
+        'routed_order': routedOrder,
       };
 }

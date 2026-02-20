@@ -1,56 +1,69 @@
 class RoutesForStop {
-  List<RouteForStop>? routesForStop;
+  final List<RouteForStop> routesForStop;
 
-  static RoutesForStop fromMap(List<dynamic> map) {
-    RoutesForStop routesForStop = RoutesForStop();
-    routesForStop.routesForStop = List<RouteForStop>.from(
-      (map).map((o) => RouteForStop.fromMap(o)),
+  const RoutesForStop({required this.routesForStop});
+
+  factory RoutesForStop.fromMap(List<dynamic> map) {
+    return RoutesForStop(
+      routesForStop: map.map((o) => RouteForStop.fromMap(o)).toList(),
     );
-    return routesForStop;
   }
 
-  Map<String, dynamic> toJson() => {
-        "routesForStop": routesForStop?.map((e) => e.toJson()).toList(),
+  Map<String, dynamic> toMap() => {
+        'routesForStop': routesForStop.map((e) => e.toMap()).toList(),
       };
 }
 
 class RouteForStop {
-  String? routeCode;
-  String? lineCode;
-  String? hidden;
-  String? routeDescr;
-  String? routeType;
-  String? routeDistance;
-  String? lineID;
-  String? lineDescription;
-  String? lineDescriptionEng;
-  String? masterLineCode;
+  final String routeCode;
+  final String lineCode;
+  final String hidden;
+  final String routeDescr;
+  final String routeType;
+  final String routeDistance;
+  final String lineID;
+  final String lineDescription;
+  final String lineDescriptionEng;
+  final String masterLineCode;
 
-  static RouteForStop fromMap(Map<String, dynamic> map) {
-    RouteForStop routeForStop = RouteForStop();
-    routeForStop.routeCode = map['RouteCode'];
-    routeForStop.lineCode = map['LineCode'];
-    routeForStop.hidden = map['hidden'];
-    routeForStop.routeDescr = map['RouteDescr'];
-    routeForStop.routeType = map['RouteType'];
-    routeForStop.routeDistance = map['RouteDistance'];
-    routeForStop.lineID = map['LineID'];
-    routeForStop.lineDescription = map['LineDescr'];
-    routeForStop.lineDescriptionEng = map['LineDescrEng'];
-    routeForStop.masterLineCode = map['MasterLineCode'];
-    return routeForStop;
+  const RouteForStop({
+    required this.routeCode,
+    required this.lineCode,
+    required this.hidden,
+    required this.routeDescr,
+    required this.routeType,
+    required this.routeDistance,
+    required this.lineID,
+    required this.lineDescription,
+    required this.lineDescriptionEng,
+    required this.masterLineCode,
+  });
+
+  factory RouteForStop.fromMap(Map<String, dynamic> map) {
+    return RouteForStop(
+      routeCode: map['RouteCode']?.toString() ?? '',
+      lineCode: map['LineCode']?.toString() ?? '',
+      hidden: map['hidden']?.toString() ?? '',
+      routeDescr: map['RouteDescr']?.toString() ?? '',
+      routeType: map['RouteType']?.toString() ?? '',
+      routeDistance: map['RouteDistance']?.toString() ?? '',
+      lineID: map['LineID']?.toString() ?? '',
+      lineDescription: map['LineDescr']?.toString() ?? '',
+      lineDescriptionEng: map['LineDescrEng']?.toString() ?? '',
+      masterLineCode: map['MasterLineCode']?.toString() ?? '',
+    );
   }
 
-  Map<String, dynamic> toJson() => {
-        "RouteCode": routeCode,
-        "LineCode": lineCode,
-        "hidden": hidden,
-        "RouteDescr": routeDescr,
-        "RouteType": routeType,
-        "RouteDistance": routeDistance,
-        "LineID": lineID,
-        "LineDescr": lineDescription,
-        "LineDescrEng": lineDescriptionEng,
-        "MasterLineCode": masterLineCode,
+  Map<String, dynamic> toMap() => {
+        'RouteCode': routeCode,
+        'LineCode': lineCode,
+        'hidden': hidden,
+        'RouteDescr': routeDescr,
+        'RouteType': routeType,
+        'RouteDistance': routeDistance,
+        'LineID': lineID,
+        'LineDescr': lineDescription,
+        'LineDescrEng': lineDescriptionEng,
+        'MasterLineCode': masterLineCode,
       };
 }

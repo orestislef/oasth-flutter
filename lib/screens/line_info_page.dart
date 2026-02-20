@@ -1,11 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/line_name.dart';
 import 'package:oasth/api/responses/lines_and_routes_for_m_land_l_code.dart';
 import 'package:oasth/api/responses/lines_with_ml_info.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/routes_for_line.dart';
+import 'package:oasth/data/favorites_service.dart';
+import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/stop_page.dart';
 
@@ -20,12 +21,15 @@ class LineInfoPage extends StatefulWidget {
   State<LineInfoPage> createState() => _LineInfoPageState();
 }
 
-class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMixin {
+class _LineInfoPageState extends State<LineInfoPage>
+    with TickerProviderStateMixin {
+  final _repo = OasthRepository();
+  final _favorites = FavoritesService();
   final ScrollController _scrollController = ScrollController();
   late TabController _tabController;
-  
+
   int _selectedDirectionIndex = 0;
-  LineWithMasterLineInfo? _currentLineInfo;
+  late String _selectedLineCode;
   bool _isFavorite = false;
   String _searchQuery = '';
   List<Stop> _filteredStops = [];
@@ -35,8 +39,9 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
-    _currentLineInfo = widget.linesWithMasterLineInfo;
+    _selectedLineCode = widget.linesWithMasterLineInfo.lineCode;
     _selectedDirectionIndex = 0;
+    _isFavorite = _favorites.isFavorite(widget.linesWithMasterLineInfo.lineId);
   }
 
   @override
@@ -48,32 +53,43 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
 
   void _filterStops(String query) {
     if (_currentRouteData == null) return;
-    
+
     setState(() {
       _searchQuery = query;
       if (query.isEmpty) {
         _filteredStops = _currentRouteData!.stops;
       } else {
         _filteredStops = _currentRouteData!.stops.where((stop) {
-          final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-              ? stop.stopDescriptionEng ?? stop.stopDescription ?? ''
-              : stop.stopDescription ?? stop.stopDescriptionEng ?? '';
-          
+          final description =
+              LanguageHelper.getLanguageUsedInApp(context) == 'en'
+                  ? stop.stopDescriptionEng.isNotEmpty
+                      ? stop.stopDescriptionEng
+                      : stop.stopDescription
+                  : stop.stopDescription.isNotEmpty
+                      ? stop.stopDescription
+                      : stop.stopDescriptionEng;
+
           return description.toLowerCase().contains(query.toLowerCase()) ||
-                 stop.stopCode?.toLowerCase().contains(query.toLowerCase()) == true ||
-                 stop.routeStopOrder?.contains(query) == true;
+              stop.stopCode.toLowerCase().contains(query.toLowerCase()) ||
+              stop.routeStopOrder.contains(query);
         }).toList();
       }
     });
   }
 
-  void _toggleFavorite() {
+  Future<void> _toggleFavorite() async {
+    final isNowFavorite = await _favorites.toggleFavorite(
+      widget.linesWithMasterLineInfo.lineId,
+    );
+    if (!mounted) return;
     setState(() {
-      _isFavorite = !_isFavorite;
+      _isFavorite = isNowFavorite;
     });
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(_isFavorite ? 'added_to_favorites'.tr() : 'removed_from_favorites'.tr()),
+        content: Text(_isFavorite
+            ? 'added_to_favorites'.tr()
+            : 'removed_from_favorites'.tr()),
         behavior: SnackBarBehavior.floating,
         duration: const Duration(seconds: 2),
       ),
@@ -118,7 +134,9 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
             color: _isFavorite ? Theme.of(context).colorScheme.error : null,
           ),
           onPressed: _toggleFavorite,
-          tooltip: _isFavorite ? 'remove_from_favorites'.tr() : 'add_to_favorites'.tr(),
+          tooltip: _isFavorite
+              ? 'remove_from_favorites'.tr()
+              : 'add_to_favorites'.tr(),
         ),
         IconButton(
           icon: const Icon(Icons.map),
@@ -129,22 +147,22 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.fromLTRB(56, 0, 56, 16),
         title: FutureBuilder<LineName>(
-          future: Api.getLineName(_currentLineInfo!.lineCode!),
+          future: _repo.getLineName(_selectedLineCode),
           builder: (context, snapshot) {
             if (snapshot.connectionState == ConnectionState.waiting) {
               return Text('loading'.tr());
             }
-            
+
             if (snapshot.hasError) {
               return Text('line_info'.tr());
             }
-            
+
             final lineName = snapshot.data!;
             return Text(
-              '${lineName.lineNames.first.lineId} ${lineName.lineNames.first.lineDescription!}',
+              '${lineName.lineNames.first.lineId} ${lineName.lineNames.first.lineDescription}',
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+                    fontWeight: FontWeight.bold,
+                  ),
               overflow: TextOverflow.ellipsis,
             );
           },
@@ -187,7 +205,7 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
             ),
             child: Center(
               child: Text(
-                _currentLineInfo!.lineId!,
+                widget.linesWithMasterLineInfo.lineId,
                 style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.bold,
@@ -205,16 +223,20 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
                 Text(
                   'line_information'.tr(),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Theme.of(context).primaryColor,
-                  ),
+                        fontWeight: FontWeight.bold,
+                        color: Theme.of(context).primaryColor,
+                      ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   'explore_routes_stops'.tr(),
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).textTheme.bodyMedium?.color?.withAlpha(178),
-                  ),
+                        color: Theme.of(context)
+                            .textTheme
+                            .bodyMedium
+                            ?.color
+                            ?.withAlpha(178),
+                      ),
                 ),
               ],
             ),
@@ -260,9 +282,9 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
 
   Widget _buildLineVariantsSection(BuildContext context) {
     return FutureBuilder<LinesAndRoutesForMLandLCode>(
-      future: Api.getLinesAndRoutesForMasterLineAndLineCode(
-        _currentLineInfo!.masterLineCode!,
-        _currentLineInfo!.lineId!,
+      future: _repo.getLinesAndRoutesForMLandLCode(
+        widget.linesWithMasterLineInfo.masterLineCode,
+        widget.linesWithMasterLineInfo.lineId,
       ),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
@@ -271,11 +293,11 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
             child: Center(child: CircularProgressIndicator.adaptive()),
           );
         }
-        
+
         if (snapshot.hasError) {
           return _buildErrorCard(context, 'failed_to_load_variants'.tr());
         }
-        
+
         final variants = snapshot.data!;
         if (variants.linesAndRoutesForMlandLcodes.length <= 1) {
           return const SizedBox.shrink();
@@ -291,33 +313,41 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
                 Text(
                   'line_variants'.tr(),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const SizedBox(height: 12),
                 ...variants.linesAndRoutesForMlandLcodes.map((variant) {
-                  final isSelected = variant.lineCode == _currentLineInfo!.lineCode;
-                  final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-                      ? variant.lineDescrEng ?? variant.lineDescr ?? ''
-                      : variant.lineDescr ?? variant.lineDescrEng ?? '';
+                  final isSelected = variant.lineCode == _selectedLineCode;
+                  final description =
+                      LanguageHelper.getLanguageUsedInApp(context) == 'en'
+                          ? variant.lineDescrEng.isNotEmpty
+                              ? variant.lineDescrEng
+                              : variant.lineDescr
+                          : variant.lineDescr.isNotEmpty
+                              ? variant.lineDescr
+                              : variant.lineDescrEng;
 
                   return InkWell(
-                    onTap: isSelected ? null : () {
-                      setState(() {
-                        _currentLineInfo!.lineCode = variant.lineCode!;
-                        _selectedDirectionIndex = 0;
-                      });
-                    },
+                    onTap: isSelected
+                        ? null
+                        : () {
+                            setState(() {
+                              _selectedLineCode = variant.lineCode;
+                              _selectedDirectionIndex = 0;
+                            });
+                          },
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 8, horizontal: 12),
                       margin: const EdgeInsets.symmetric(vertical: 2),
                       decoration: BoxDecoration(
-                        color: isSelected 
+                        color: isSelected
                             ? Theme.of(context).primaryColor.withAlpha(25)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
-                        border: isSelected 
+                        border: isSelected
                             ? Border.all(color: Theme.of(context).primaryColor)
                             : null,
                       ),
@@ -327,7 +357,7 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
                             width: 32,
                             height: 32,
                             decoration: BoxDecoration(
-                              color: isSelected 
+                              color: isSelected
                                   ? Theme.of(context).primaryColor
                                   : Theme.of(context).cardColor,
                               shape: BoxShape.circle,
@@ -338,11 +368,11 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
                             ),
                             child: Center(
                               child: Text(
-                                variant.lineIdGr!,
+                                variant.lineIdGr,
                                 style: TextStyle(
                                   fontWeight: FontWeight.bold,
                                   fontSize: 12,
-                                  color: isSelected 
+                                  color: isSelected
                                       ? Theme.of(context).colorScheme.onPrimary
                                       : Theme.of(context).primaryColor,
                                 ),
@@ -353,10 +383,16 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
                           Expanded(
                             child: Text(
                               description,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: isSelected ? FontWeight.w600 : null,
-                                color: isSelected ? Theme.of(context).primaryColor : null,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    fontWeight:
+                                        isSelected ? FontWeight.w600 : null,
+                                    color: isSelected
+                                        ? Theme.of(context).primaryColor
+                                        : null,
+                                  ),
                             ),
                           ),
                           if (isSelected)
@@ -379,8 +415,8 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
   }
 
   Widget _buildDirectionSection(BuildContext context) {
-    return FutureBuilder<RoutesForLine>(
-      future: Api.getRoutesForLine(_currentLineInfo!.lineCode!),
+    return FutureBuilder<List<LineRoute>>(
+      future: _repo.getRoutesForLine(_selectedLineCode),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Padding(
@@ -388,13 +424,13 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
             child: Center(child: CircularProgressIndicator.adaptive()),
           );
         }
-        
+
         if (snapshot.hasError) {
           return _buildErrorCard(context, 'failed_to_load_directions'.tr());
         }
-        
+
         final routes = snapshot.data!;
-        if (routes.routesForLine.isEmpty) {
+        if (routes.isEmpty) {
           return _buildErrorCard(context, 'no_routes_available'.tr());
         }
 
@@ -408,35 +444,43 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
                 Text(
                   'direction'.tr(),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
                 const SizedBox(height: 12),
-                ...routes.routesForLine.asMap().entries.map((entry) {
+                ...routes.asMap().entries.map((entry) {
                   final index = entry.key;
                   final route = entry.value;
                   final isSelected = _selectedDirectionIndex == index;
-                  final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-                      ? route.routeDescriptionEng ?? route.routeDescription ?? ''
-                      : route.routeDescription ?? route.routeDescriptionEng ?? '';
+                  final description =
+                      LanguageHelper.getLanguageUsedInApp(context) == 'en'
+                          ? route.routeDescriptionEng.isNotEmpty
+                              ? route.routeDescriptionEng
+                              : route.routeDescription
+                          : route.routeDescription.isNotEmpty
+                              ? route.routeDescription
+                              : route.routeDescriptionEng;
 
                   return InkWell(
-                    onTap: routes.routesForLine.length > 1 ? () {
-                      setState(() {
-                        _selectedDirectionIndex = index;
-                        _searchQuery = '';
-                      });
-                    } : null,
+                    onTap: routes.length > 1
+                        ? () {
+                            setState(() {
+                              _selectedDirectionIndex = index;
+                              _searchQuery = '';
+                            });
+                          }
+                        : null,
                     borderRadius: BorderRadius.circular(8),
                     child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 12),
+                      padding: const EdgeInsets.symmetric(
+                          vertical: 12, horizontal: 12),
                       margin: const EdgeInsets.symmetric(vertical: 2),
                       decoration: BoxDecoration(
-                        color: isSelected 
+                        color: isSelected
                             ? Theme.of(context).primaryColor.withAlpha(25)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(8),
-                        border: isSelected 
+                        border: isSelected
                             ? Border.all(color: Theme.of(context).primaryColor)
                             : null,
                       ),
@@ -444,7 +488,7 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
                         children: [
                           Icon(
                             Icons.route,
-                            color: isSelected 
+                            color: isSelected
                                 ? Theme.of(context).primaryColor
                                 : Theme.of(context).disabledColor,
                             size: 20,
@@ -453,10 +497,16 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
                           Expanded(
                             child: Text(
                               description,
-                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                fontWeight: isSelected ? FontWeight.w600 : null,
-                                color: isSelected ? Theme.of(context).primaryColor : null,
-                              ),
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.copyWith(
+                                    fontWeight:
+                                        isSelected ? FontWeight.w600 : null,
+                                    color: isSelected
+                                        ? Theme.of(context).primaryColor
+                                        : null,
+                                  ),
                             ),
                           ),
                           if (isSelected)
@@ -503,33 +553,33 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
   }
 
   Widget _buildStopsList(BuildContext context) {
-    return FutureBuilder<RoutesForLine>(
-      future: Api.getRoutesForLine(_currentLineInfo!.lineCode!),
+    return FutureBuilder<List<LineRoute>>(
+      future: _repo.getRoutesForLine(_selectedLineCode),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator.adaptive());
         }
-        
-        if (snapshot.hasError || snapshot.data!.routesForLine.isEmpty) {
+
+        if (snapshot.hasError || snapshot.data!.isEmpty) {
           return _buildErrorCard(context, 'failed_to_load_route_data'.tr());
         }
 
         return FutureBuilder<RouteDetailAndStops>(
-          future: Api.webGetRoutesDetailsAndStops(
-            snapshot.data!.routesForLine[_selectedDirectionIndex].routeCode!,
+          future: _repo.getRouteDetailsAndStops(
+            snapshot.data![_selectedDirectionIndex].routeCode,
           ),
           builder: (context, routeSnapshot) {
             if (routeSnapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator.adaptive());
             }
-            
+
             if (routeSnapshot.hasError) {
               return _buildErrorCard(context, 'failed_to_load_stops'.tr());
             }
 
             _currentRouteData = routeSnapshot.data!;
-            final stops = _searchQuery.isEmpty 
-                ? _currentRouteData!.stops 
+            final stops = _searchQuery.isEmpty
+                ? _currentRouteData!.stops
                 : _filteredStops;
 
             if (stops.isEmpty && _searchQuery.isNotEmpty) {
@@ -554,10 +604,11 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
                             'count': stops.length.toString(),
                             'total': _currentRouteData!.stops.length.toString(),
                           }),
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).primaryColor,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).primaryColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                         ),
                       ],
                     ),
@@ -583,8 +634,12 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
 
   Widget _buildStopCard(BuildContext context, Stop stop) {
     final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-        ? stop.stopDescriptionEng ?? stop.stopDescription ?? 'unknown_stop'.tr()
-        : stop.stopDescription ?? stop.stopDescriptionEng ?? 'unknown_stop'.tr();
+        ? stop.stopDescriptionEng.isNotEmpty
+            ? stop.stopDescriptionEng
+            : stop.stopDescription
+        : stop.stopDescription.isNotEmpty
+            ? stop.stopDescription
+            : stop.stopDescriptionEng;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
@@ -608,7 +663,7 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
                 ),
                 child: Center(
                   child: Text(
-                    stop.routeStopOrder ?? '?',
+                    stop.routeStopOrder.isNotEmpty ? stop.routeStopOrder : '?',
                     style: TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Theme.of(context).primaryColor,
@@ -624,18 +679,22 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
                     Text(
                       description,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                            fontWeight: FontWeight.w600,
+                          ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (stop.stopStreet != null && stop.stopStreet!.isNotEmpty) ...[
+                    if (stop.stopStreet.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
-                        stop.stopStreet!,
+                        stop.stopStreet,
                         style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).textTheme.bodySmall?.color?.withAlpha(178),
-                        ),
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.color
+                                  ?.withAlpha(178),
+                            ),
                       ),
                     ],
                   ],
@@ -666,26 +725,26 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
   }
 
   Widget _buildMapTab(BuildContext context) {
-    return FutureBuilder<RoutesForLine>(
-      future: Api.getRoutesForLine(_currentLineInfo!.lineCode!),
+    return FutureBuilder<List<LineRoute>>(
+      future: _repo.getRoutesForLine(_selectedLineCode),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator.adaptive());
         }
-        
-        if (snapshot.hasError || snapshot.data!.routesForLine.isEmpty) {
+
+        if (snapshot.hasError || snapshot.data!.isEmpty) {
           return _buildErrorCard(context, 'failed_to_load_route_data'.tr());
         }
 
         return FutureBuilder<RouteDetailAndStops>(
-          future: Api.webGetRoutesDetailsAndStops(
-            snapshot.data!.routesForLine[_selectedDirectionIndex].routeCode!,
+          future: _repo.getRouteDetailsAndStops(
+            snapshot.data![_selectedDirectionIndex].routeCode,
           ),
           builder: (context, routeSnapshot) {
             if (routeSnapshot.connectionState == ConnectionState.waiting) {
               return const Center(child: CircularProgressIndicator.adaptive());
             }
-            
+
             if (routeSnapshot.hasError) {
               return _buildErrorCard(context, 'failed_to_load_map_data'.tr());
             }
@@ -695,11 +754,11 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
               details: routeData.details,
               stops: routeData.stops,
               hasAppBar: false,
-              routeCode: snapshot.data!.routesForLine[_selectedDirectionIndex].routeCode!,
+              routeCode: snapshot.data![_selectedDirectionIndex].routeCode,
               routeName: LanguageHelper.getLanguageUsedInApp(context) == 'en'
-                  ? snapshot.data!.routesForLine[_selectedDirectionIndex].routeDescriptionEng
-                  : snapshot.data!.routesForLine[_selectedDirectionIndex].routeDescription,
-              lineId: _currentLineInfo!.lineId,
+                  ? snapshot.data![_selectedDirectionIndex].routeDescriptionEng
+                  : snapshot.data![_selectedDirectionIndex].routeDescription,
+              lineId: widget.linesWithMasterLineInfo.lineId,
             );
           },
         );
@@ -723,8 +782,8 @@ class _LineInfoPageState extends State<LineInfoPage> with TickerProviderStateMix
             Text(
               message,
               style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                color: Theme.of(context).colorScheme.error,
-              ),
+                    color: Theme.of(context).colorScheme.error,
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -780,12 +839,13 @@ class _TabBarDelegate extends SliverPersistentHeaderDelegate {
 
   @override
   double get minExtent => _tabBar.preferredSize.height;
-  
+
   @override
   double get maxExtent => _tabBar.preferredSize.height;
 
   @override
-  Widget build(BuildContext context, double shrinkOffset, bool overlapsContent) {
+  Widget build(
+      BuildContext context, double shrinkOffset, bool overlapsContent) {
     return Container(
       color: Theme.of(context).scaffoldBackgroundColor,
       child: _tabBar,

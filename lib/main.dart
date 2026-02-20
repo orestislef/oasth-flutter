@@ -1,5 +1,6 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/screens/welcome_page.dart';
 
 import 'helpers/language_helper.dart';
@@ -7,6 +8,7 @@ import 'helpers/language_helper.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
+  await OasthRepository().init();
   runApp(
     EasyLocalization(
       supportedLocales: LanguageHelper.getAvailableLocales(),
