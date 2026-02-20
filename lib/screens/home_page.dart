@@ -22,12 +22,14 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   
   final List<_NavigationItem> _navigationItems = [];
 
+  bool _navigationInitialized = false;
+
   @override
   void initState() {
     super.initState();
     _currentIndex = widget.currentIndex;
     _pageController = PageController(initialPage: _currentIndex);
-    
+
     _animationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -35,9 +37,17 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(parent: _animationController, curve: Curves.easeInOut),
     );
-    
-    _initializeNavigationItems();
+
     _animationController.forward();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_navigationInitialized) {
+      _initializeNavigationItems();
+      _navigationInitialized = true;
+    }
   }
 
   @override
