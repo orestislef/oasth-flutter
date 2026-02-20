@@ -70,7 +70,7 @@ class _HomePageState extends State<HomePage> {
     }
   }
 
-  _buildTitleBasedOnIndex(int currentIndex) {
+  Widget _buildTitleBasedOnIndex(int currentIndex) {
     switch (currentIndex) {
       case 0:
         return Text('lines'.tr());

@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:oasa-telematics-api.readthedocs.io)",
+      "Bash(grep:*)",
+      "Bash(java -version:*)",
+      "Bash(git checkout:*)",
+      "Bash(flutter create:*)"
+    ]
+  }
+}

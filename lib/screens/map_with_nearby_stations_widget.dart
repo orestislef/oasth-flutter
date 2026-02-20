@@ -127,7 +127,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
                   ? Container(
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.blue[900]?.withOpacity(0.7),
+                        color: Colors.blue[900]?.withValues(alpha: 0.7),
                       ),
                       child: Center(
                         child: Text(

@@ -52,7 +52,7 @@ class RoutePage extends StatelessWidget {
                   border: Border.all(color: Colors.black),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.grey.withOpacity(0.5),
+                      color: Colors.grey.withValues(alpha: 0.5),
                       spreadRadius: 5,
                       blurRadius: 7,
                       offset: const Offset(0, 3), // changes position of shadow
@@ -143,7 +143,6 @@ class RoutePage extends StatelessWidget {
         options: MapOptions(
           maxZoom: 18.0,
           minZoom: 8.0,
-          applyPointerTranslucencyToLayers: true,
           initialCameraFit: CameraFit.coordinates(
             coordinates: points,
             padding: const EdgeInsets.all(20.0),

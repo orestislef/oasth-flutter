@@ -44,23 +44,21 @@ class LocationHelper {
     );
   }
 
-  _buildDialog() {
-    return Builder(
-      builder: (context) {
-        return AlertDialog(
-          title: Text('location_permission_explain'.tr()),
-          actions: [
-            TextButton(
-              child: Text('no'.tr()),
-              onPressed: () => Navigator.of(context).pop(false),
-            ),
-            TextButton(
-              child: Text('yes'.tr()),
-              onPressed: () => Navigator.of(context).pop(true),
-            ),
-          ],
-        );
-      },
-    );
+  WidgetBuilder _buildDialog() {
+    return (context) {
+      return AlertDialog(
+        title: Text('location_permission_explain'.tr()),
+        actions: [
+          TextButton(
+            child: Text('no'.tr()),
+            onPressed: () => Navigator.of(context).pop(false),
+          ),
+          TextButton(
+            child: Text('yes'.tr()),
+            onPressed: () => Navigator.of(context).pop(true),
+          ),
+        ],
+      );
+    };
   }
 }

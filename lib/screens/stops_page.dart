@@ -114,6 +114,7 @@ class _StopsPageState extends State<StopsPage> {
     required String stopCode,
   }) async {
     StopBySip stopBySip = await Api.getStopBySIP(stopCode);
+    if (!context.mounted) return;
     RouteForStop? routeForStop = await showModalBottomSheet(
         context: context,
         builder: (context) {
@@ -174,6 +175,7 @@ class _StopsPageState extends State<StopsPage> {
         });
 
     if (routeForStop != null) {
+      if (!context.mounted) return;
       showModalBottomSheet(
           context: context,
           builder: (context) {
@@ -298,6 +300,7 @@ class _StopsPageState extends State<StopsPage> {
   void _onPressedOnStop(BuildContext context, LineData line) async {
     debugPrint('line: ${line.lineID}');
     rfl.RoutesForLine routesForLine = await Api.getRoutesForLine(line.lineCode!);
+    if (!context.mounted) return;
 
     rfl.Route? route = await showModalBottomSheet(
         context: context,
@@ -359,6 +362,7 @@ class _StopsPageState extends State<StopsPage> {
               });
         });
     if (route != null) {
+      if (!context.mounted) return;
       Stop? stop = await showModalBottomSheet(
           context: context,
           builder: (context) {
@@ -421,6 +425,7 @@ class _StopsPageState extends State<StopsPage> {
                 });
           });
       if (stop != null) {
+        if (!context.mounted) return;
         Navigator.push(
           context,
           MaterialPageRoute(
