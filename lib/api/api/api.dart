@@ -263,55 +263,62 @@ class Api {
     Duration? timeout,
     String? endpoint,
   }) async {
-    try {
-      await _ensureInitialized();
+    const maxAttempts = 3;
 
-      final response = await _cookieClient
-          .get(Uri.parse(url), headers: ApiConfig.headers)
-          .timeout(timeout ?? ApiConfig.defaultTimeout);
+    for (int attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        if (attempt > 0) {
+          debugPrint('[API] Attempt ${attempt + 1}/$maxAttempts for $url');
+          _cookieClient.reset();
+        }
 
-      if (response.statusCode == 401) {
-        debugPrint('[API] 401 for $url, resetting session and retrying...');
-        _cookieClient.reset();
         await _ensureInitialized();
-        final retryResponse = await _cookieClient
+
+        final response = await _cookieClient
             .get(Uri.parse(url), headers: ApiConfig.headers, timeout: timeout)
             .timeout(timeout ?? ApiConfig.defaultTimeout);
 
-        if (retryResponse.statusCode != 200) {
+        if (response.statusCode == 401) {
+          debugPrint(
+              '[API] 401 for $url (attempt ${attempt + 1}/$maxAttempts)');
+          if (attempt < maxAttempts - 1) {
+            await Future.delayed(const Duration(milliseconds: 500));
+            continue;
+          }
           throw ApiError(
-            'HTTP ${retryResponse.statusCode}: ${retryResponse.reasonPhrase}',
-            statusCode: retryResponse.statusCode,
+            'HTTP 401: Unauthorized',
+            statusCode: 401,
             endpoint: endpoint,
           );
         }
-        return retryResponse;
-      }
 
-      if (response.statusCode != 200) {
-        debugPrint(
-          '[API] ${response.statusCode} ${response.reasonPhrase} for $url\n'
-          'Endpoint: ${endpoint ?? 'unknown'}\n'
-          'Body: ${response.body}',
-        );
-        throw ApiError(
-          'HTTP ${response.statusCode}: ${response.reasonPhrase}',
-          statusCode: response.statusCode,
-          endpoint: endpoint,
-        );
-      }
+        if (response.statusCode != 200) {
+          debugPrint(
+            '[API] ${response.statusCode} ${response.reasonPhrase} for $url\n'
+            'Endpoint: ${endpoint ?? 'unknown'}\n'
+            'Body: ${response.body}',
+          );
+          throw ApiError(
+            'HTTP ${response.statusCode}: ${response.reasonPhrase}',
+            statusCode: response.statusCode,
+            endpoint: endpoint,
+          );
+        }
 
-      return response;
-    } on SocketException {
-      throw ApiError('No internet connection', endpoint: endpoint);
-    } on HttpException catch (e) {
-      throw ApiError('HTTP error: ${e.message}', endpoint: endpoint);
-    } on FormatException catch (e) {
-      throw ApiError('Invalid response format: ${e.message}',
-          endpoint: endpoint);
-    } on TimeoutException {
-      throw ApiError('Request timed out', endpoint: endpoint);
+        return response;
+      } on SocketException {
+        throw ApiError('No internet connection', endpoint: endpoint);
+      } on HttpException catch (e) {
+        throw ApiError('HTTP error: ${e.message}', endpoint: endpoint);
+      } on FormatException catch (e) {
+        throw ApiError('Invalid response format: ${e.message}',
+            endpoint: endpoint);
+      } on TimeoutException {
+        throw ApiError('Request timed out', endpoint: endpoint);
+      }
     }
+
+    throw ApiError('Max retries exceeded', endpoint: endpoint);
   }
 
   // --- All Stops (heavy operation with progress) ---
