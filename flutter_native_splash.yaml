@@ -1,0 +1,7 @@
+flutter_native_splash:
+  color: "#fefefe"
+  image: "assets/icons/oasth_logo.png"
+
+  android: true
+  ios: true
+  web: true
