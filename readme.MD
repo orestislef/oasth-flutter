@@ -1,404 +1,255 @@
-# 🚌 OASTH - Thessaloniki Public Transport App
+# OASTH - Thessaloniki Public Transport App
 
 <p align="center">
   <strong>Your smart companion for public transport in Thessaloniki</strong>
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/Flutter-3.0+-blue.svg" alt="Flutter Version">
-  <img src="https://img.shields.io/badge/Dart-3.0+-blue.svg" alt="Dart Version">
-  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS-lightgrey.svg" alt="Platform">
-  <img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License">
+  <img src="https://img.shields.io/badge/Flutter-3.2+-blue.svg" alt="Flutter Version">
+  <img src="https://img.shields.io/badge/Dart-3.2+-blue.svg" alt="Dart Version">
+  <img src="https://img.shields.io/badge/Platform-Android%20%7C%20iOS%20%7C%20Web-lightgrey.svg" alt="Platform">
 </p>
 
-## 📱 About
+## About
 
-OASTH is a comprehensive mobile application for navigating Thessaloniki's public transportation system. Built with Flutter, it provides real-time bus information, route planning, and an intuitive interface for both Greek and English users.
+OASTH is a mobile application for navigating Thessaloniki's public transportation system. Built with Flutter, it provides real-time bus tracking, offline A* route planning, live arrival times, and an intuitive interface in both Greek and English.
 
-### ✨ Key Features
+## Features
 
-- 🚍 **Real-time Bus Arrivals** - Live arrival times for all bus stops
-- 🗺️ **Interactive Maps** - Detailed route maps with live bus tracking
-- 🔍 **Smart Search** - Find lines, stops, and routes instantly
-- 📍 **Nearby Stops** - Discover bus stops near your location
-- 🧭 **Route Planning** - Get directions using Google Maps integration
-- 🌐 **Multilingual** - Full support for Greek and English
-- ❤️ **Favorites** - Save your frequently used lines and stops
-- 📱 **Offline Cache** - Access data even with poor connectivity
-- ♿ **Accessibility** - Clear indicators for wheelchair-accessible stops
+### Real-time Bus Tracking
+- Live bus positions on the map with vehicle numbers
+- Auto-refreshing arrival times at stops (30s interval)
+- 10-second polling for bus locations in fullscreen map view
 
-## 🏗️ Architecture
+### Offline Route Planner (A* Algorithm)
+- Graph-based pathfinding across 3,694 stops and 31,000+ edges
+- Composite A* state `(stopCode|lastBusRouteCode)` for smart transfer detection
+- Same-line backtracking prevention (3x penalty for taking the same line in opposite direction)
+- Walking transfer edges (up to 500m, configurable)
+- Transfer penalty that correctly persists through walking segments
+- Disk caching of the route graph for instant startup
+- Results include: distance, transfer count, stop count, journey segments
 
-### Core Structure
+### Interactive Maps
+- Trimmed polylines showing only the segment you ride
+- Ghost polyline (35% opacity) showing the full bus route for context
+- Live bus markers with vehicle numbers on the route map
+- Walking segments shown as dotted lines
+- Transfer point markers at bus change locations
+- Start/end markers with distinct colors
+- Multiple map types: OpenStreetMap, Google Maps, Satellite
+- Dark mode tile support
+- Offline map tile caching
+
+### Smart Search & Geocoding
+- Native phone geocoding on mobile (no API rate limits)
+- Nominatim fallback for web platform
+- Debounced search (800ms) with generation counter for stale result cancellation
+- Stop search results shown immediately while address search loads
+- Thessaloniki bounding box filtering
+
+### Lines & Stops
+- Browse all bus lines with search and filtering
+- Favorite lines system with persistent storage
+- Stop search by name or 5-digit code
+- Real-time arrival predictions per stop
+- Route details with stop listings
+
+### Nearby Stops
+- GPS-based nearby stop discovery
+- Distance filtering
+- Tap-to-navigate to stop details
+- Clustered map markers
+
+### News & Updates
+- Latest announcements from OASTH
+- Search and filter functionality
+
+### UI/UX
+- Shimmer loading placeholders (replaced all spinners)
+- Material 3 design system
+- Light, Dark, and System theme modes
+- Greek and English localization
+- Smooth animated transitions
+
+## Architecture
+
+### Project Structure
 
 ```
 lib/
-├── api/                    # API layer
-│   ├── api/               # API client and endpoints
-│   └── responses/         # Response models
-├── helpers/               # Utility classes
-├── screens/               # UI screens
-└── widgets/               # Reusable components
+├── api/
+│   ├── api/                    # HTTP client with cookie/CSRF handling, retry logic
+│   └── responses/              # 16 response models (lines, stops, routes, bus locations, news)
+├── data/
+│   ├── oasth_repository.dart   # Single data source wrapping all API calls
+│   ├── route_planner.dart      # A* pathfinding algorithm with composite state
+│   ├── route_planner_models.dart # RouteEdge, OfflineRouteResult, RouteSegment, etc.
+│   └── favorites_service.dart  # Singleton managing favorite lines
+├── enums/
+│   └── map_type.dart           # OSM, Google, Satellite
+├── helpers/
+│   ├── app_routes.dart         # GoRouter route definitions (11 routes)
+│   ├── geocoding_helper.dart   # Native + Nominatim geocoding
+│   ├── location_helper.dart    # GPS permission & location retrieval
+│   ├── shared_preferences_helper.dart # Cache management
+│   ├── theme_mode_controller.dart     # Theme state (ValueNotifier)
+│   ├── theme_mode_helper.dart         # Theme persistence
+│   ├── tile_layer_helper.dart         # Map tile layer with caching & dark mode
+│   ├── map_type_helper.dart           # Map type persistence
+│   └── ...                     # Language, formatting, color helpers
+├── screens/
+│   ├── home_page.dart          # Tab navigation (Stations, Lines, Best Route, More)
+│   ├── welcome_page.dart       # Dashboard with map, quick actions, news carousel
+│   ├── stops_page.dart         # Stop search
+│   ├── stop_page.dart          # Stop details with live arrivals
+│   ├── lines_page.dart         # Lines listing with favorites
+│   ├── line_page.dart          # Line details
+│   ├── line_info_page.dart     # Master line info
+│   ├── line_route_page.dart    # Route display for a line
+│   ├── best_route_page.dart    # Route planner orchestrator
+│   ├── best_route/
+│   │   ├── input_step.dart     # From/To input with address autocomplete
+│   │   ├── results_step.dart   # Route results with arrival times
+│   │   └── route_map.dart      # Inline + fullscreen maps with live bus tracking
+│   ├── more_screen.dart        # Settings (theme, language, map type)
+│   ├── news_screen.dart        # News listing
+│   └── map_with_nearby_stations_widget.dart # Nearby stops map
+└── widgets/
+    ├── shimmer_loading.dart    # Shimmer placeholder system
+    └── language_toggle.dart    # Greek/English flag toggle
 ```
 
-### Key Components
+### Key Patterns
 
-- **API Layer**: Optimized HTTP client with caching and retry mechanisms
-- **State Management**: StatefulWidget with proper resource management
-- **Localization**: Easy Localization with flag assets for language switching
-- **Maps Integration**: Flutter Map with real-time data overlay
-- **Navigation**: Material Design bottom navigation
-- **Help System**: Visual guides with info images for stop code usage
+- **Repository pattern** - `OasthRepository` as single data source
+- **Singleton pattern** - `FavoritesService`, `RoutePlanner`, `PackageInfoPlusHelper`
+- **ValueNotifier** - Theme mode state management
+- **InheritedWidget** - Shimmer animation coordination
+- **GoRouter** - Declarative navigation with typed extras
 
-## 🚀 Features Breakdown
+## Route Planner Algorithm
 
-### 🏠 Welcome Screen
-- Quick access to nearby stops
-- Featured news from OASTH
-- Direct navigation to main features
-- Location-based suggestions
+The route planner uses an A* algorithm with a composite state `(stopCode|lastBusRouteCode)` to correctly handle transfers:
 
-### 🚌 Lines Browser
-- Browse all available bus lines
-- Filter by line number or alphabetically
-- Favorites system for quick access
-- Search functionality across all lines
+1. **Graph Construction**: Builds edges from all OASTH routes (16,570 bus edges) plus walking transfers between nearby stops (14,508 walking edges within 400m radius)
+2. **Composite State**: Each A* node carries both the current stop and the last bus route taken. This context persists through walking edges, enabling accurate transfer detection.
+3. **Transfer Penalties**:
+   - Legitimate transfer (different line): 800m equivalent penalty
+   - Backtracking (same line, opposite direction): 2400m penalty (3x)
+   - Walking: distance * 3.0 penalty factor
+4. **Polyline Trimming**: Route details polylines are trimmed to only the boarding-to-alighting segment by finding nearest polyline points to each stop and slicing forward (never reversing - each route has its own directional polyline).
 
-### 📍 Stops Finder
-- Search stops by name or 5-digit code
-- QR code scanner integration
-- Accessibility information
-- Real-time arrival predictions
+## API Integration
 
-### 🗺️ Interactive Maps
-- Live bus tracking on routes
-- Nearby stops with distance filtering
-- Tap-to-navigate to stop details
-- Offline map support
+### OASTH Telematics API
 
-### 🧭 Route Planning
-- Integration with Google Maps
-- Multiple travel modes (transit, walking, driving)
-- Current location detection
-- Recent searches history
+- **Base URL**: `https://telematics.oasth.gr/api`
+- **Authentication**: Session-based with PHPSESSID and CSRF tokens
+- **Cookie Handling**: Custom `CookieClient` with Greece timezone support
+- **Retry Logic**: Up to 3 retries with 15s timeout
+- **Web Proxy**: `web/api-proxy.php` for CORS handling on web platform
 
-### 📰 News & Updates
-- Latest news from OASTH
-- Search through announcements
-- Share functionality
-- Offline reading support
+### Key Endpoints
 
-## 🛠️ Technical Stack
+| Endpoint | Cache | Description |
+|----------|-------|-------------|
+| `webGetLines` | 30 min | All bus lines |
+| `getStopArrivals` | 30 sec | Real-time arrivals at a stop |
+| `getBusLocation` | None (10s timeout) | Live bus GPS positions |
+| `webGetRoutesDetailsAndStops` | 30 min | Route geometry + stops |
+| `webGetStops` | 30 min | All stops for a route |
+| `getStopNameAndXY` | 30 min | Stop coordinates by code |
 
-### Frontend
-- **Flutter** 3.0+ - Cross-platform UI framework
-- **Dart** 3.0+ - Programming language
-- **Material Design** - UI/UX guidelines
+### Caching Strategy
 
-### Core Dependencies
+- **Route details & lines**: 30-minute cache (rarely change)
+- **Stop arrivals**: 30-second cache (frequently updated)
+- **Bus locations**: No cache (real-time, polled every 10s)
+- **Route planner graph**: Disk-cached, built once from API data
+
+## Dependencies
+
 ```yaml
 dependencies:
-  flutter:
-    sdk: flutter
-  
-  # Networking & Data
-  http: ^1.1.0
-  json_annotation: ^4.8.1
-  
-  # Maps & Location
-  flutter_map: ^6.1.0
-  flutter_map_location_marker: ^8.0.0
-  flutter_map_marker_cluster: ^1.3.4
-  geolocator: ^10.1.0
-  geocoding: ^2.1.1
-  
-  # UI Components
-  carousel_slider: ^4.2.1
-  bottom_navy_bar: ^6.0.0
-  
-  # Localization
-  easy_localization: ^3.0.3
-  
-  # Storage
-  shared_preferences: ^2.2.2
-  
-  # Utilities
-  url_launcher: ^6.2.2
-  maps_launcher: ^2.2.1
+  flutter: sdk
+  go_router: ^14.6.1          # Navigation
+  http: ^1.6.0                # HTTP client
+  flutter_map: ^8.2.2         # OpenStreetMap maps
+  flutter_map_cache: ^1.0.2   # Offline tile caching
+  flutter_map_marker_cluster: ^8.2.2   # Marker clustering
+  flutter_map_location_marker: ^10.2.0 # User location marker
+  latlong2: ^0.9.1            # Coordinate math
+  geolocator: ^14.0.2         # GPS location
+  geocoding: ^4.0.0           # Native address lookup
+  location: ^8.0.1            # Location services
+  easy_localization: ^3.0.8   # i18n (Greek/English)
+  shared_preferences: ^2.5.4  # Local storage
+  carousel_slider: ^5.1.2     # News carousel
+  bottom_navy_bar: ^6.1.0     # Bottom navigation
+  url_launcher: ^6.3.2        # External links
+  maps_launcher: ^3.0.0+1     # Open in maps app
+  package_info_plus: ^8.0.3   # App version info
+  path_provider: ^2.1.4       # File system paths
+  crypto: ^3.0.7              # Hashing utilities
+  dio_cache_interceptor: ^3.5.0         # Cache layer
+  dio_cache_interceptor_file_store: ^1.2.2  # File-based cache
 ```
 
-### Backend Integration
-- **OASTH Telematics API** - Real-time transport data
-- **Google Maps API** - Route planning and navigation
-- **REST Architecture** - HTTP-based API communication
-
-## 🚀 Getting Started
+## Getting Started
 
 ### Prerequisites
-- Flutter SDK (3.0 or higher)
-- Dart SDK (3.0 or higher)
+- Flutter SDK 3.2+
+- Dart SDK 3.2+
 - Android Studio / VS Code
 - Android SDK / Xcode (for iOS)
 
 ### Installation
 
-1. **Clone the repository**
 ```bash
-git clone https://github.com/your-org/oasth-app.git
-cd oasth-app
-```
-
-2. **Install dependencies**
-```bash
+git clone <repository-url>
+cd oasth
 flutter pub get
-```
-
-3. **Generate code (if needed)**
-```bash
-flutter packages pub run build_runner build
-```
-
-4. **Run the app**
-```bash
 flutter run
 ```
 
 ### Configuration
 
-1. **API Configuration**
-   - Update base URLs in `lib/api/api/api.dart`
-   - Configure timeout settings in `ApiConfig`
+- **API URLs**: Configured in `lib/api/api/api.dart`
+- **Translations**: `assets/translations/en-US.json` and `assets/translations/el-GR.json`
+- **Map tiles**: Managed via `lib/helpers/tile_layer_helper.dart` (OSM, Google, Satellite)
+- **Location permissions**: Platform-specific configuration in `android/` and `ios/`
 
-2. **Localization Setup**
-   - Translation files: `assets/translations/en.json`, `assets/translations/el.json`
-   - Language flags: `assets/icons/english_flag.png`, `assets/icons/greek_flag.png`
+## Localization
 
-3. **Help System Assets**
-   - Stop code help images: `assets/icons/stop_code_info1.png`, `assets/icons/stop_code_info2.png`
-   - Used in the "More" section for user guidance
+| Language | File | Status |
+|----------|------|--------|
+| Greek (el-GR) | `assets/translations/el-GR.json` | Primary |
+| English (en-US) | `assets/translations/en-US.json` | Full support |
 
-4. **Maps Setup**
-   - Configure map tiles URL in map widgets
-   - Set up location permissions in platform files
+Language can be switched at runtime from the More screen without restarting the app.
 
-## 🗂️ Assets Structure
+## Building
 
-### Icons & Images
-```
-assets/icons/
-├── english_flag.png    # Language selector - English
-├── greek_flag.png      # Language selector - Greek  
-├── stop_code_info1.png # Help image - Stop code example 1
-└── stop_code_info2.png # Help image - Stop code example 2
-```
-
-### Translations
-```
-assets/translations/
-├── en.json            # English translations
-└── el.json            # Greek translations
-```
-
-## 🔧 API Integration
-
-### OASTH Telematics API
-
-The app integrates with OASTH's real-time telematics system:
-
-- **Base URL**: `https://telematics.oasth.gr/api`
-- **Authentication**: Session-based with PHPSESSID
-- **Rate Limiting**: Built-in request throttling
-- **Caching**: Intelligent caching for optimal performance
-
-### Key Endpoints
-
-```dart
-// Get all bus lines
-GET /?act=webGetLines
-
-// Get real-time arrivals
-GET /?act=getStopArrivals&p1={stopId}
-
-// Get bus locations
-GET /?act=getBusLocation&p1={routeCode}
-
-// Get route details
-GET /?act=webGetRoutesDetailsAndStops&p1={routeCode}
-```
-
-## 🌐 Localization
-
-### Supported Languages
-- **🇬🇷 Greek (el)** - Primary language with `greek_flag.png`
-- **🇺🇸 English (en)** - Full translation support with `english_flag.png`
-
-### Adding New Languages
-
-1. Create translation file: `assets/translations/{locale}.json`
-2. Add translations for all keys
-3. Update `supportedLocales` in main app configuration
-4. Test thoroughly with new locale
-
-## 🎨 Design System
-
-### Theme Support
-- **Light Theme** - Clean, modern interface
-- **Dark Theme** - Eye-friendly dark mode
-- **System Theme** - Follows device preferences
-
-### Color Scheme
-- **Primary**: Blue (#2196F3) - OASTH brand color
-- **Secondary**: Various accent colors per feature
-- **Error**: Red for warnings and errors
-- **Success**: Green for confirmations
-
-### Typography
-- **Headlines**: Bold, clear hierarchy
-- **Body Text**: Readable, accessible sizing
-- **Captions**: Subtle, informative text
-
-## 🧪 Testing
-
-### Run Tests
 ```bash
-# Unit tests
-flutter test
-
-# Integration tests
-flutter test integration_test/
-
-# Widget tests
-flutter test test/widget_test.dart
-```
-
-### Test Coverage
-```bash
-flutter test --coverage
-genhtml coverage/lcov.info -o coverage/html
-```
-
-## 📦 Building for Production
-
-### Android
-```bash
+# Android
 flutter build appbundle --release
-```
 
-### iOS
-```bash
+# iOS
 flutter build ios --release
+
+# Web
+flutter build web --release
 ```
 
-### Build Configuration
-- **App signing** configured in `android/app/build.gradle`
-- **iOS certificates** managed through Xcode
-- **Build flavors** for different environments
+## Acknowledgments
 
-## 🚀 Performance Optimizations
-
-### API Optimizations
-- **Smart Caching**: Different cache durations per data type
-- **Parallel Processing**: Concurrent API requests where appropriate
-- **Request Limiting**: Prevents server overload
-- **Retry Logic**: Exponential backoff for failed requests
-
-### UI Optimizations
-- **Lazy Loading**: Lists load items as needed
-- **Image Caching**: Efficient image loading and caching
-- **Animations**: Smooth, performant transitions
-- **Memory Management**: Proper disposal of resources
-
-## 🔒 Privacy & Security
-
-### Data Handling
-- **Location Data**: Only used for nearby stops feature
-- **No Personal Data**: App doesn't collect personal information
-- **Local Storage**: Preferences and cache stored locally
-- **API Security**: HTTPS communication with certificate validation
-
-### Permissions
-- **Location**: For finding nearby stops (optional)
-- **Internet**: For real-time data (required)
-- **Storage**: For offline caching (minimal)
-
-## 🤝 Contributing
-
-We welcome contributions! Please see our [Contributing Guidelines](CONTRIBUTING.md) for details.
-
-### Development Workflow
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
-
-### Code Style
-- Follow [Dart Style Guide](https://dart.dev/guides/language/effective-dart)
-- Use `flutter format` for consistent formatting
-- Run `flutter analyze` before committing
-- Write meaningful commit messages
-
-## 📋 Roadmap
-
-### Upcoming Features
-- [ ] 🔔 **Push Notifications** - Service alerts and arrival notifications
-- [ ] 🎫 **Digital Tickets** - Mobile ticketing integration
-- [ ] 📊 **Usage Analytics** - Personal travel statistics
-- [ ] 🌙 **Auto Dark Mode** - Time-based theme switching
-- [ ] 🔄 **Offline Mode** - Enhanced offline capabilities
-- [ ] 🎯 **Smart Suggestions** - AI-powered route recommendations
-
-### Long-term Goals
-- Integration with other transport modes (metro, taxi)
-- Multi-city support for other Greek cities
-- Advanced accessibility features
-- Community features (stop ratings, crowdsourced data)
-
-## 🐛 Known Issues
-
-- Map performance on older devices may be limited
-- Offline mode requires initial data download
-- Some translations may need refinement
-
-See [Issues](https://github.com/your-org/oasth-app/issues) for full list and reporting new bugs.
-
-## 📞 Support
-
-### Getting Help
-- 📧 **Email**: support@oasth-app.com
-- 💬 **Discord**: [Join our community](https://discord.gg/oasth-app)
-- 📖 **Documentation**: [Full docs](https://docs.oasth-app.com)
-- 🐛 **Bug Reports**: [GitHub Issues](https://github.com/your-org/oasth-app/issues)
-
-### Feedback
-We love hearing from users! Feel free to:
-- Rate the app on app stores
-- Submit feature requests
-- Share your experience
-- Contribute to translations
-
-## 📄 License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
-## 🙏 Acknowledgments
-
-- **OASTH** - For providing the public transport API
-- **Flutter Team** - For the amazing framework
-- **OpenStreetMap** - For map tiles and data
-- **Community Contributors** - For translations and improvements
+- **OASTH** - Thessaloniki Urban Transport Organization for the telematics API
+- **OpenStreetMap** - Map tiles and Nominatim geocoding
+- **Flutter** - Cross-platform framework
 
 ---
 
 <p align="center">
-  <strong>Made with ❤️ for Thessaloniki</strong>
-</p>
-
-<p align="center">
-  <a href="https://play.google.com/store/apps/details?id=com.oasth.app">
-    <img src="https://img.shields.io/badge/Google_Play-414141?style=for-the-badge&logo=google-play&logoColor=white" alt="Get it on Google Play">
-  </a>
-  <a href="https://apps.apple.com/app/oasth/id123456789">
-    <img src="https://img.shields.io/badge/App_Store-0D96F6?style=for-the-badge&logo=app-store&logoColor=white" alt="Download on the App Store">
-  </a>
+  Made for Thessaloniki
 </p>
