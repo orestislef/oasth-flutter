@@ -229,9 +229,9 @@ class _RouteMapViewState extends State<RouteMapView> {
     // Live bus markers
     for (final bus in _busLocations) {
       if (bus.csLat != 0.0 || bus.csLng != 0.0) {
-        final color = lineColors[_lineIdForRouteCode(bus.routeCode, segments)] ??
-            Theme.of(context).primaryColor;
-        markers.add(_buildBusMarker(context, bus, color));
+        final lineId = _lineIdForRouteCode(bus.routeCode, segments);
+        final color = lineColors[lineId] ?? Theme.of(context).primaryColor;
+        markers.add(_buildBusMarker(context, bus, color, lineId ?? ''));
       }
     }
 
@@ -281,7 +281,7 @@ class _RouteMapViewState extends State<RouteMapView> {
   }
 
   Marker _buildBusMarker(
-      BuildContext context, BusLocationData bus, Color color) {
+      BuildContext context, BusLocationData bus, Color color, String lineId) {
     return Marker(
       point: LatLng(bus.csLat, bus.csLng),
       width: 56,
@@ -312,7 +312,7 @@ class _RouteMapViewState extends State<RouteMapView> {
                 ),
                 const SizedBox(width: 2),
                 Text(
-                  bus.vehNo,
+                  lineId,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary,
                     fontSize: 10,
@@ -685,9 +685,9 @@ class _FullScreenMapState extends State<FullScreenRouteMap> {
     // Live bus markers
     for (final bus in _busLocations) {
       if (bus.csLat != 0.0 || bus.csLng != 0.0) {
-        final color = lineColors[_lineIdForRouteCode(bus.routeCode, segments)] ??
-            Theme.of(context).primaryColor;
-        markers.add(_buildBusMarker(context, bus, color));
+        final lineId = _lineIdForRouteCode(bus.routeCode, segments);
+        final color = lineColors[lineId] ?? Theme.of(context).primaryColor;
+        markers.add(_buildBusMarker(context, bus, color, lineId ?? ''));
       }
     }
 
@@ -736,7 +736,7 @@ class _FullScreenMapState extends State<FullScreenRouteMap> {
   }
 
   Marker _buildBusMarker(
-      BuildContext context, BusLocationData bus, Color color) {
+      BuildContext context, BusLocationData bus, Color color, String lineId) {
     return Marker(
       point: LatLng(bus.csLat, bus.csLng),
       width: 56,
@@ -767,7 +767,7 @@ class _FullScreenMapState extends State<FullScreenRouteMap> {
                 ),
                 const SizedBox(width: 2),
                 Text(
-                  bus.vehNo,
+                  lineId,
                   style: TextStyle(
                     color: Theme.of(context).colorScheme.onPrimary,
                     fontSize: 10,
