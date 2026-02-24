@@ -7,6 +7,7 @@ class SharedPreferencesHelper {
   static const String _keyLinesCache = 'lines_cache';
   static const String _keyRoutesGraphCache = 'routes_graph_cache';
   static const String _keyCacheTimestamp = 'cache_timestamp';
+  static const String _keyMapType = 'map_type';
   static const int _maxRecentSearches = 10;
   static const double _defaultSearchRadius = 500.0;
 
@@ -52,7 +53,7 @@ class SharedPreferencesHelper {
   }
 
   static Future<bool> isCacheValid(
-      {Duration maxAge = const Duration(hours: 12)}) async {
+      {Duration maxAge = const Duration(days: 30)}) async {
     final timestamp = await getCacheTimestamp();
     if (timestamp == null) return false;
     final cached = DateTime.fromMillisecondsSinceEpoch(timestamp);
@@ -122,5 +123,17 @@ class SharedPreferencesHelper {
   static Future<void> setSearchRadius(double radius) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setDouble(_keySearchRadius, radius);
+  }
+
+  // --- Map type ---
+
+  static Future<void> setMapType(int id) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_keyMapType, id);
+  }
+
+  static Future<int?> getMapType() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_keyMapType);
   }
 }

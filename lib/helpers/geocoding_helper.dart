@@ -29,36 +29,38 @@ class GeocodingHelper {
   /// Uses the native geocoding package (no API key needed on mobile).
   /// Falls back to Nominatim if native geocoding fails.
   static Future<String> reverseGeocode(double lat, double lng) async {
-    try {
-      final placemarks = await placemarkFromCoordinates(lat, lng);
-      if (placemarks.isNotEmpty) {
-        final p = placemarks.first;
-        final parts = <String>[];
-        if (p.street != null && p.street!.isNotEmpty) parts.add(p.street!);
-        if (p.subLocality != null && p.subLocality!.isNotEmpty) {
-          parts.add(p.subLocality!);
+    if (!kIsWeb) {
+      try {
+        final placemarks = await placemarkFromCoordinates(lat, lng);
+        if (placemarks.isNotEmpty) {
+          final p = placemarks.first;
+          final parts = <String>[];
+          if (p.street != null && p.street!.isNotEmpty) parts.add(p.street!);
+          if (p.subLocality != null && p.subLocality!.isNotEmpty) {
+            parts.add(p.subLocality!);
+          }
+          if (p.locality != null && p.locality!.isNotEmpty) {
+            parts.add(p.locality!);
+          }
+          if (parts.isNotEmpty) return parts.join(', ');
         }
-        if (p.locality != null && p.locality!.isNotEmpty) {
-          parts.add(p.locality!);
-        }
-        if (parts.isNotEmpty) return parts.join(', ');
+      } catch (e) {
+        debugPrint('[Geocoding] Native reverse geocoding failed: $e');
       }
-    } catch (e) {
-      debugPrint('[Geocoding] Native reverse geocoding failed: $e');
+    } else {
+      debugPrint('[Geocoding] Skipping native reverse geocoding on web');
     }
 
     // Fallback to Nominatim
     try {
-      final response = await http
-          .get(
-            Uri.parse(
-              'https://nominatim.openstreetmap.org/reverse'
-              '?format=json&lat=$lat&lon=$lng&zoom=18'
-              '&accept-language=en',
-            ),
-            headers: {'User-Agent': 'OasthTelematicsApp/1.0'},
-          )
-          .timeout(const Duration(seconds: 5));
+      final response = await http.get(
+        Uri.parse(
+          'https://nominatim.openstreetmap.org/reverse'
+          '?format=json&lat=$lat&lon=$lng&zoom=18'
+          '&accept-language=en',
+        ),
+        headers: {'User-Agent': 'OasthTelematicsApp/1.0'},
+      ).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
@@ -103,19 +105,17 @@ class GeocodingHelper {
         '&accept-language=en',
       );
 
-      final response = await http
-          .get(uri, headers: {'User-Agent': 'OasthTelematicsApp/1.0'})
-          .timeout(const Duration(seconds: 5));
+      final response = await http.get(uri, headers: {
+        'User-Agent': 'OasthTelematicsApp/1.0'
+      }).timeout(const Duration(seconds: 5));
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
         return data.map((item) {
           return GeocodingResult(
             displayName: _buildShortName(item as Map<String, dynamic>),
-            latitude:
-                double.tryParse(item['lat']?.toString() ?? '') ?? 0,
-            longitude:
-                double.tryParse(item['lon']?.toString() ?? '') ?? 0,
+            latitude: double.tryParse(item['lat']?.toString() ?? '') ?? 0,
+            longitude: double.tryParse(item['lon']?.toString() ?? '') ?? 0,
             type: 'address',
           );
         }).toList();

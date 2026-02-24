@@ -1,9 +1,10 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:oasth/api/responses/lines_with_ml_info.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/language_helper.dart';
-import 'package:oasth/screens/line_info_page.dart';
+import 'package:oasth/helpers/app_routes.dart';
 import 'package:oasth/widgets/shimmer_loading.dart';
 
 class LinesPage extends StatefulWidget {
@@ -75,17 +76,22 @@ class _LinesPageState extends State<LinesPage> {
     if (_searchQuery.isNotEmpty) {
       filteredLines = filteredLines.where((line) {
         final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-            ? line.lineDescriptionEng.isNotEmpty ? line.lineDescriptionEng : line.lineDescription
-            : line.lineDescription.isNotEmpty ? line.lineDescription : line.lineDescriptionEng;
+            ? line.lineDescriptionEng.isNotEmpty
+                ? line.lineDescriptionEng
+                : line.lineDescription
+            : line.lineDescription.isNotEmpty
+                ? line.lineDescription
+                : line.lineDescriptionEng;
 
         return description.toLowerCase().contains(_searchQuery.toLowerCase()) ||
-               line.lineId.toLowerCase().contains(_searchQuery.toLowerCase());
+            line.lineId.toLowerCase().contains(_searchQuery.toLowerCase());
       }).toList();
     }
 
     if (_showFavoritesOnly) {
-      filteredLines = filteredLines.where((line) =>
-          _repo.favorites.isFavorite(line.lineId)).toList();
+      filteredLines = filteredLines
+          .where((line) => _repo.favorites.isFavorite(line.lineId))
+          .toList();
     }
 
     switch (_sortType) {
@@ -99,11 +105,19 @@ class _LinesPageState extends State<LinesPage> {
       case LinesSortType.alphabetical:
         filteredLines.sort((a, b) {
           final aDesc = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-              ? a.lineDescriptionEng.isNotEmpty ? a.lineDescriptionEng : a.lineDescription
-              : a.lineDescription.isNotEmpty ? a.lineDescription : a.lineDescriptionEng;
+              ? a.lineDescriptionEng.isNotEmpty
+                  ? a.lineDescriptionEng
+                  : a.lineDescription
+              : a.lineDescription.isNotEmpty
+                  ? a.lineDescription
+                  : a.lineDescriptionEng;
           final bDesc = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-              ? b.lineDescriptionEng.isNotEmpty ? b.lineDescriptionEng : b.lineDescription
-              : b.lineDescription.isNotEmpty ? b.lineDescription : b.lineDescriptionEng;
+              ? b.lineDescriptionEng.isNotEmpty
+                  ? b.lineDescriptionEng
+                  : b.lineDescription
+              : b.lineDescription.isNotEmpty
+                  ? b.lineDescription
+                  : b.lineDescriptionEng;
           return aDesc.compareTo(bDesc);
         });
         break;
@@ -124,7 +138,9 @@ class _LinesPageState extends State<LinesPage> {
   void _toggleFavorite(LineWithMasterLineInfo line) async {
     await _repo.favorites.toggleFavorite(line.lineId);
     setState(() {});
-    if (_showFavoritesOnly) _applyFiltersAndSort();
+    if (_showFavoritesOnly) {
+      _applyFiltersAndSort();
+    }
   }
 
   bool _isFavorite(LineWithMasterLineInfo line) {
@@ -165,15 +181,15 @@ class _LinesPageState extends State<LinesPage> {
           Text(
             'bus_lines'.tr(),
             style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+                  fontWeight: FontWeight.bold,
+                ),
           ),
           const SizedBox(height: 8),
           Text(
             'browse_all_routes'.tr(),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).hintColor,
-            ),
+                  color: Theme.of(context).hintColor,
+                ),
           ),
         ],
       ),
@@ -267,7 +283,9 @@ class _LinesPageState extends State<LinesPage> {
   }
 
   Widget _buildResultsInfo(BuildContext context) {
-    if (_searchQuery.isEmpty && !_showFavoritesOnly) return const SizedBox.shrink();
+    if (_searchQuery.isEmpty && !_showFavoritesOnly) {
+      return const SizedBox.shrink();
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
@@ -281,15 +299,16 @@ class _LinesPageState extends State<LinesPage> {
           const SizedBox(width: 8),
           Text(
             _showFavoritesOnly
-                ? 'showing_favorites'.tr(namedArgs: {'count': _displayedLines.length.toString()})
+                ? 'showing_favorites'
+                    .tr(namedArgs: {'count': _displayedLines.length.toString()})
                 : 'showing_search_results'.tr(namedArgs: {
                     'count': _displayedLines.length.toString(),
                     'total': _allLines.length.toString(),
                   }),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).primaryColor,
-              fontWeight: FontWeight.w500,
-            ),
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
         ],
       ),
@@ -337,17 +356,17 @@ class _LinesPageState extends State<LinesPage> {
             Text(
               'failed_to_load_lines'.tr(),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-                color: Theme.of(context).colorScheme.error,
-              ),
+                    fontWeight: FontWeight.w600,
+                    color: Theme.of(context).colorScheme.error,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
               _errorMessage,
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).hintColor,
-              ),
+                    color: Theme.of(context).hintColor,
+                  ),
               textAlign: TextAlign.center,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
@@ -384,8 +403,8 @@ class _LinesPageState extends State<LinesPage> {
                       ? 'no_lines_found'.tr()
                       : 'no_lines_available'.tr(),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+                    fontWeight: FontWeight.w600,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
@@ -396,8 +415,8 @@ class _LinesPageState extends State<LinesPage> {
                       ? 'try_different_search_terms'.tr()
                       : 'check_connection_try_again'.tr(),
               style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                color: Theme.of(context).hintColor,
-              ),
+                    color: Theme.of(context).hintColor,
+                  ),
               textAlign: TextAlign.center,
             ),
             if (_searchQuery.isNotEmpty || _showFavoritesOnly) ...[
@@ -437,11 +456,16 @@ class _LinesPageState extends State<LinesPage> {
     );
   }
 
-  Widget _buildLineCard(BuildContext context, LineWithMasterLineInfo line, int index) {
+  Widget _buildLineCard(
+      BuildContext context, LineWithMasterLineInfo line, int index) {
     final isFavorite = _isFavorite(line);
     final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-        ? line.lineDescriptionEng.isNotEmpty ? line.lineDescriptionEng : line.lineDescription
-        : line.lineDescription.isNotEmpty ? line.lineDescription : line.lineDescriptionEng;
+        ? line.lineDescriptionEng.isNotEmpty
+            ? line.lineDescriptionEng
+            : line.lineDescription
+        : line.lineDescription.isNotEmpty
+            ? line.lineDescription
+            : line.lineDescriptionEng;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -460,10 +484,13 @@ class _LinesPageState extends State<LinesPage> {
                     width: 48,
                     height: 48,
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withValues(alpha: .1),
+                      color:
+                          Theme.of(context).primaryColor.withValues(alpha: .1),
                       borderRadius: BorderRadius.circular(12),
                       border: Border.all(
-                        color: Theme.of(context).primaryColor.withValues(alpha: .3),
+                        color: Theme.of(context)
+                            .primaryColor
+                            .withValues(alpha: .3),
                         width: 1,
                       ),
                     ),
@@ -473,7 +500,7 @@ class _LinesPageState extends State<LinesPage> {
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
-                          color: Theme.of(context).primaryColor,
+                          color: Theme.of(context).colorScheme.onPrimary,
                         ),
                       ),
                     ),
@@ -488,8 +515,8 @@ class _LinesPageState extends State<LinesPage> {
                     Text(
                       description,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                            fontWeight: FontWeight.w600,
+                          ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -497,8 +524,8 @@ class _LinesPageState extends State<LinesPage> {
                     Text(
                       '${'line'.tr()} ${line.lineId}',
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context).hintColor,
-                      ),
+                            color: Theme.of(context).hintColor,
+                          ),
                     ),
                   ],
                 ),
@@ -513,7 +540,9 @@ class _LinesPageState extends State<LinesPage> {
                           : Theme.of(context).disabledColor,
                     ),
                     onPressed: () => _toggleFavorite(line),
-                    tooltip: isFavorite ? 'remove_from_favorites'.tr() : 'add_to_favorites'.tr(),
+                    tooltip: isFavorite
+                        ? 'remove_from_favorites'.tr()
+                        : 'add_to_favorites'.tr(),
                   ),
                   Icon(
                     Icons.arrow_forward_ios,
@@ -538,14 +567,7 @@ class _LinesPageState extends State<LinesPage> {
   }
 
   void _onTapOnLine(BuildContext context, LineWithMasterLineInfo line) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => LineInfoPage(
-          linesWithMasterLineInfo: line,
-        ),
-      ),
-    );
+    context.push(AppRoutes.lineInfo, extra: LineInfoArgs(line));
   }
 }
 

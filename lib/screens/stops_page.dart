@@ -1,12 +1,12 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:oasth/api/responses/lines_with_ml_info.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/data/oasth_repository.dart';
+import 'package:oasth/helpers/app_routes.dart';
 import 'package:oasth/helpers/input_formatters_helper.dart';
 import 'package:oasth/helpers/language_helper.dart';
-import 'package:oasth/screens/line_info_page.dart';
-import 'package:oasth/screens/stop_page.dart';
 import 'package:oasth/widgets/shimmer_loading.dart';
 
 class StopsPage extends StatefulWidget {
@@ -137,9 +137,8 @@ class _StopsPageState extends State<StopsPage> {
             SizedBox(
               width: double.infinity,
               child: FilledButton.icon(
-                onPressed: _isButtonEnabled
-                    ? () => _lookupStopByCode(context)
-                    : null,
+                onPressed:
+                    _isButtonEnabled ? () => _lookupStopByCode(context) : null,
                 icon: const Icon(Icons.search),
                 label: Text('take_station_info'.tr()),
               ),
@@ -161,8 +160,7 @@ class _StopsPageState extends State<StopsPage> {
           suffixIcon: _lineSearchQuery.isNotEmpty
               ? IconButton(
                   icon: const Icon(Icons.clear),
-                  onPressed: () =>
-                      setState(() => _lineSearchQuery = ''),
+                  onPressed: () => setState(() => _lineSearchQuery = ''),
                 )
               : null,
           border: OutlineInputBorder(
@@ -232,26 +230,19 @@ class _StopsPageState extends State<StopsPage> {
   }
 
   Widget _buildLineCard(BuildContext context, LineWithMasterLineInfo line) {
-    final description =
-        LanguageHelper.getLanguageUsedInApp(context) == 'en'
-            ? line.lineDescriptionEng.isNotEmpty
-                ? line.lineDescriptionEng
-                : line.lineDescription
-            : line.lineDescription.isNotEmpty
-                ? line.lineDescription
-                : line.lineDescriptionEng;
+    final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
+        ? line.lineDescriptionEng.isNotEmpty
+            ? line.lineDescriptionEng
+            : line.lineDescription
+        : line.lineDescription.isNotEmpty
+            ? line.lineDescription
+            : line.lineDescriptionEng;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
         onTap: () {
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  LineInfoPage(linesWithMasterLineInfo: line),
-            ),
-          );
+          context.push(AppRoutes.lineInfo, extra: LineInfoArgs(line));
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -326,10 +317,7 @@ class _StopsPageState extends State<StopsPage> {
         stopAmea: '',
       );
 
-      Navigator.push(
-        context,
-        MaterialPageRoute(builder: (_) => StopPage(stop: stop)),
-      );
+      context.push(AppRoutes.stop, extra: StopArgs(stop));
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -360,14 +348,14 @@ class _StopsPageState extends State<StopsPage> {
                 const SizedBox(height: 16),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child:
-                      Image.asset('assets/icons/stop_code_info1.png', width: 200),
+                  child: Image.asset('assets/icons/stop_code_info1.png',
+                      width: 200),
                 ),
                 const SizedBox(height: 8),
                 ClipRRect(
                   borderRadius: BorderRadius.circular(12),
-                  child:
-                      Image.asset('assets/icons/stop_code_info2.png', width: 200),
+                  child: Image.asset('assets/icons/stop_code_info2.png',
+                      width: 200),
                 ),
                 const SizedBox(height: 16),
               ],

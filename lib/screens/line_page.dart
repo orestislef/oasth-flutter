@@ -1,11 +1,11 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/lines.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
-import 'package:oasth/screens/line_route_page.dart';
-import 'package:oasth/screens/stop_page.dart';
+import 'package:oasth/helpers/app_routes.dart';
 import 'package:oasth/widgets/shimmer_loading.dart';
 
 import '../helpers/language_helper.dart';
@@ -137,16 +137,14 @@ class _LinePageState extends State<LinePage> {
       return;
     }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => RoutePage(
-          details: _routeData!.details,
-          stops: _routeData!.stops,
-          routeCode: widget.line.lineCode,
-          routeName: widget.line.lineDescription,
-          lineId: widget.line.lineID,
-        ),
+    context.push(
+      AppRoutes.routeMap,
+      extra: RoutePageArgs(
+        details: _routeData!.details,
+        stops: _routeData!.stops,
+        routeCode: widget.line.lineCode,
+        routeName: widget.line.lineDescription,
+        lineId: widget.line.lineID,
       ),
     );
   }
@@ -732,9 +730,10 @@ class _LinePageState extends State<LinePage> {
                         type: MaterialType.transparency,
                         child: Text(
                           description,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -812,12 +811,7 @@ class _LinePageState extends State<LinePage> {
   }
 
   void _navigateToStop(Stop stop) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => StopPage(stop: stop),
-      ),
-    );
+    context.push(AppRoutes.stop, extra: StopArgs(stop));
   }
 
   void _showInfoSnackBar(String message) {

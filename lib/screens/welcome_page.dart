@@ -1,10 +1,9 @@
 import 'package:carousel_slider/carousel_slider.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:oasth/helpers/language_helper.dart';
-import 'package:oasth/screens/home_page.dart';
-import 'package:oasth/screens/more_screen.dart';
-import 'package:oasth/screens/news_screen.dart';
+import 'package:oasth/helpers/app_routes.dart';
 import 'package:oasth/widgets/shimmer_loading.dart';
 
 import '../api/responses/news.dart';
@@ -42,15 +41,15 @@ class WelcomeScreen extends StatelessWidget {
           Text(
             'app_name'.tr(),
             style: Theme.of(context).textTheme.headlineLarge?.copyWith(
-              fontWeight: FontWeight.bold,
-            ),
+                  fontWeight: FontWeight.bold,
+                ),
           ),
           const SizedBox(height: 8),
           Text(
             'welcome_subtitle'.tr(), // Add this to your translations
             style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-              color: Theme.of(context).hintColor,
-            ),
+                  color: Theme.of(context).hintColor,
+                ),
           ),
         ],
       ),
@@ -89,16 +88,18 @@ class WelcomeScreen extends StatelessWidget {
                       children: [
                         Text(
                           'stations_nearby'.tr(),
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           'tap_to_view_full_map'.tr(), // Add this translation
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).hintColor,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).hintColor,
+                                  ),
                         ),
                       ],
                     ),
@@ -134,8 +135,8 @@ class WelcomeScreen extends StatelessWidget {
           Text(
             'quick_actions'.tr(), // Add this translation
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           const SizedBox(height: 16),
           Row(
@@ -217,8 +218,8 @@ class WelcomeScreen extends StatelessWidget {
             Text(
               title,
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+                    fontWeight: FontWeight.w600,
+                  ),
               textAlign: TextAlign.center,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
@@ -227,8 +228,8 @@ class WelcomeScreen extends StatelessWidget {
             Text(
               subtitle,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).hintColor,
-              ),
+                    color: Theme.of(context).hintColor,
+                  ),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -248,15 +249,16 @@ class WelcomeScreen extends StatelessWidget {
           child: Text(
             'latest_news'.tr(),
             style: Theme.of(context).textTheme.titleLarge?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+                  fontWeight: FontWeight.w600,
+                ),
           ),
         ),
         const SizedBox(height: 16),
         SizedBox(
           height: 220,
           child: FutureBuilder<List<NewsData>>(
-            future: OasthRepository().getNews(LanguageHelper.getLanguageUsedInApp(context)),
+            future: OasthRepository()
+                .getNews(LanguageHelper.getLanguageUsedInApp(context)),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const ShimmerContainer(
@@ -303,7 +305,8 @@ class WelcomeScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildNewsCard(BuildContext context, NewsData newsData, List<NewsData> allNews) {
+  Widget _buildNewsCard(
+      BuildContext context, NewsData newsData, List<NewsData> allNews) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 8),
       child: InkWell(
@@ -347,8 +350,8 @@ class WelcomeScreen extends StatelessWidget {
                     child: Text(
                       newsData.title,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
+                            fontWeight: FontWeight.w600,
+                          ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
@@ -360,8 +363,8 @@ class WelcomeScreen extends StatelessWidget {
                 child: Text(
                   newsData.summary,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    height: 1.4,
-                  ),
+                        height: 1.4,
+                      ),
                   maxLines: 4,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -373,9 +376,9 @@ class WelcomeScreen extends StatelessWidget {
                   Text(
                     'tap_to_read_more'.tr(), // Add translation
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).primaryColor,
-                      fontWeight: FontWeight.w500,
-                    ),
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                   Icon(
                     Icons.arrow_forward,
@@ -413,8 +416,8 @@ class WelcomeScreen extends StatelessWidget {
             Text(
               error,
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                color: Theme.of(context).hintColor,
-              ),
+                    color: Theme.of(context).hintColor,
+                  ),
               textAlign: TextAlign.center,
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
@@ -451,42 +454,18 @@ class WelcomeScreen extends StatelessWidget {
 
   // Navigation methods
   void _navigateToFullMap(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const MapWithNearbyStations(
-          hasBackButton: true,
-        ),
-      ),
-    );
+    context.push(AppRoutes.mapFull);
   }
 
   void _navigateToHomePage(BuildContext context, int index) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => HomePage(
-          currentIndex: index,
-        ),
-      ),
-    );
+    context.push(AppRoutes.homeTab, extra: HomeArgs(currentIndex: index));
   }
 
   void _navigateToMorePage(BuildContext context) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => const MorePage(),
-      ),
-    );
+    context.push(AppRoutes.more);
   }
 
   void _navigateToNewsScreen(BuildContext context, List<NewsData> news) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => NewsScreen(news: news),
-      ),
-    );
+    context.push(AppRoutes.news, extra: NewsArgs(news));
   }
 }

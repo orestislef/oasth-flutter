@@ -9,6 +9,7 @@ import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/stop_details.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/language_helper.dart';
+import 'package:oasth/helpers/tile_layer_helper.dart';
 import 'package:oasth/widgets/shimmer_loading.dart';
 
 class StopPage extends StatefulWidget {
@@ -221,23 +222,21 @@ class _StopPageState extends State<StopPage> {
                     children: [
                       Text(
                         'stop_information'.tr(),
-                        style:
-                            Theme.of(context).textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.bold,
-                                  color: Theme.of(context).primaryColor,
-                                ),
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                              fontWeight: FontWeight.bold,
+                              color: Theme.of(context).primaryColor,
+                            ),
                       ),
                       const SizedBox(height: 4),
                       Text(
                         widget.stop.stopCode,
-                        style:
-                            Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.color
-                                      ?.withAlpha(178),
-                                ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context)
+                                  .textTheme
+                                  .bodyMedium
+                                  ?.color
+                                  ?.withAlpha(178),
+                            ),
                       ),
                     ],
                   ),
@@ -663,11 +662,7 @@ class _StopPageState extends State<StopPage> {
         ),
       ),
       children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: const ['a', 'b', 'c'],
-          userAgentPackageName: 'com.oasth.oast',
-        ),
+        const MapTileLayer(),
         MarkerLayer(
           markers: [
             Marker(
