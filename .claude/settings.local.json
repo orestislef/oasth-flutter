@@ -54,7 +54,25 @@
       "Bash(node -e \"const d=JSON.parse\\(require\\(''fs''\\).readFileSync\\(0,''utf8''\\)\\); console.log\\(Buffer.from\\(d.content,''base64''\\).toString\\(''utf8''\\)\\)\")",
       "Bash(curl -s \"https://api.github.com/repos/AggelosAst/oasthwrapper/contents/src/libs\")",
       "Bash(node -e \"const d=JSON.parse\\(require\\(''fs''\\).readFileSync\\(0,''utf8''\\)\\); d.forEach\\(f=>console.log\\(f.name\\)\\)\")",
-      "Bash(curl -s \"https://api.github.com/repos/AggelosAst/oasthwrapper/contents/src/libs/Oasth.ts\")"
+      "Bash(curl -s \"https://api.github.com/repos/AggelosAst/oasthwrapper/contents/src/libs/Oasth.ts\")",
+      "WebFetch(domain:telematics.oasth.gr)",
+      "Bash(gh api repos/kostasvos37/oasth-telematics/contents/)",
+      "Bash(python3 -c \"import json,sys; [print\\(f[''name''], f[''type'']\\) for f in json.loads\\(sys.stdin.read\\(\\)\\)]\")",
+      "Bash(gh api repos/teogramm/oasth/contents/)",
+      "Bash(gh api repos/kostasvos37/oasth-telematics/contents/src --jq '.[].name')",
+      "Bash(gh api repos/teogramm/oasth/contents/src --jq '.[] | \"\"\\\\\\(.name\\) \\\\\\(.type\\)\"\"')",
+      "Bash(gh api repos/georgetomzaridis/oasth-telematics-api-documentation/contents/ --jq '.[] | \"\"\\\\\\(.name\\) \\\\\\(.type\\)\"\"')",
+      "Bash(gh search code \"oasth csrf\" --json repository,path,textMatches)",
+      "Bash(python3 -c \"import json,sys; data=json.loads\\(sys.stdin.read\\(\\)\\); [print\\(f''{d[\"\"repository\"\"][\"\"fullName\"\"]} - {d[\"\"path\"\"]}''\\) for d in data]\")",
+      "Bash(gh api repos/kostasvos37/oasth-telematics/contents/src/App.js --jq '.content')",
+      "Bash(gh api repos/kostasvos37/oasth-telematics/contents/src/Search.js --jq '.content')",
+      "Bash(gh api repos/kostasvos37/oasth-telematics/contents/src/Results.js --jq '.content')",
+      "Bash(gh api repos/kostasvos37/oasth-telematics/contents/src/UserContext.js --jq '.content')",
+      "Bash(gh api repos/kostasvos37/oasth-telematics/contents/src/Home.js --jq '.content')",
+      "Bash(gh api repos/teogramm/oasth/contents/src/main --jq '.[] | \"\"\\\\\\(.name\\) \\\\\\(.type\\)\"\"')",
+      "Bash(gh api repos/georgetomzaridis/oasth-telematics-api-documentation/contents/README.rst --jq '.content')",
+      "Bash(gh api repos/teogramm/oasth/contents/src/main/kotlin --jq '.[] | \"\"\\\\\\(.name\\) \\\\\\(.type\\)\"\"')",
+      "Bash(gh api repos/teogramm/oasth/git/trees/main?recursive=1 --jq '.tree[] | select\\(.type==\"\"blob\"\"\\) | .path')"
     ]
   }
 }

@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:oasth/api/responses/lines.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/routes_for_line.dart';
 import 'package:oasth/data/oasth_repository.dart';
@@ -18,12 +19,16 @@ class RouteEdge {
   final String fromStopCode;
   final String toStopCode;
   final String routeCode;
+  final String lineId;
+  final String routeDescription;
   final double distanceMeters;
 
   const RouteEdge({
     required this.fromStopCode,
     required this.toStopCode,
     required this.routeCode,
+    required this.lineId,
+    required this.routeDescription,
     required this.distanceMeters,
   });
 }
@@ -62,22 +67,27 @@ class RoutePlanner {
     _building = true;
 
     final lines = await repository.getLines();
-    final Map<String, List<LineRoute>> routesByLine = {};
+    final lineRoutes = <(LineData, List<LineRoute>)>[];
     int totalRoutes = 0;
 
     for (final line in lines) {
       final routes = await repository.getRoutesForLine(line.lineCode);
-      routesByLine[line.lineCode] = routes;
+      lineRoutes.add((line, routes));
       totalRoutes += routes.length;
     }
 
     int processed = 0;
 
-    for (final entry in routesByLine.entries) {
-      for (final route in entry.value) {
+    for (final (line, routes) in lineRoutes) {
+      for (final route in routes) {
         final stops = await repository.getStopsForRoute(route.routeCode);
         _indexStops(stops);
-        _addEdgesForRoute(route.routeCode, stops);
+        _addEdgesForRoute(
+          routeCode: route.routeCode,
+          lineId: line.lineID,
+          routeDescription: route.routeDescription,
+          stops: stops,
+        );
         processed++;
         onProgress?.call(
           RoutePlannerProgress(
@@ -90,6 +100,20 @@ class RoutePlanner {
 
     _graphReady = true;
     _building = false;
+  }
+
+  /// Search stops by name/description (for autocomplete).
+  List<Stop> searchStopsByName(String query, {int limit = 5}) {
+    if (!_graphReady || query.isEmpty) return [];
+    final q = query.toLowerCase();
+    return _stopsByCode.values
+        .where((s) =>
+            s.stopDescription.toLowerCase().contains(q) ||
+            s.stopDescriptionEng.toLowerCase().contains(q) ||
+            s.stopStreet.toLowerCase().contains(q) ||
+            s.stopStreetEng.toLowerCase().contains(q))
+        .take(limit)
+        .toList();
   }
 
   Stop findNearestStop(double lat, double lng) {
@@ -112,7 +136,12 @@ class RoutePlanner {
     return best;
   }
 
-  OfflineRouteResult? findBestRoute(String startCode, String endCode) {
+  OfflineRouteResult? findBestRoute(
+    String startCode,
+    String endCode, {
+    bool minimizeTransfers = true,
+    double transferPenalty = 800.0,
+  }) {
     if (!_graphReady) {
       throw StateError('Route graph is not ready');
     }
@@ -157,8 +186,17 @@ class RoutePlanner {
       final edges = _edgesByStop[current] ?? const [];
 
       for (final edge in edges) {
-        final tentative =
-            (gScore[current] ?? double.infinity) + edge.distanceMeters;
+        double cost = edge.distanceMeters;
+
+        // Add transfer penalty when switching bus lines
+        if (minimizeTransfers && cameFrom.containsKey(current)) {
+          final prevEdge = cameFrom[current]!;
+          if (prevEdge.routeCode != edge.routeCode) {
+            cost += transferPenalty;
+          }
+        }
+
+        final tentative = (gScore[current] ?? double.infinity) + cost;
         final previous = gScore[edge.toStopCode] ?? double.infinity;
         if (tentative < previous) {
           cameFrom[edge.toStopCode] = edge;
@@ -205,7 +243,8 @@ class RoutePlanner {
     final from = _stopsByCode[fromCode];
     final to = _stopsByCode[toCode];
     if (from == null || to == null) return 0.0;
-    return _haversineMeters(from.stopLat, from.stopLng, to.stopLat, to.stopLng);
+    return _haversineMeters(
+        from.stopLat, from.stopLng, to.stopLat, to.stopLng);
   }
 
   void _indexStops(List<Stop> stops) {
@@ -214,7 +253,12 @@ class RoutePlanner {
     }
   }
 
-  void _addEdgesForRoute(String routeCode, List<Stop> stops) {
+  void _addEdgesForRoute({
+    required String routeCode,
+    required String lineId,
+    required String routeDescription,
+    required List<Stop> stops,
+  }) {
     if (stops.length < 2) return;
 
     for (var i = 0; i < stops.length - 1; i++) {
@@ -232,6 +276,8 @@ class RoutePlanner {
               fromStopCode: from.stopCode,
               toStopCode: to.stopCode,
               routeCode: routeCode,
+              lineId: lineId,
+              routeDescription: routeDescription,
               distanceMeters: distance,
             ),
           );
@@ -241,6 +287,8 @@ class RoutePlanner {
               fromStopCode: to.stopCode,
               toStopCode: from.stopCode,
               routeCode: routeCode,
+              lineId: lineId,
+              routeDescription: routeDescription,
               distanceMeters: distance,
             ),
           );
@@ -252,7 +300,9 @@ class RoutePlanner {
     final dLat = _toRadians(lat2 - lat1);
     final dLon = _toRadians(lon2 - lon1);
     final a = pow(sin(dLat / 2), 2) +
-        cos(_toRadians(lat1)) * cos(_toRadians(lat2)) * pow(sin(dLon / 2), 2);
+        cos(_toRadians(lat1)) *
+            cos(_toRadians(lat2)) *
+            pow(sin(dLon / 2), 2);
     final c = 2 * atan2(sqrt(a.toDouble()), sqrt(1 - a.toDouble()));
     return radius * c;
   }
