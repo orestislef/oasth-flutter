@@ -93,11 +93,13 @@ class RouteSegment {
   final String routeCode;
   final String lineId;
   final String routeDescription;
+  final bool isWalking;
   final List<RouteEdge> stops = [];
 
   RouteSegment({
     required this.routeCode,
     required this.lineId,
     required this.routeDescription,
+    this.isWalking = false,
   });
 }
