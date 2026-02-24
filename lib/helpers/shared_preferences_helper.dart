@@ -1,8 +1,9 @@
-import 'dart:io';
-
 import 'package:flutter/foundation.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+
+// Conditional import: uses file I/O on mobile/desktop, SharedPreferences on web
+import 'file_cache_web.dart' if (dart.library.io) 'file_cache_io.dart'
+    as file_cache;
 
 class SharedPreferencesHelper {
   static const String _keyRecentSearches = 'recent_searches';
@@ -12,31 +13,19 @@ class SharedPreferencesHelper {
   static const int _maxRecentSearches = 10;
   static const double _defaultSearchRadius = 500.0;
 
-  // File names for large data (stored as files, not SharedPreferences)
+  // File names for large data (stored as files on mobile, SharedPreferences on web)
   static const String _linesCacheFile = 'lines_cache.json';
   static const String _routesGraphCacheFile = 'routes_graph_cache.json';
   static const String _stopsListFile = 'stops_list.json';
 
-  static String? _cacheDir;
-
-  static Future<String> _getCacheDir() async {
-    if (_cacheDir != null) return _cacheDir!;
-    final dir = await getApplicationDocumentsDirectory();
-    final cacheDir = Directory('${dir.path}/oasth_cache');
-    if (!await cacheDir.exists()) {
-      await cacheDir.create(recursive: true);
-    }
-    _cacheDir = cacheDir.path;
-    return _cacheDir!;
-  }
-
   static Future<void> init() async {
     await SharedPreferences.getInstance();
-    await _getCacheDir();
+    await file_cache.initCacheDir();
     await _migrateFromSharedPreferences();
   }
 
-  /// One-time migration: move large data from SharedPreferences to files.
+  /// One-time migration: move large data from SharedPreferences to file cache.
+  /// On web this moves from one SharedPreferences key to another (file_xxx prefix).
   static Future<void> _migrateFromSharedPreferences() async {
     final prefs = await SharedPreferences.getInstance();
     bool migrated = false;
@@ -44,7 +33,7 @@ class SharedPreferencesHelper {
     // Migrate lines cache
     final linesData = prefs.getString('lines_cache');
     if (linesData != null) {
-      await _writeFile(_linesCacheFile, linesData);
+      await file_cache.writeFileCache(_linesCacheFile, linesData);
       await prefs.remove('lines_cache');
       migrated = true;
     }
@@ -52,7 +41,7 @@ class SharedPreferencesHelper {
     // Migrate routes graph cache
     final graphData = prefs.getString('routes_graph_cache');
     if (graphData != null) {
-      await _writeFile(_routesGraphCacheFile, graphData);
+      await file_cache.writeFileCache(_routesGraphCacheFile, graphData);
       await prefs.remove('routes_graph_cache');
       migrated = true;
     }
@@ -60,69 +49,40 @@ class SharedPreferencesHelper {
     // Migrate stops list
     final stopsData = prefs.getString('keyStopsList');
     if (stopsData != null) {
-      await _writeFile(_stopsListFile, stopsData);
+      await file_cache.writeFileCache(_stopsListFile, stopsData);
       await prefs.remove('keyStopsList');
       migrated = true;
     }
 
     if (migrated) {
-      debugPrint('[Cache] Migrated large data from SharedPreferences to files');
+      debugPrint('[Cache] Migrated large data from SharedPreferences to file cache');
     }
-  }
-
-  static Future<void> _writeFile(String fileName, String content) async {
-    final dir = await _getCacheDir();
-    final file = File('$dir/$fileName');
-    await file.writeAsString(content, flush: true);
-  }
-
-  static Future<String?> _readFile(String fileName) async {
-    final dir = await _getCacheDir();
-    final file = File('$dir/$fileName');
-    if (await file.exists()) {
-      return await file.readAsString();
-    }
-    return null;
-  }
-
-  static Future<void> _deleteFile(String fileName) async {
-    final dir = await _getCacheDir();
-    final file = File('$dir/$fileName');
-    if (await file.exists()) {
-      await file.delete();
-    }
-  }
-
-  static Future<bool> _fileExists(String fileName) async {
-    final dir = await _getCacheDir();
-    final file = File('$dir/$fileName');
-    return file.exists();
   }
 
   static Future<void> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
-    await _deleteFile(_linesCacheFile);
-    await _deleteFile(_routesGraphCacheFile);
-    await _deleteFile(_stopsListFile);
+    await file_cache.deleteFileCache(_linesCacheFile);
+    await file_cache.deleteFileCache(_routesGraphCacheFile);
+    await file_cache.deleteFileCache(_stopsListFile);
   }
 
-  // --- Full data cache (lines + routes + stops graph) --- stored as files ---
+  // --- Full data cache (lines + routes + stops graph) ---
 
   static Future<void> setLinesCache(String json) async {
-    await _writeFile(_linesCacheFile, json);
+    await file_cache.writeFileCache(_linesCacheFile, json);
   }
 
   static Future<String?> getLinesCache() async {
-    return await _readFile(_linesCacheFile);
+    return await file_cache.readFileCache(_linesCacheFile);
   }
 
   static Future<void> setRoutesGraphCache(String json) async {
-    await _writeFile(_routesGraphCacheFile, json);
+    await file_cache.writeFileCache(_routesGraphCacheFile, json);
   }
 
   static Future<String?> getRoutesGraphCache() async {
-    return await _readFile(_routesGraphCacheFile);
+    return await file_cache.readFileCache(_routesGraphCacheFile);
   }
 
   static Future<void> setCacheTimestamp(int epochMs) async {
@@ -146,27 +106,27 @@ class SharedPreferencesHelper {
   static Future<void> clearDataCache() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_keyCacheTimestamp);
-    await _deleteFile(_linesCacheFile);
-    await _deleteFile(_routesGraphCacheFile);
-    await _deleteFile(_stopsListFile);
+    await file_cache.deleteFileCache(_linesCacheFile);
+    await file_cache.deleteFileCache(_routesGraphCacheFile);
+    await file_cache.deleteFileCache(_stopsListFile);
   }
 
-  // --- Stops list cache --- stored as file ---
+  // --- Stops list cache ---
 
   static Future<void> clearStopsList() async {
-    await _deleteFile(_stopsListFile);
+    await file_cache.deleteFileCache(_stopsListFile);
   }
 
   static Future<bool> stopsListExists() async {
-    return await _fileExists(_stopsListFile);
+    return await file_cache.fileCacheExists(_stopsListFile);
   }
 
   static Future<void> setStopsList(String stopsList) async {
-    await _writeFile(_stopsListFile, stopsList);
+    await file_cache.writeFileCache(_stopsListFile, stopsList);
   }
 
   static Future<String?> getStopsList() async {
-    return await _readFile(_stopsListFile);
+    return await file_cache.readFileCache(_stopsListFile);
   }
 
   // --- Recent searches ---
