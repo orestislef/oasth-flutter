@@ -334,5 +334,8 @@
   "more_options": "Περισσότερα",
   "articles": "άρθρα",
   "walking_transfer": "Περπάτημα στην επόμενη στάση",
-  "route_map": "Χάρτης Διαδρομής"
+  "route_map": "Χάρτης Διαδρομής",
+  "sort_by": "Ταξινόμηση",
+  "route_order": "Σειρά",
+  "closest": "Κοντά μου"
 }

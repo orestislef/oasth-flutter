@@ -4,6 +4,7 @@ import 'package:oasth/api/responses/lines_with_ml_info.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/line_info_page.dart';
+import 'package:oasth/widgets/shimmer_loading.dart';
 
 class LinesPage extends StatefulWidget {
   const LinesPage({super.key});
@@ -312,25 +313,10 @@ class _LinesPageState extends State<LinesPage> {
   }
 
   Widget _buildLoadingState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator.adaptive(),
-          const SizedBox(height: 16),
-          Text(
-            'loading_lines'.tr(),
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'please_wait_loading_routes'.tr(),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).hintColor,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+    return ShimmerContainer(
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: List.generate(8, (_) => const ShimmerLineCard()),
       ),
     );
   }

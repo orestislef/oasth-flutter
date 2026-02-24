@@ -10,6 +10,7 @@ import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/helpers/location_helper.dart';
 import 'package:oasth/helpers/text_broadcaster.dart';
 import 'package:oasth/screens/stop_page.dart';
+import 'package:oasth/widgets/shimmer_loading.dart';
 
 import '../api/responses/route_detail_and_stops.dart';
 
@@ -325,7 +326,9 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                const CircularProgressIndicator.adaptive(),
+                const ShimmerContainer(
+                  child: ShimmerBox(width: 48, height: 48),
+                ),
                 const SizedBox(height: 16),
                 Text(
                   _isLoadingLocation

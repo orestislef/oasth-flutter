@@ -6,6 +6,7 @@ import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/screens/line_route_page.dart';
 import 'package:oasth/screens/stop_page.dart';
+import 'package:oasth/widgets/shimmer_loading.dart';
 
 import '../helpers/language_helper.dart';
 
@@ -363,29 +364,10 @@ class _LinePageState extends State<LinePage> {
   }
 
   Widget _buildLoadingState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator.adaptive(),
-          const SizedBox(height: 16),
-          Text(
-            'loading_line_stops'.tr(),
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'please_wait_loading_stops'.tr(),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.color
-                      ?.withAlpha(178),
-                ),
-            textAlign: TextAlign.center,
-          ),
-        ],
+    return ShimmerContainer(
+      child: ListView(
+        padding: const EdgeInsets.all(16),
+        children: List.generate(8, (_) => const ShimmerListTile()),
       ),
     );
   }

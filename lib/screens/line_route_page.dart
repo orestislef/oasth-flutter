@@ -8,6 +8,7 @@ import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/stop_page.dart';
+import 'package:oasth/widgets/shimmer_loading.dart';
 
 class RoutePage extends StatefulWidget {
   const RoutePage({
@@ -320,17 +321,10 @@ class _RoutePageState extends State<RoutePage> {
 
   Widget _buildMap(BuildContext context) {
     if (_isLoadingBuses && _routePoints.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator.adaptive(),
-            const SizedBox(height: 16),
-            Text(
-              'loading_route_map'.tr(),
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-          ],
+      return const ShimmerContainer(
+        child: ShimmerBox(
+          width: double.infinity,
+          height: double.infinity,
         ),
       );
     }
