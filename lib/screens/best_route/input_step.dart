@@ -49,6 +49,7 @@ class _InputStepState extends State<InputStep> {
   List<GeocodingResult> _fromSuggestions = [];
   List<GeocodingResult> _toSuggestions = [];
   Timer? _searchDebounce;
+  int _searchGeneration = 0; // cancels stale Nominatim results
   bool _isFromSearching = false;
   bool _isToSearching = false;
   bool _isGettingFromLocation = false;
@@ -181,12 +182,14 @@ class _InputStepState extends State<InputStep> {
       return;
     }
 
-    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+    _searchDebounce = Timer(const Duration(milliseconds: 800), () {
       _searchSuggestions(value, isFrom);
     });
   }
 
   Future<void> _searchSuggestions(String query, bool isFrom) async {
+    final generation = ++_searchGeneration;
+
     setState(() {
       if (isFrom) {
         _isFromSearching = true;
@@ -195,8 +198,8 @@ class _InputStepState extends State<InputStep> {
       }
     });
 
+    // Show local stop results immediately (no network needed)
     final results = <GeocodingResult>[];
-
     final planner = RoutePlanner();
     if (planner.isReady) {
       final stops = planner.searchStopsByName(query);
@@ -215,19 +218,31 @@ class _InputStepState extends State<InputStep> {
       }));
     }
 
+    // Show stop results right away while address search loads
+    if (mounted && generation == _searchGeneration && results.isNotEmpty) {
+      setState(() {
+        if (isFrom) {
+          _fromSuggestions = List.of(results);
+        } else {
+          _toSuggestions = List.of(results);
+        }
+      });
+    }
+
+    // Fetch address results from Nominatim (slower, can timeout)
+    if (generation != _searchGeneration) return; // stale, skip network call
     final addresses = await GeocodingHelper.searchAddress(query);
+    if (generation != _searchGeneration) return; // stale, discard results
+
     results.addAll(addresses);
 
     if (mounted) {
       setState(() {
         if (isFrom) {
           _fromSuggestions = results;
-        } else {
-          _toSuggestions = results;
-        }
-        if (isFrom) {
           _isFromSearching = false;
         } else {
+          _toSuggestions = results;
           _isToSearching = false;
         }
       });

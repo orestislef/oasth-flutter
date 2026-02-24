@@ -62,6 +62,7 @@ class RoutePlanner {
   final Map<String, Stop> _stopsByCode = {};
   final Map<String, List<RouteEdge>> _edgesByStop = {};
   final Map<String, Set<String>> _routesByStop = {};
+  final Map<String, String> _lineIdByRouteCode = {};
   bool _graphReady = false;
   bool _building = false;
 
@@ -356,6 +357,23 @@ class RoutePlanner {
     return distances.take(count).toList();
   }
 
+  // ---------------------------------------------------------------------------
+  // Composite A* state helpers
+  // State = "stopCode|lastBusRouteCode" — carries bus context through walks
+  // ---------------------------------------------------------------------------
+
+  String _encodeState(String stopCode, String lastBusRouteCode) =>
+      '$stopCode|$lastBusRouteCode';
+
+  (String, String) _decodeState(String state) {
+    final idx = state.indexOf('|');
+    return (state.substring(0, idx), state.substring(idx + 1));
+  }
+
+  // ---------------------------------------------------------------------------
+  // Public entry point
+  // ---------------------------------------------------------------------------
+
   OfflineRouteResult? findBestRoute(
     String startCode,
     String endCode, {
@@ -403,82 +421,141 @@ class RoutePlanner {
       );
     }
 
-    // A* algorithm with priority queue
+    // Try direct A* first
+    final result = _astar(
+      startCode,
+      endCode,
+      minimizeTransfers: minimizeTransfers,
+      transferPenalty: transferPenalty,
+      maxWalkingDistance: maxWalkingDistance,
+    );
+
+    if (result != null) return result;
+
+    // Fall back to multi-stop approach
+    return _tryMultiStopRoute(
+      startCode,
+      endCode,
+      minimizeTransfers: minimizeTransfers,
+      transferPenalty: transferPenalty,
+      maxWalkingDistance: maxWalkingDistance,
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // Core A* with composite state (stopCode, lastBusRouteCode)
+  //
+  // The state carries which bus route we last rode. Walking edges preserve this
+  // context so that transfer penalties are correctly applied when boarding a
+  // new bus after walking. Same-line backtracking (e.g. taking outbound then
+  // inbound on the same line) is heavily penalised.
+  // ---------------------------------------------------------------------------
+
+  OfflineRouteResult? _astar(
+    String startCode,
+    String endCode, {
+    required bool minimizeTransfers,
+    required double transferPenalty,
+    required int maxWalkingDistance,
+  }) {
+    final startState = _encodeState(startCode, '');
+
     final openQueue = SplayTreeMap<double, List<String>>();
-    final gScore = <String, double>{startCode: 0.0};
+    final gScore = <String, double>{startState: 0.0};
     final fScore = <String, double>{
-      startCode: _heuristic(startCode, endCode),
+      startState: _heuristic(startCode, endCode),
     };
-    final cameFrom = <String, RouteEdge>{};
+    // Maps composite state → (edge that led here, previous composite state)
+    final cameFrom = <String, (RouteEdge, String)>{};
     final closedSet = <String>{};
 
-    void addToQueue(String code, double score) {
-      openQueue.putIfAbsent(score, () => []).add(code);
+    void addToQueue(String state, double score) {
+      openQueue.putIfAbsent(score, () => []).add(state);
     }
 
     String? popBest() {
       while (openQueue.isNotEmpty) {
         final bestScore = openQueue.firstKey()!;
         final list = openQueue[bestScore]!;
-        final code = list.removeLast();
+        final state = list.removeLast();
         if (list.isEmpty) openQueue.remove(bestScore);
-        if (!closedSet.contains(code)) return code;
+        if (!closedSet.contains(state)) return state;
       }
       return null;
     }
 
-    addToQueue(startCode, fScore[startCode]!);
+    addToQueue(startState, fScore[startState]!);
 
     int nodesExpanded = 0;
-
     int walkingEdgesSkipped = 0;
-    while (openQueue.isNotEmpty) {
-      final current = popBest();
-      if (current == null) break;
 
-      if (closedSet.contains(current)) continue;
-      closedSet.add(current);
+    while (openQueue.isNotEmpty) {
+      final currentState = popBest();
+      if (currentState == null) break;
+
+      if (closedSet.contains(currentState)) continue;
+      closedSet.add(currentState);
       nodesExpanded++;
 
-      if (current == endCode) {
-        debugPrint(
-            '[route_planner] Route found! Expanded $nodesExpanded nodes.');
-        return _reconstructPath(startCode, endCode, cameFrom);
+      final (currentStop, lastBusRoute) = _decodeState(currentState);
+
+      // Goal: any state where stopCode == endCode
+      if (currentStop == endCode) {
+        if (debugLogging) {
+          debugPrint(
+              '[route_planner] Route found! Expanded $nodesExpanded nodes.');
+        }
+        return _reconstructPath(startCode, endCode, currentState, cameFrom);
       }
 
-      final edges = _edgesByStop[current] ?? const [];
+      final edges = _edgesByStop[currentStop] ?? const [];
 
       for (final edge in edges) {
-        if (closedSet.contains(edge.toStopCode)) continue;
-
         double cost = edge.distanceMeters;
+        String nextLastBusRoute;
 
         if (edge.isWalkingEdge) {
+          // Walking: apply penalty, PRESERVE last bus route context
           if (edge.distanceMeters > maxWalkingDistance) {
             walkingEdgesSkipped++;
             continue;
           }
           cost = edge.distanceMeters * walkingPenaltyFactor;
-        }
+          nextLastBusRoute = lastBusRoute;
+        } else {
+          // Bus edge: detect transfers and backtracking
+          nextLastBusRoute = edge.routeCode;
 
-        // Add transfer penalty when switching bus lines
-        if (minimizeTransfers && cameFrom.containsKey(current)) {
-          final prevEdge = cameFrom[current]!;
-          if (!edge.isWalkingEdge &&
-              !prevEdge.isWalkingEdge &&
-              prevEdge.routeCode != edge.routeCode) {
-            cost += transferPenalty;
+          if (minimizeTransfers &&
+              lastBusRoute.isNotEmpty &&
+              lastBusRoute != edge.routeCode) {
+            // Switching routes — check if same line (backtracking) or different
+            final prevLineId = _lineIdByRouteCode[lastBusRoute] ?? '';
+            final thisLineId = _lineIdByRouteCode[edge.routeCode] ?? '';
+
+            if (prevLineId.isNotEmpty && prevLineId == thisLineId) {
+              // Same line, different direction = backtracking (very expensive)
+              cost += transferPenalty * 3;
+            } else {
+              // Legitimate transfer to a different line
+              cost += transferPenalty;
+            }
           }
         }
 
-        final tentative = (gScore[current] ?? double.infinity) + cost;
-        final previous = gScore[edge.toStopCode] ?? double.infinity;
+        final nextState = _encodeState(edge.toStopCode, nextLastBusRoute);
+
+        if (closedSet.contains(nextState)) continue;
+
+        final tentative = (gScore[currentState] ?? double.infinity) + cost;
+        final previous = gScore[nextState] ?? double.infinity;
+
         if (tentative < previous) {
-          cameFrom[edge.toStopCode] = edge;
-          gScore[edge.toStopCode] = tentative;
+          cameFrom[nextState] = (edge, currentState);
+          gScore[nextState] = tentative;
           final f = tentative + _heuristic(edge.toStopCode, endCode);
-          fScore[edge.toStopCode] = f;
-          addToQueue(edge.toStopCode, f);
+          fScore[nextState] = f;
+          addToQueue(nextState, f);
         }
       }
     }
@@ -490,16 +567,12 @@ class RoutePlanner {
       debugPrint(
           '[route_planner] Walking edges skipped (over limit): $walkingEdgesSkipped');
     }
-
-    // Try multi-stop approach: find route between multiple nearby stops
-    return _tryMultiStopRoute(
-      startCode,
-      endCode,
-      minimizeTransfers: minimizeTransfers,
-      transferPenalty: transferPenalty,
-      maxWalkingDistance: maxWalkingDistance,
-    );
+    return null;
   }
+
+  // ---------------------------------------------------------------------------
+  // Multi-stop fallback
+  // ---------------------------------------------------------------------------
 
   /// If direct A* fails, try routing between the nearest N stops to both
   /// origin and destination to find any possible connection.
@@ -537,8 +610,7 @@ class RoutePlanner {
         // Quick check: do these stops have edges?
         if ((_edgesByStop[altStart.stopCode] ?? []).isEmpty) continue;
 
-        // Run A* between these alternative stops (without recursion)
-        final result = _directAStar(
+        final result = _astar(
           altStart.stopCode,
           altEnd.stopCode,
           minimizeTransfers: minimizeTransfers,
@@ -575,103 +647,26 @@ class RoutePlanner {
     return bestResult;
   }
 
-  /// Direct A* without the multi-stop fallback (to prevent recursion).
-  OfflineRouteResult? _directAStar(
-    String startCode,
-    String endCode, {
-    bool minimizeTransfers = true,
-    double transferPenalty = 800.0,
-    int maxWalkingDistance = 500,
-  }) {
-    final openQueue = SplayTreeMap<double, List<String>>();
-    final gScore = <String, double>{startCode: 0.0};
-    final cameFrom = <String, RouteEdge>{};
-    final closedSet = <String>{};
-
-    void addToQueue(String code, double score) {
-      openQueue.putIfAbsent(score, () => []).add(code);
-    }
-
-    String? popBest() {
-      while (openQueue.isNotEmpty) {
-        final bestScore = openQueue.firstKey()!;
-        final list = openQueue[bestScore]!;
-        final code = list.removeLast();
-        if (list.isEmpty) openQueue.remove(bestScore);
-        if (!closedSet.contains(code)) return code;
-      }
-      return null;
-    }
-
-    addToQueue(startCode, _heuristic(startCode, endCode));
-
-    int walkingEdgesSkipped = 0;
-    while (openQueue.isNotEmpty) {
-      final current = popBest();
-      if (current == null) break;
-
-      if (closedSet.contains(current)) continue;
-      closedSet.add(current);
-
-      if (current == endCode) {
-        return _reconstructPath(startCode, endCode, cameFrom);
-      }
-
-      final edges = _edgesByStop[current] ?? const [];
-
-      for (final edge in edges) {
-        if (closedSet.contains(edge.toStopCode)) continue;
-
-        double cost = edge.distanceMeters;
-
-        if (edge.isWalkingEdge) {
-          if (edge.distanceMeters > maxWalkingDistance) {
-            walkingEdgesSkipped++;
-            continue;
-          }
-          cost = edge.distanceMeters * walkingPenaltyFactor;
-        }
-
-        if (minimizeTransfers && cameFrom.containsKey(current)) {
-          final prevEdge = cameFrom[current]!;
-          if (!edge.isWalkingEdge &&
-              !prevEdge.isWalkingEdge &&
-              prevEdge.routeCode != edge.routeCode) {
-            cost += transferPenalty;
-          }
-        }
-
-        final tentative = (gScore[current] ?? double.infinity) + cost;
-        final previous = gScore[edge.toStopCode] ?? double.infinity;
-        if (tentative < previous) {
-          cameFrom[edge.toStopCode] = edge;
-          gScore[edge.toStopCode] = tentative;
-          final f = tentative + _heuristic(edge.toStopCode, endCode);
-          addToQueue(edge.toStopCode, f);
-        }
-      }
-    }
-
-    if (debugLogging) {
-      debugPrint(
-          '[route_planner] Direct A* failed. Walking edges skipped (over limit): $walkingEdgesSkipped');
-    }
-    return null;
-  }
+  // ---------------------------------------------------------------------------
+  // Path reconstruction (follows composite state chain)
+  // ---------------------------------------------------------------------------
 
   OfflineRouteResult _reconstructPath(
     String startCode,
     String endCode,
-    Map<String, RouteEdge> cameFrom,
+    String goalState,
+    Map<String, (RouteEdge, String)> cameFrom,
   ) {
     final edges = <RouteEdge>[];
-    String current = endCode;
+    String currentState = goalState;
     int safety = 0;
-    while (current != startCode && safety < 10000) {
-      final edge = cameFrom[current];
-      if (edge == null) break;
+
+    while (safety < 10000) {
+      final entry = cameFrom[currentState];
+      if (entry == null) break; // reached start state
+      final (edge, prevState) = entry;
       edges.add(edge);
-      current = edge.fromStopCode;
+      currentState = prevState;
       safety++;
     }
 
@@ -684,33 +679,27 @@ class RoutePlanner {
     if (debugLogging) {
       debugPrint('[route_planner] Path reconstructed: ${path.length} edges, '
           '${totalDistance.toStringAsFixed(0)}m total');
-    }
 
-    // Log route segments
-    String? currentRoute;
-    int transfers = 0;
-    double walkingDistance = 0.0;
-    for (final edge in path) {
-      if (edge.isWalkingEdge) {
-        walkingDistance += edge.distanceMeters;
-      }
-      if (edge.routeCode != currentRoute) {
-        if (currentRoute != null) transfers++;
+      // Log route segments
+      String? currentRoute;
+      int transfers = 0;
+      double walkingDistance = 0.0;
+      for (final edge in path) {
         if (edge.isWalkingEdge) {
-          if (debugLogging) {
+          walkingDistance += edge.distanceMeters;
+        }
+        if (edge.routeCode != currentRoute) {
+          if (currentRoute != null) transfers++;
+          if (edge.isWalkingEdge) {
             debugPrint(
                 '[route_planner]   [WALK] ${edge.fromStopCode} -> ${edge.toStopCode} (${edge.distanceMeters.toStringAsFixed(0)}m)');
-          }
-        } else {
-          if (debugLogging) {
+          } else {
             debugPrint(
                 '[route_planner]   [${edge.lineId}] Route ${edge.routeCode}: ${edge.routeDescription}');
           }
+          currentRoute = edge.routeCode;
         }
-        currentRoute = edge.routeCode;
       }
-    }
-    if (debugLogging) {
       debugPrint(
           '[route_planner] Summary: transfers=$transfers, walkingDistance=${walkingDistance.toStringAsFixed(0)}m');
     }
@@ -722,6 +711,10 @@ class RoutePlanner {
       totalDistanceMeters: totalDistance,
     );
   }
+
+  // ---------------------------------------------------------------------------
+  // Helpers
+  // ---------------------------------------------------------------------------
 
   double _heuristic(String fromCode, String toCode) {
     final from = _stopsByCode[fromCode];
@@ -745,6 +738,8 @@ class RoutePlanner {
     required List<Stop> stops,
   }) {
     if (stops.length < 2) return;
+
+    _lineIdByRouteCode[routeCode] = lineId;
 
     for (final stop in stops) {
       _routesByStop.putIfAbsent(stop.stopCode, () => {}).add(routeCode);

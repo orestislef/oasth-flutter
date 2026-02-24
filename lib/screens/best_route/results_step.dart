@@ -280,14 +280,15 @@ class _ResultsStepState extends State<ResultsStep> {
   int _countTransfers(OfflineRouteResult route) {
     if (route.edges.isEmpty) return 0;
 
-    String? currentRoute;
+    String? lastBusRoute;
     int transfers = 0;
 
     for (final edge in route.edges) {
-      if (currentRoute != null && edge.routeCode != currentRoute) {
+      if (edge.isWalkingEdge) continue;
+      if (lastBusRoute != null && edge.routeCode != lastBusRoute) {
         transfers++;
       }
-      currentRoute = edge.routeCode;
+      lastBusRoute = edge.routeCode;
     }
 
     return transfers;
@@ -349,7 +350,7 @@ class _ResultsStepState extends State<ResultsStep> {
                   icon: Icons.directions_walk,
                   title: 'walking_transfer'.tr(),
                   subtitle:
-                      '${(segment.stops.fold<double>(0, (sum, e) => sum + e.distanceMeters) / 3).toStringAsFixed(0)}m',
+                      '${segment.stops.fold<double>(0, (sum, e) => sum + e.distanceMeters).toStringAsFixed(0)}m',
                   color: Theme.of(context).colorScheme.tertiary,
                 )
               : _buildBusSegmentItem(context, segment),

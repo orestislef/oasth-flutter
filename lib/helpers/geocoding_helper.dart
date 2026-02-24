@@ -88,10 +88,64 @@ class GeocodingHelper {
     return '${lat.toStringAsFixed(4)}, ${lng.toStringAsFixed(4)}';
   }
 
-  /// Search for addresses in the Thessaloniki area using Nominatim (free, no key).
+  /// Search for addresses in the Thessaloniki area.
+  /// Uses native phone geocoding on mobile; falls back to Nominatim on web.
   static Future<List<GeocodingResult>> searchAddress(String query) async {
     if (query.length < 3) return [];
 
+    // On mobile, use the phone's native geocoder (no network rate limits)
+    if (!kIsWeb) {
+      try {
+        final locations = await locationFromAddress('$query, Thessaloniki');
+        final inArea = locations.where((loc) =>
+            loc.latitude >= _minLat &&
+            loc.latitude <= _maxLat &&
+            loc.longitude >= _minLon &&
+            loc.longitude <= _maxLon);
+
+        // Reverse-geocode each hit in parallel to get display names
+        final futures = inArea.take(5).map((loc) async {
+          try {
+            final pms = await placemarkFromCoordinates(
+                loc.latitude, loc.longitude);
+            if (pms.isNotEmpty) {
+              final p = pms.first;
+              final parts = <String>[];
+              if (p.street != null && p.street!.isNotEmpty) {
+                parts.add(p.street!);
+              }
+              if (p.subLocality != null && p.subLocality!.isNotEmpty) {
+                parts.add(p.subLocality!);
+              }
+              if (p.locality != null && p.locality!.isNotEmpty) {
+                parts.add(p.locality!);
+              }
+              if (parts.isNotEmpty) {
+                return GeocodingResult(
+                  displayName: parts.join(', '),
+                  latitude: loc.latitude,
+                  longitude: loc.longitude,
+                  type: 'address',
+                );
+              }
+            }
+          } catch (_) {}
+          return null;
+        });
+
+        final results = (await Future.wait(futures)).whereType<GeocodingResult>().toList();
+        if (results.isNotEmpty) return results;
+      } catch (e) {
+        debugPrint('[Geocoding] Native address search failed: $e');
+      }
+    }
+
+    // Fallback: Nominatim (for web, or if native geocoding fails)
+    return _searchAddressNominatim(query);
+  }
+
+  static Future<List<GeocodingResult>> _searchAddressNominatim(
+      String query) async {
     try {
       final uri = Uri.parse(
         'https://nominatim.openstreetmap.org/search'
@@ -121,7 +175,7 @@ class GeocodingHelper {
         }).toList();
       }
     } catch (e) {
-      debugPrint('[Geocoding] Address search failed: $e');
+      debugPrint('[Geocoding] Nominatim address search failed: $e');
     }
 
     return [];
