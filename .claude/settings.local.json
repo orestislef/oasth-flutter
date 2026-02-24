@@ -73,7 +73,8 @@
       "Bash(gh api repos/georgetomzaridis/oasth-telematics-api-documentation/contents/README.rst --jq '.content')",
       "Bash(gh api repos/teogramm/oasth/contents/src/main/kotlin --jq '.[] | \"\"\\\\\\(.name\\) \\\\\\(.type\\)\"\"')",
       "Bash(gh api repos/teogramm/oasth/git/trees/main?recursive=1 --jq '.tree[] | select\\(.type==\"\"blob\"\"\\) | .path')",
-      "Bash(wc -l /c/Users/billy/Desktop/lefkaditisHUB/Personal_stuff/oasth/lib/screens/*.dart)"
+      "Bash(wc -l /c/Users/billy/Desktop/lefkaditisHUB/Personal_stuff/oasth/lib/screens/*.dart)",
+      "Bash(flutter analyze:*)"
     ]
   }
 }

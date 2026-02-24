@@ -1,45 +1,128 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class SharedPreferencesHelper {
-  static const String _keyStopsList = 'keyStopsList';
   static const String _keyRecentSearches = 'recent_searches';
   static const String _keySearchRadius = 'search_radius';
-  static const String _keyLinesCache = 'lines_cache';
-  static const String _keyRoutesGraphCache = 'routes_graph_cache';
   static const String _keyCacheTimestamp = 'cache_timestamp';
   static const String _keyMapType = 'map_type';
   static const int _maxRecentSearches = 10;
   static const double _defaultSearchRadius = 500.0;
 
+  // File names for large data (stored as files, not SharedPreferences)
+  static const String _linesCacheFile = 'lines_cache.json';
+  static const String _routesGraphCacheFile = 'routes_graph_cache.json';
+  static const String _stopsListFile = 'stops_list.json';
+
+  static String? _cacheDir;
+
+  static Future<String> _getCacheDir() async {
+    if (_cacheDir != null) return _cacheDir!;
+    final dir = await getApplicationDocumentsDirectory();
+    final cacheDir = Directory('${dir.path}/oasth_cache');
+    if (!await cacheDir.exists()) {
+      await cacheDir.create(recursive: true);
+    }
+    _cacheDir = cacheDir.path;
+    return _cacheDir!;
+  }
+
   static Future<void> init() async {
     await SharedPreferences.getInstance();
+    await _getCacheDir();
+    await _migrateFromSharedPreferences();
+  }
+
+  /// One-time migration: move large data from SharedPreferences to files.
+  static Future<void> _migrateFromSharedPreferences() async {
+    final prefs = await SharedPreferences.getInstance();
+    bool migrated = false;
+
+    // Migrate lines cache
+    final linesData = prefs.getString('lines_cache');
+    if (linesData != null) {
+      await _writeFile(_linesCacheFile, linesData);
+      await prefs.remove('lines_cache');
+      migrated = true;
+    }
+
+    // Migrate routes graph cache
+    final graphData = prefs.getString('routes_graph_cache');
+    if (graphData != null) {
+      await _writeFile(_routesGraphCacheFile, graphData);
+      await prefs.remove('routes_graph_cache');
+      migrated = true;
+    }
+
+    // Migrate stops list
+    final stopsData = prefs.getString('keyStopsList');
+    if (stopsData != null) {
+      await _writeFile(_stopsListFile, stopsData);
+      await prefs.remove('keyStopsList');
+      migrated = true;
+    }
+
+    if (migrated) {
+      debugPrint('[Cache] Migrated large data from SharedPreferences to files');
+    }
+  }
+
+  static Future<void> _writeFile(String fileName, String content) async {
+    final dir = await _getCacheDir();
+    final file = File('$dir/$fileName');
+    await file.writeAsString(content, flush: true);
+  }
+
+  static Future<String?> _readFile(String fileName) async {
+    final dir = await _getCacheDir();
+    final file = File('$dir/$fileName');
+    if (await file.exists()) {
+      return await file.readAsString();
+    }
+    return null;
+  }
+
+  static Future<void> _deleteFile(String fileName) async {
+    final dir = await _getCacheDir();
+    final file = File('$dir/$fileName');
+    if (await file.exists()) {
+      await file.delete();
+    }
+  }
+
+  static Future<bool> _fileExists(String fileName) async {
+    final dir = await _getCacheDir();
+    final file = File('$dir/$fileName');
+    return file.exists();
   }
 
   static Future<void> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.clear();
+    await _deleteFile(_linesCacheFile);
+    await _deleteFile(_routesGraphCacheFile);
+    await _deleteFile(_stopsListFile);
   }
 
-  // --- Full data cache (lines + routes + stops graph) ---
+  // --- Full data cache (lines + routes + stops graph) --- stored as files ---
 
   static Future<void> setLinesCache(String json) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyLinesCache, json);
+    await _writeFile(_linesCacheFile, json);
   }
 
   static Future<String?> getLinesCache() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyLinesCache);
+    return await _readFile(_linesCacheFile);
   }
 
   static Future<void> setRoutesGraphCache(String json) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyRoutesGraphCache, json);
+    await _writeFile(_routesGraphCacheFile, json);
   }
 
   static Future<String?> getRoutesGraphCache() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyRoutesGraphCache);
+    return await _readFile(_routesGraphCacheFile);
   }
 
   static Future<void> setCacheTimestamp(int epochMs) async {
@@ -62,32 +145,28 @@ class SharedPreferencesHelper {
 
   static Future<void> clearDataCache() async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keyLinesCache);
-    await prefs.remove(_keyRoutesGraphCache);
     await prefs.remove(_keyCacheTimestamp);
-    await prefs.remove(_keyStopsList);
+    await _deleteFile(_linesCacheFile);
+    await _deleteFile(_routesGraphCacheFile);
+    await _deleteFile(_stopsListFile);
   }
 
-  // --- Stops list cache ---
+  // --- Stops list cache --- stored as file ---
 
   static Future<void> clearStopsList() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_keyStopsList);
+    await _deleteFile(_stopsListFile);
   }
 
   static Future<bool> stopsListExists() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.containsKey(_keyStopsList);
+    return await _fileExists(_stopsListFile);
   }
 
   static Future<void> setStopsList(String stopsList) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_keyStopsList, stopsList);
+    await _writeFile(_stopsListFile, stopsList);
   }
 
   static Future<String?> getStopsList() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_keyStopsList);
+    return await _readFile(_stopsListFile);
   }
 
   // --- Recent searches ---
