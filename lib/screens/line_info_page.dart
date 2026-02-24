@@ -1,5 +1,7 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:latlong2/latlong.dart' hide Path;
 import 'package:oasth/api/responses/line_name.dart';
 import 'package:oasth/api/responses/lines_and_routes_for_m_land_l_code.dart';
 import 'package:oasth/api/responses/lines_with_ml_info.dart';
@@ -9,6 +11,7 @@ import 'package:oasth/data/favorites_service.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/stop_page.dart';
+import 'package:oasth/widgets/shimmer_loading.dart';
 
 import 'line_route_page.dart';
 
@@ -34,6 +37,11 @@ class _LineInfoPageState extends State<LineInfoPage>
   String _searchQuery = '';
   List<Stop> _filteredStops = [];
   RouteDetailAndStops? _currentRouteData;
+
+  bool _sortByDistance = false;
+  Position? _userPosition;
+  bool _isGettingLocation = false;
+  Map<String, double> _stopDistances = {};
 
   @override
   void initState() {
@@ -75,6 +83,96 @@ class _LineInfoPageState extends State<LineInfoPage>
         }).toList();
       }
     });
+  }
+
+  Future<void> _getUserLocationAndSort() async {
+    if (_isGettingLocation) return;
+    setState(() => _isGettingLocation = true);
+
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('location_permission_denied'.tr()),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+            setState(() {
+              _sortByDistance = false;
+              _isGettingLocation = false;
+            });
+          }
+          return;
+        }
+      }
+
+      if (permission == LocationPermission.deniedForever) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('location_permission_permanently_denied'.tr()),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+          setState(() {
+            _sortByDistance = false;
+            _isGettingLocation = false;
+          });
+        }
+        return;
+      }
+
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 15),
+        ),
+      );
+
+      if (!mounted) return;
+      _userPosition = position;
+      _calculateDistances();
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('location_error'.tr()),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+        setState(() => _sortByDistance = false);
+      }
+    } finally {
+      if (mounted) setState(() => _isGettingLocation = false);
+    }
+  }
+
+  void _calculateDistances() {
+    if (_userPosition == null) return;
+    final distCalc = const Distance();
+    final userLatLng = LatLng(_userPosition!.latitude, _userPosition!.longitude);
+    final distances = <String, double>{};
+
+    if (_currentRouteData != null) {
+      for (final stop in _currentRouteData!.stops) {
+        distances[stop.stopCode] = distCalc.as(
+          LengthUnit.Meter,
+          userLatLng,
+          LatLng(stop.stopLat, stop.stopLng),
+        );
+      }
+    }
+
+    setState(() => _stopDistances = distances);
+  }
+
+  String _formatDistance(double meters) {
+    if (meters < 1000) return '${meters.round()}m';
+    return '${(meters / 1000).toStringAsFixed(1)}km';
   }
 
   Future<void> _toggleFavorite() async {
@@ -273,10 +371,72 @@ class _LineInfoPageState extends State<LineInfoPage>
         _buildLineVariantsSection(context),
         _buildDirectionSection(context),
         _buildSearchBar(context),
+        _buildSortToggle(context),
         Expanded(
           child: _buildStopsList(context),
         ),
       ],
+    );
+  }
+
+  Widget _buildSortToggle(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      child: Row(
+        children: [
+          Icon(Icons.sort, size: 18, color: Theme.of(context).primaryColor),
+          const SizedBox(width: 8),
+          Text(
+            'sort_by'.tr(),
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
+          const Spacer(),
+          if (_isGettingLocation)
+            Padding(
+              padding: const EdgeInsets.only(right: 12),
+              child: SizedBox(
+                width: 16,
+                height: 16,
+                child: CircularProgressIndicator(
+                  strokeWidth: 2,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    Theme.of(context).primaryColor,
+                  ),
+                ),
+              ),
+            ),
+          SegmentedButton<bool>(
+            segments: [
+              ButtonSegment(
+                value: false,
+                label: Text('route_order'.tr()),
+                icon: const Icon(Icons.route, size: 16),
+              ),
+              ButtonSegment(
+                value: true,
+                label: Text('closest'.tr()),
+                icon: const Icon(Icons.near_me, size: 16),
+              ),
+            ],
+            selected: {_sortByDistance},
+            onSelectionChanged: (selected) {
+              final wantDistance = selected.first;
+              if (wantDistance && _userPosition == null) {
+                _getUserLocationAndSort();
+              }
+              setState(() => _sortByDistance = wantDistance);
+            },
+            style: ButtonStyle(
+              visualDensity: VisualDensity.compact,
+              textStyle: WidgetStatePropertyAll(
+                Theme.of(context).textTheme.labelSmall,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -290,7 +450,9 @@ class _LineInfoPageState extends State<LineInfoPage>
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Padding(
             padding: EdgeInsets.all(16),
-            child: Center(child: CircularProgressIndicator.adaptive()),
+            child: ShimmerContainer(
+              child: ShimmerBox(width: double.infinity, height: 60),
+            ),
           );
         }
 
@@ -421,7 +583,9 @@ class _LineInfoPageState extends State<LineInfoPage>
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Padding(
             padding: EdgeInsets.all(16),
-            child: Center(child: CircularProgressIndicator.adaptive()),
+            child: ShimmerContainer(
+              child: ShimmerBox(width: double.infinity, height: 80),
+            ),
           );
         }
 
@@ -557,7 +721,12 @@ class _LineInfoPageState extends State<LineInfoPage>
       future: _repo.getRoutesForLine(_selectedLineCode),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator.adaptive());
+          return ShimmerContainer(
+            child: ListView(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              children: List.generate(8, (_) => const ShimmerListTile()),
+            ),
+          );
         }
 
         if (snapshot.hasError || snapshot.data!.isEmpty) {
@@ -570,7 +739,12 @@ class _LineInfoPageState extends State<LineInfoPage>
           ),
           builder: (context, routeSnapshot) {
             if (routeSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator.adaptive());
+              return ShimmerContainer(
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  children: List.generate(8, (_) => const ShimmerListTile()),
+                ),
+              );
             }
 
             if (routeSnapshot.hasError) {
@@ -578,9 +752,26 @@ class _LineInfoPageState extends State<LineInfoPage>
             }
 
             _currentRouteData = routeSnapshot.data!;
-            final stops = _searchQuery.isEmpty
+
+            // Recalculate distances if we have a position but distances are empty
+            if (_userPosition != null && _stopDistances.isEmpty) {
+              _calculateDistances();
+            }
+
+            var stops = _searchQuery.isEmpty
                 ? _currentRouteData!.stops
                 : _filteredStops;
+
+            if (_sortByDistance && _stopDistances.isNotEmpty) {
+              stops = List.of(stops)
+                ..sort((a, b) {
+                  final distA =
+                      _stopDistances[a.stopCode] ?? double.infinity;
+                  final distB =
+                      _stopDistances[b.stopCode] ?? double.infinity;
+                  return distA.compareTo(distB);
+                });
+            }
 
             if (stops.isEmpty && _searchQuery.isNotEmpty) {
               return _buildEmptySearchState(context);
@@ -641,6 +832,10 @@ class _LineInfoPageState extends State<LineInfoPage>
             ? stop.stopDescription
             : stop.stopDescriptionEng;
 
+    final showDistance =
+        _sortByDistance && _stopDistances.containsKey(stop.stopCode);
+    final distMeters = _stopDistances[stop.stopCode];
+
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
@@ -651,24 +846,54 @@ class _LineInfoPageState extends State<LineInfoPage>
           child: Row(
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: 44,
+                height: 44,
                 decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withAlpha(25),
+                  color: showDistance
+                      ? (distMeters != null && distMeters < 300
+                          ? Theme.of(context).colorScheme.primary.withAlpha(25)
+                          : Theme.of(context).primaryColor.withAlpha(25))
+                      : Theme.of(context).primaryColor.withAlpha(25),
                   borderRadius: BorderRadius.circular(8),
                   border: Border.all(
-                    color: Theme.of(context).primaryColor.withAlpha(76),
+                    color: showDistance
+                        ? (distMeters != null && distMeters < 300
+                            ? Theme.of(context).colorScheme.primary
+                            : Theme.of(context).primaryColor.withAlpha(76))
+                        : Theme.of(context).primaryColor.withAlpha(76),
                     width: 1,
                   ),
                 ),
                 child: Center(
-                  child: Text(
-                    stop.routeStopOrder.isNotEmpty ? stop.routeStopOrder : '?',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).primaryColor,
-                    ),
-                  ),
+                  child: showDistance && distMeters != null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.near_me,
+                              size: 14,
+                              color: Theme.of(context).primaryColor,
+                            ),
+                            const SizedBox(height: 1),
+                            Text(
+                              _formatDistance(distMeters),
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 9,
+                                color: Theme.of(context).primaryColor,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Text(
+                          stop.routeStopOrder.isNotEmpty
+                              ? stop.routeStopOrder
+                              : '?',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                        ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -684,7 +909,49 @@ class _LineInfoPageState extends State<LineInfoPage>
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    if (stop.stopStreet.isNotEmpty) ...[
+                    if (showDistance && distMeters != null) ...[
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.directions_walk,
+                            size: 14,
+                            color: Theme.of(context).hintColor,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            _formatDistance(distMeters),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: distMeters < 300
+                                          ? Theme.of(context)
+                                              .colorScheme
+                                              .primary
+                                          : Theme.of(context).hintColor,
+                                      fontWeight: distMeters < 300
+                                          ? FontWeight.w600
+                                          : null,
+                                    ),
+                          ),
+                          if (stop.routeStopOrder.isNotEmpty) ...[
+                            const SizedBox(width: 12),
+                            Text(
+                              '#${stop.routeStopOrder}',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
+                                        ?.color
+                                        ?.withAlpha(128),
+                                  ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ] else if (stop.stopStreet.isNotEmpty) ...[
                       const SizedBox(height: 4),
                       Text(
                         stop.stopStreet,
@@ -729,7 +996,12 @@ class _LineInfoPageState extends State<LineInfoPage>
       future: _repo.getRoutesForLine(_selectedLineCode),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator.adaptive());
+          return const ShimmerContainer(
+            child: ShimmerBox(
+              width: double.infinity,
+              height: double.infinity,
+            ),
+          );
         }
 
         if (snapshot.hasError || snapshot.data!.isEmpty) {
@@ -742,7 +1014,12 @@ class _LineInfoPageState extends State<LineInfoPage>
           ),
           builder: (context, routeSnapshot) {
             if (routeSnapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator.adaptive());
+              return const ShimmerContainer(
+                child: ShimmerBox(
+                  width: double.infinity,
+                  height: double.infinity,
+                ),
+              );
             }
 
             if (routeSnapshot.hasError) {

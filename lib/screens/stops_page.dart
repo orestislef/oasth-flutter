@@ -1,12 +1,13 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:oasth/api/responses/lines_with_ml_info.dart';
-import 'package:oasth/api/responses/routes_for_stop.dart';
-import 'package:oasth/api/responses/stop_details.dart';
+import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/input_formatters_helper.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/line_info_page.dart';
+import 'package:oasth/screens/stop_page.dart';
+import 'package:oasth/widgets/shimmer_loading.dart';
 
 class StopsPage extends StatefulWidget {
   const StopsPage({super.key});
@@ -179,7 +180,12 @@ class _StopsPageState extends State<StopsPage> {
       future: _repo.getLinesWithMLInfo(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator.adaptive());
+          return ShimmerContainer(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: List.generate(6, (_) => const ShimmerLineCard()),
+            ),
+          );
         }
         if (snapshot.hasError) {
           return Center(
@@ -299,226 +305,34 @@ class _StopsPageState extends State<StopsPage> {
       final stopBySip = await _repo.getStopBySIP(stopCode);
       if (!context.mounted) return;
 
-      // Show routes for this stop in a bottom sheet
-      final RouteForStop? selected = await showModalBottomSheet<RouteForStop>(
-        context: context,
-        builder: (context) {
-          return FutureBuilder<List<RouteForStop>>(
-            future: _repo.getRoutesForStop(stopBySip.id),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const SizedBox(
-                  height: 200,
-                  child: Center(child: CircularProgressIndicator.adaptive()),
-                );
-              }
-              if (snapshot.hasError) {
-                return SizedBox(
-                  height: 200,
-                  child: Center(child: Text('error'.tr())),
-                );
-              }
-              final routes = snapshot.data!;
-              if (routes.isEmpty) {
-                return SizedBox(
-                  height: 200,
-                  child: Center(child: Text('no_line_info'.tr())),
-                );
-              }
-
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const SizedBox(height: 16),
-                  Text(
-                    'choose_route'.tr(),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
-                  ),
-                  const SizedBox(height: 8),
-                  Flexible(
-                    child: ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: routes.length,
-                      itemBuilder: (context, index) {
-                        final route = routes[index];
-                        final desc =
-                            LanguageHelper.getLanguageUsedInApp(context) == 'en'
-                                ? route.lineDescriptionEng
-                                : route.lineDescription;
-
-                        return Card(
-                          margin: const EdgeInsets.symmetric(
-                              horizontal: 16, vertical: 4),
-                          child: InkWell(
-                            onTap: () => Navigator.pop(context, route),
-                            borderRadius: BorderRadius.circular(12),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Row(
-                                children: [
-                                  Container(
-                                    width: 36,
-                                    height: 36,
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).primaryColor,
-                                      shape: BoxShape.circle,
-                                    ),
-                                    child: Center(
-                                      child: Text(
-                                        route.lineID,
-                                        style: TextStyle(
-                                          fontWeight: FontWeight.bold,
-                                          color: Theme.of(context)
-                                              .colorScheme
-                                              .onPrimary,
-                                          fontSize: 12,
-                                        ),
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(child: Text(desc)),
-                                ],
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                ],
-              );
-            },
-          );
-        },
+      final stop = Stop(
+        stopCode: stopCode,
+        stopID: stopBySip.id,
+        stopDescription: stopBySip.titleEl,
+        stopDescriptionEng: stopBySip.titleEn,
+        stopStreet: '',
+        stopStreetEng: '',
+        stopHeading: '',
+        stopLat: stopBySip.lat,
+        stopLng: stopBySip.lng,
+        routeStopOrder: '',
+        stopType: '',
+        stopAmea: '',
       );
 
-      if (selected != null && context.mounted) {
-        // Get stop arrivals and show
-        _showStopArrivals(context, stopBySip.id, stopCode, selected);
-      }
+      Navigator.push(
+        context,
+        MaterialPageRoute(builder: (_) => StopPage(stop: stop)),
+      );
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('error'.tr()),
+          content: Text('stop_not_found'.tr()),
           behavior: SnackBarBehavior.floating,
         ),
       );
     }
-  }
-
-  void _showStopArrivals(BuildContext context, String stopId, String stopCode,
-      RouteForStop route) {
-    showModalBottomSheet(
-      context: context,
-      builder: (context) {
-        return Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                '${route.lineID} - ${LanguageHelper.getLanguageUsedInApp(context) == 'en' ? route.lineDescriptionEng : route.lineDescription}',
-                style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                '${'station_code'.tr()}: $stopCode',
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).hintColor,
-                    ),
-              ),
-              const SizedBox(height: 16),
-              Flexible(
-                child: FutureBuilder<List<StopDetails>>(
-                  future: _repo.getStopArrivals(stopId),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const SizedBox(
-                        height: 100,
-                        child: Center(
-                            child: CircularProgressIndicator.adaptive()),
-                      );
-                    }
-                    if (snapshot.hasError) {
-                      return Center(child: Text('error'.tr()));
-                    }
-                    final arrivals = snapshot.data!;
-                    if (arrivals.isEmpty) {
-                      return Center(
-                        child: Padding(
-                          padding: const EdgeInsets.all(16),
-                          child: Text(
-                            'no_stop_details'.tr(),
-                            style: Theme.of(context).textTheme.bodyMedium,
-                          ),
-                        ),
-                      );
-                    }
-                    return ListView.builder(
-                      shrinkWrap: true,
-                      itemCount: arrivals.length,
-                      itemBuilder: (context, index) {
-                        final arrival = arrivals[index];
-                        final minutes =
-                            int.tryParse(arrival.btime2) ?? 999;
-                        final color = minutes <= 2
-                            ? Theme.of(context).colorScheme.error
-                            : minutes <= 5
-                                ? Theme.of(context).primaryColor
-                                : null;
-
-                        return Card(
-                          margin: const EdgeInsets.only(bottom: 4),
-                          child: Padding(
-                            padding: const EdgeInsets.all(12),
-                            child: Row(
-                              children: [
-                                Icon(Icons.directions_bus,
-                                    color: color, size: 20),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Text(
-                                    arrival.routeCode,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
-                                            fontWeight: FontWeight.w600),
-                                  ),
-                                ),
-                                Text(
-                                  '${arrival.btime2} ${minutes == 1 ? 'min' : 'mins'}',
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .titleMedium
-                                      ?.copyWith(
-                                        fontWeight: FontWeight.bold,
-                                        color: color,
-                                      ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 8),
-            ],
-          ),
-        );
-      },
-    );
   }
 
   void _showStopCodeInfoDialog() {

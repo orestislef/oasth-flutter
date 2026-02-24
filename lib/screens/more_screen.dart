@@ -63,8 +63,13 @@ class _CustomExpansionTileState extends State<CustomExpansionTile>
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
                           color: widget.isImportant
-                              ? Theme.of(context).colorScheme.primary.withValues(alpha: .1)
-                              : Theme.of(context).primaryColor.withValues(alpha: .1),
+                              ? Theme.of(context)
+                                  .colorScheme
+                                  .primary
+                                  .withValues(alpha: .1)
+                              : Theme.of(context)
+                                  .primaryColor
+                                  .withValues(alpha: .1),
                           borderRadius: BorderRadius.circular(8),
                         ),
                         child: Icon(
@@ -80,12 +85,13 @@ class _CustomExpansionTileState extends State<CustomExpansionTile>
                     Expanded(
                       child: Text(
                         widget.title,
-                        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: widget.isImportant
-                              ? Theme.of(context).colorScheme.primary
-                              : null,
-                        ),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                  color: widget.isImportant
+                                      ? Theme.of(context).colorScheme.primary
+                                      : null,
+                                ),
                       ),
                     ),
                     AnimatedRotation(
@@ -123,10 +129,11 @@ class _CustomExpansionTileState extends State<CustomExpansionTile>
                   Text(
                     widget.details,
                     style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                      height: 1.5,
-                    ),
+                          height: 1.5,
+                        ),
                   ),
-                  if (widget.title.contains('contact') || widget.title.contains('επικοινωνία'))
+                  if (widget.title.contains('contact') ||
+                      widget.title.contains('επικοινωνία'))
                     _buildContactActions(context),
                 ],
               ),
@@ -281,8 +288,8 @@ class _MorePageState extends State<MorePage> {
       } else {
         _filteredItems = _allItems.where((item) {
           return item.title.toLowerCase().contains(query.toLowerCase()) ||
-                 item.details.toLowerCase().contains(query.toLowerCase()) ||
-                 item.category.toLowerCase().contains(query.toLowerCase());
+              item.details.toLowerCase().contains(query.toLowerCase()) ||
+              item.category.toLowerCase().contains(query.toLowerCase());
         }).toList();
       }
     });
@@ -312,15 +319,15 @@ class _MorePageState extends State<MorePage> {
           Text(
             'app_settings_help'.tr(),
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w600,
-            ),
+                  fontWeight: FontWeight.w600,
+                ),
           ),
           const SizedBox(height: 8),
           Text(
             'find_answers_settings'.tr(),
             style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: Theme.of(context).hintColor,
-            ),
+                  color: Theme.of(context).hintColor,
+                ),
           ),
         ],
       ),
@@ -367,9 +374,9 @@ class _MorePageState extends State<MorePage> {
               'count': _filteredItems.length.toString(),
             }),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).primaryColor,
-              fontWeight: FontWeight.w500,
-            ),
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
         ],
       ),
@@ -388,8 +395,10 @@ class _MorePageState extends State<MorePage> {
         const SizedBox(height: 8),
         _buildForceRefreshButton(context),
         const SizedBox(height: 16),
-        if (_searchQuery.isEmpty) ..._buildCategorizedSections(context)
-        else ..._buildFilteredResults(context),
+        if (_searchQuery.isEmpty)
+          ..._buildCategorizedSections(context)
+        else
+          ..._buildFilteredResults(context),
         const SizedBox(height: 32),
       ],
     );
@@ -402,7 +411,7 @@ class _MorePageState extends State<MorePage> {
         onTap: () async {
           await SharedPreferencesHelper.clearDataCache();
           Api.clearCache();
-          if (!mounted) return;
+          if (!context.mounted) return;
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('cache_cleared'.tr()),
@@ -453,22 +462,22 @@ class _MorePageState extends State<MorePage> {
 
   List<Widget> _buildCategorizedSections(BuildContext context) {
     final sections = <String, List<_SectionItem>>{};
-    
+
     for (final item in _allItems) {
       sections.putIfAbsent(item.category, () => []).add(item);
     }
 
     final widgets = <Widget>[];
-    
+
     sections.forEach((category, items) {
       widgets.add(_buildSectionHeader(context, category));
       widgets.addAll(
         items.map((item) => CustomExpansionTile(
-          title: item.title,
-          details: item.details,
-          icon: item.icon,
-          isImportant: item.isImportant,
-        )),
+              title: item.title,
+              details: item.details,
+              icon: item.icon,
+              isImportant: item.isImportant,
+            )),
       );
       widgets.add(const SizedBox(height: 16));
     });
@@ -482,21 +491,23 @@ class _MorePageState extends State<MorePage> {
       child: Text(
         title,
         style: Theme.of(context).textTheme.titleSmall?.copyWith(
-          fontWeight: FontWeight.bold,
-          color: Theme.of(context).primaryColor,
-          letterSpacing: 0.5,
-        ),
+              fontWeight: FontWeight.bold,
+              color: Theme.of(context).primaryColor,
+              letterSpacing: 0.5,
+            ),
       ),
     );
   }
 
   List<Widget> _buildFilteredResults(BuildContext context) {
-    return _filteredItems.map((item) => CustomExpansionTile(
-      title: item.title,
-      details: item.details,
-      icon: item.icon,
-      isImportant: item.isImportant,
-    )).toList();
+    return _filteredItems
+        .map((item) => CustomExpansionTile(
+              title: item.title,
+              details: item.details,
+              icon: item.icon,
+              isImportant: item.isImportant,
+            ))
+        .toList();
   }
 
   Widget _buildEmptySearchState(BuildContext context) {
@@ -515,16 +526,16 @@ class _MorePageState extends State<MorePage> {
             Text(
               'no_help_results'.tr(),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+                    fontWeight: FontWeight.w600,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
               'try_different_search'.tr(),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).hintColor,
-              ),
+                    color: Theme.of(context).hintColor,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -538,7 +549,6 @@ class _MorePageState extends State<MorePage> {
       ),
     );
   }
-
 }
 
 class _SectionItem {

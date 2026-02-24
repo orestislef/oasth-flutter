@@ -334,5 +334,8 @@
   "more_options": "More",
   "articles": "articles",
   "walking_transfer": "Walk to next stop",
-  "route_map": "Route Map"
+  "route_map": "Route Map",
+  "sort_by": "Sort by",
+  "route_order": "Route order",
+  "closest": "Closest"
 }

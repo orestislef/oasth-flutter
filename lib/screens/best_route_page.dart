@@ -206,28 +206,36 @@ class _BestRoutePageState extends State<BestRoutePage>
         child: Column(
           children: [
             _buildHeader(),
-            if (_buildingGraph && !_graphReady) _buildGraphProgressIndicator(),
             Expanded(
-              child: switch (_currentStep) {
-                RouteStep.input => InputStep(
-                    fromPlace: _fromPlace,
-                    toPlace: _toPlace,
-                    preferences: _preferences,
-                    recentSearches: _recentSearches,
-                    graphReady: _graphReady,
-                    onFromChanged: (place) =>
-                        setState(() => _fromPlace = place),
-                    onToChanged: (place) => setState(() => _toPlace = place),
-                    onPreferencesChanged: (prefs) =>
-                        setState(() => _preferences = prefs),
-                    onFindRoute: _findRoute,
-                    onSwapLocations: _swapLocations,
+              child: Column(
+                children: [
+                  if (_buildingGraph && !_graphReady)
+                    _buildGraphProgressIndicator(),
+                  Expanded(
+                    child: switch (_currentStep) {
+                      RouteStep.input => InputStep(
+                          fromPlace: _fromPlace,
+                          toPlace: _toPlace,
+                          preferences: _preferences,
+                          recentSearches: _recentSearches,
+                          graphReady: _graphReady,
+                          onFromChanged: (place) =>
+                              setState(() => _fromPlace = place),
+                          onToChanged: (place) =>
+                              setState(() => _toPlace = place),
+                          onPreferencesChanged: (prefs) =>
+                              setState(() => _preferences = prefs),
+                          onFindRoute: _findRoute,
+                          onSwapLocations: _swapLocations,
+                        ),
+                      RouteStep.results => ResultsStep(
+                          result: _result,
+                          onResetToInput: _resetToInput,
+                        ),
+                    },
                   ),
-                RouteStep.results => ResultsStep(
-                    result: _result,
-                    onResetToInput: _resetToInput,
-                  ),
-              },
+                ],
+              ),
             ),
           ],
         ),

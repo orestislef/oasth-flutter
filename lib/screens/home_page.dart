@@ -12,6 +12,7 @@ import 'package:oasth/screens/lines_page.dart';
 import 'package:oasth/screens/more_screen.dart';
 import 'package:oasth/screens/stop_page.dart';
 import 'package:oasth/screens/stops_page.dart';
+import 'package:oasth/widgets/shimmer_loading.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key, this.currentIndex = 0});
@@ -408,7 +409,16 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
       future: _performSearch(query, context),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator.adaptive());
+          return ShimmerContainer(
+            child: ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                ...List.generate(4, (_) => const ShimmerLineCard()),
+                const SizedBox(height: 16),
+                ...List.generate(4, (_) => const ShimmerListTile()),
+              ],
+            ),
+          );
         }
 
         if (snapshot.hasError) {

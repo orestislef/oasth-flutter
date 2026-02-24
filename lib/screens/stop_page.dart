@@ -9,6 +9,7 @@ import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/stop_details.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/language_helper.dart';
+import 'package:oasth/widgets/shimmer_loading.dart';
 
 class StopPage extends StatefulWidget {
   const StopPage({super.key, required this.stop});
@@ -103,13 +104,15 @@ class _StopPageState extends State<StopPage> {
         headerSliverBuilder: (context, innerBoxIsScrolled) {
           return [_buildSliverAppBar(context)];
         },
-        body: Column(
+        body: ListView(
+          padding: EdgeInsets.zero,
           children: [
             _buildStopInfo(context),
             const SizedBox(height: 16),
             _buildArrivalsSection(context),
             const SizedBox(height: 16),
             _buildMapSection(context),
+            const SizedBox(height: 80),
           ],
         ),
       ),
@@ -339,44 +342,40 @@ class _StopPageState extends State<StopPage> {
   }
 
   Widget _buildArrivalsSection(BuildContext context) {
-    return Expanded(
-      flex: 2,
-      child: Card(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.schedule,
-                    size: 24,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'live_arrivals'.tr(),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const Spacer(),
-                  Text(
-                    'updates_every_10s'.tr(),
-                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Theme.of(context).hintColor,
-                        ),
-                  ),
-                ],
-              ),
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.schedule,
+                  size: 24,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'live_arrivals'.tr(),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const Spacer(),
+                Text(
+                  'updates_every_10s'.tr(),
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).hintColor,
+                      ),
+                ),
+              ],
             ),
-            const Divider(height: 1),
-            Expanded(
-              child: _buildArrivalsContent(context),
-            ),
-          ],
-        ),
+          ),
+          const Divider(height: 1),
+          _buildArrivalsContent(context),
+        ],
       ),
     );
   }
@@ -403,21 +402,16 @@ class _StopPageState extends State<StopPage> {
   }
 
   Widget _buildLoadingState(BuildContext context) {
-    return Center(
+    return ShimmerContainer(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          CircularProgressIndicator(
-            valueColor: AlwaysStoppedAnimation<Color>(
-              Theme.of(context).primaryColor,
-            ),
+        mainAxisSize: MainAxisSize.min,
+        children: List.generate(
+          5,
+          (_) => const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: ShimmerArrivalCard(),
           ),
-          const SizedBox(height: 16),
-          Text(
-            'loading_arrivals'.tr(),
-            style: Theme.of(context).textTheme.titleMedium,
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -498,6 +492,8 @@ class _StopPageState extends State<StopPage> {
 
   Widget _buildArrivalsList(BuildContext context, List<StopDetails> arrivals) {
     return ListView.separated(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
       padding: const EdgeInsets.all(16),
       itemCount: arrivals.length,
       separatorBuilder: (context, index) => const Divider(height: 1),
@@ -577,44 +573,43 @@ class _StopPageState extends State<StopPage> {
   }
 
   Widget _buildMapSection(BuildContext context) {
-    return Expanded(
-      flex: 3,
-      child: Card(
-        margin: const EdgeInsets.all(16),
-        clipBehavior: Clip.antiAlias,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Row(
-                children: [
-                  Icon(
-                    Icons.map,
-                    size: 24,
-                    color: Theme.of(context).primaryColor,
-                  ),
-                  const SizedBox(width: 12),
-                  Text(
-                    'stop_location'.tr(),
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                        ),
-                  ),
-                  const Spacer(),
-                  TextButton.icon(
-                    onPressed: _openInMaps,
-                    icon: const Icon(Icons.open_in_new, size: 16),
-                    label: Text('open_in_maps'.tr()),
-                  ),
-                ],
-              ),
+    return Card(
+      margin: const EdgeInsets.all(16),
+      clipBehavior: Clip.antiAlias,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.map,
+                  size: 24,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'stop_location'.tr(),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+                const Spacer(),
+                TextButton.icon(
+                  onPressed: _openInMaps,
+                  icon: const Icon(Icons.open_in_new, size: 16),
+                  label: Text('open_in_maps'.tr()),
+                ),
+              ],
             ),
-            const Divider(height: 1),
-            Expanded(
-              child: _buildMap(context),
-            ),
-          ],
-        ),
+          ),
+          const Divider(height: 1),
+          SizedBox(
+            height: 300,
+            child: _buildMap(context),
+          ),
+        ],
       ),
     );
   }

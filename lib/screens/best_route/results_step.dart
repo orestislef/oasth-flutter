@@ -4,6 +4,7 @@ import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/data/route_planner.dart';
 import 'package:oasth/data/route_planner_models.dart';
 import 'package:oasth/screens/best_route/route_map.dart';
+import 'package:oasth/widgets/shimmer_loading.dart';
 
 class ResultsStep extends StatelessWidget {
   final RouteResult result;
@@ -18,14 +19,26 @@ class ResultsStep extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (result.isLoading) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(),
-            const SizedBox(height: 16),
-            Text('finding_best_route'.tr()),
-          ],
+      return SingleChildScrollView(
+        padding: const EdgeInsets.all(20),
+        child: ShimmerContainer(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const ShimmerRouteResultCard(),
+              const SizedBox(height: 16),
+              const ShimmerBox(
+                  width: double.infinity, height: 300, borderRadius: 12),
+              const SizedBox(height: 16),
+              ...List.generate(
+                4,
+                (_) => const Padding(
+                  padding: EdgeInsets.only(bottom: 8),
+                  child: ShimmerListTile(),
+                ),
+              ),
+            ],
+          ),
         ),
       );
     }

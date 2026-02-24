@@ -44,7 +44,8 @@ class _InputStepState extends State<InputStep> {
   List<GeocodingResult> _fromSuggestions = [];
   List<GeocodingResult> _toSuggestions = [];
   Timer? _searchDebounce;
-  bool _isSearching = false;
+  bool _isFromSearching = false;
+  bool _isToSearching = false;
   bool _isGettingFromLocation = false;
   bool _isGettingToLocation = false;
   bool _showPreferences = false;
@@ -181,7 +182,13 @@ class _InputStepState extends State<InputStep> {
   }
 
   Future<void> _searchSuggestions(String query, bool isFrom) async {
-    setState(() => _isSearching = true);
+    setState(() {
+      if (isFrom) {
+        _isFromSearching = true;
+      } else {
+        _isToSearching = true;
+      }
+    });
 
     final results = <GeocodingResult>[];
 
@@ -213,7 +220,11 @@ class _InputStepState extends State<InputStep> {
         } else {
           _toSuggestions = results;
         }
-        _isSearching = false;
+        if (isFrom) {
+          _isFromSearching = false;
+        } else {
+          _isToSearching = false;
+        }
       });
     }
   }
@@ -370,7 +381,8 @@ class _InputStepState extends State<InputStep> {
                 fillColor: Theme.of(context).cardColor,
               ),
             ),
-            if (_isSearching && suggestions.isEmpty)
+            if ((isFrom ? _isFromSearching : _isToSearching) &&
+                suggestions.isEmpty)
               const Padding(
                 padding: EdgeInsets.only(top: 8),
                 child: LinearProgressIndicator(),
