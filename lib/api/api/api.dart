@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 import 'package:oasth/api/responses/bus_location.dart';
@@ -51,7 +52,9 @@ class ApiError extends Error {
 
 class CookieClient {
   HttpClient? _httpClient;
-  String _cookieString = '';
+  String _phpSessionId = '';
+  String _csrfToken = '';
+  String _lastTokenDate = '';
   bool _warmedUp = false;
   bool _warmingUp = false;
 
@@ -61,6 +64,52 @@ class CookieClient {
       ..idleTimeout = const Duration(seconds: 30)
       ..connectionTimeout = const Duration(seconds: 15);
     return _httpClient!;
+  }
+
+  /// Get current time in Greece timezone (EET/EEST with proper DST).
+  DateTime _getGreeceTime() {
+    final utcNow = DateTime.now().toUtc();
+
+    // EU DST: last Sunday of March 01:00 UTC to last Sunday of October 01:00 UTC
+    var marchDay = DateTime.utc(utcNow.year, 3, 31);
+    while (marchDay.weekday != DateTime.sunday) {
+      marchDay = marchDay.subtract(const Duration(days: 1));
+    }
+    final dstStart = DateTime.utc(marchDay.year, marchDay.month, marchDay.day, 1);
+
+    var octDay = DateTime.utc(utcNow.year, 10, 31);
+    while (octDay.weekday != DateTime.sunday) {
+      octDay = octDay.subtract(const Duration(days: 1));
+    }
+    final dstEnd = DateTime.utc(octDay.year, octDay.month, octDay.day, 1);
+
+    final isDst = utcNow.isAfter(dstStart) && utcNow.isBefore(dstEnd);
+    return utcNow.add(Duration(hours: isDst ? 3 : 2));
+  }
+
+  String _getGreeceDateStr() {
+    final gt = _getGreeceTime();
+    return '${gt.year}${gt.month.toString().padLeft(2, '0')}${gt.day.toString().padLeft(2, '0')}';
+  }
+
+  /// Generate CSRF token from secret phrase + Greece timezone date (SHA-256).
+  String _generateCsrfToken() {
+    final dateStr = _getGreeceDateStr();
+    final phrase = 'o@sthW38T3l3m@t!c\$\$-1$dateStr';
+    final token = sha256.convert(utf8.encode(phrase)).toString();
+
+    _lastTokenDate = dateStr;
+    debugPrint('[CookieClient] Generated CSRF token for date: $dateStr');
+    return token;
+  }
+
+  /// Regenerate the token if the Greece date has changed.
+  void _refreshTokenIfNeeded() {
+    final dateStr = _getGreeceDateStr();
+    if (dateStr != _lastTokenDate) {
+      debugPrint('[CookieClient] Date changed, regenerating CSRF token');
+      _csrfToken = _generateCsrfToken();
+    }
   }
 
   Future<void> warmup() async {
@@ -74,51 +123,47 @@ class CookieClient {
 
     _warmingUp = true;
     try {
-      final client = _getClient();
-      final request =
-          await client.getUrl(Uri.parse('https://telematics.oasth.gr/'));
+      // Generate CSRF token
+      _csrfToken = _generateCsrfToken();
 
+      // Call webGetLangs to obtain PHPSESSID cookie
+      final client = _getClient();
+      final request = await client.getUrl(
+          Uri.parse('${ApiConfig.baseUrl}/?act=webGetLangs'));
       request.headers.set('User-Agent',
           'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-      request.headers.set('Accept',
-          'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8');
+      request.headers.set('Accept', 'application/json, text/plain, */*');
       request.headers.set('Accept-Language', 'en-US,en;q=0.9,el;q=0.8');
-      request.headers.set('Connection', 'keep-alive');
+      request.headers.set('Referer', 'https://telematics.oasth.gr/');
+      request.headers.set('Origin', 'https://telematics.oasth.gr');
 
       final response = await request.close();
 
-      final setCookies = response.headers['set-cookie'];
-      if (setCookies != null && setCookies.isNotEmpty) {
-        final cookies = <String>[];
-        for (final cookieStr in setCookies) {
-          final cookieValue = _parseCookieValue(cookieStr);
-          if (cookieValue != null) {
-            cookies.add(cookieValue);
-          }
-        }
-        _cookieString = cookies.join('; ');
-        debugPrint('[CookieClient] Extracted cookies: $_cookieString');
-      }
+      _extractPhpSessionId(response);
 
       await response.drain();
       _warmedUp = true;
-      debugPrint('[CookieClient] Warmup complete');
-    } catch (e) {
+      debugPrint('[CookieClient] Warmup complete - PHPSESSID: ${_phpSessionId.isNotEmpty ? 'obtained' : 'MISSING'}');
+    } catch (e, stack) {
       debugPrint('[CookieClient] Warmup failed: $e');
+      debugPrint('[CookieClient] Stack: $stack');
     } finally {
       _warmingUp = false;
     }
   }
 
-  String? _parseCookieValue(String cookieHeader) {
-    try {
-      final parts = cookieHeader.split(';');
-      if (parts.isEmpty) return null;
-      final nameValue = parts[0].trim();
-      if (!nameValue.contains('=')) return null;
-      return nameValue;
-    } catch (e) {
-      return null;
+  void _extractPhpSessionId(HttpClientResponse response) {
+    final setCookies = response.headers['set-cookie'];
+    if (setCookies != null) {
+      for (final cookieStr in setCookies) {
+        if (cookieStr.contains('PHPSESSID')) {
+          final match = RegExp(r'PHPSESSID=([^;]+)').firstMatch(cookieStr);
+          if (match != null) {
+            _phpSessionId = match.group(1)!;
+            debugPrint('[CookieClient] Got PHPSESSID: ${_phpSessionId.substring(0, 8)}...');
+          }
+        }
+      }
     }
   }
 
@@ -127,6 +172,8 @@ class CookieClient {
     if (!_warmedUp) {
       await warmup();
     }
+
+    _refreshTokenIfNeeded();
 
     final client = _getClient();
     final request = await client.getUrl(url);
@@ -137,9 +184,10 @@ class CookieClient {
     request.headers.set('Accept-Language', 'en-US,en;q=0.9,el;q=0.8');
     request.headers.set('Referer', 'https://telematics.oasth.gr/');
     request.headers.set('Origin', 'https://telematics.oasth.gr');
+    request.headers.set('X-CSRF-TOKEN', _csrfToken);
 
-    if (_cookieString.isNotEmpty) {
-      request.headers.set('Cookie', _cookieString);
+    if (_phpSessionId.isNotEmpty) {
+      request.headers.set('Cookie', 'PHPSESSID=$_phpSessionId');
     }
 
     if (headers != null) {
@@ -151,18 +199,8 @@ class CookieClient {
     final response =
         await request.close().timeout(timeout ?? ApiConfig.defaultTimeout);
 
-    final newCookies = response.headers['set-cookie'];
-    if (newCookies != null && newCookies.isNotEmpty) {
-      final cookies = <String>[];
-      if (_cookieString.isNotEmpty) cookies.add(_cookieString);
-      for (final cookieStr in newCookies) {
-        final cookieValue = _parseCookieValue(cookieStr);
-        if (cookieValue != null) {
-          cookies.add(cookieValue);
-        }
-      }
-      _cookieString = cookies.join('; ');
-    }
+    // Update PHPSESSID if a new one is returned
+    _extractPhpSessionId(response);
 
     final body = await response.transform(utf8.decoder).join();
 
@@ -179,7 +217,9 @@ class CookieClient {
 
   void reset() {
     _warmedUp = false;
-    _cookieString = '';
+    _phpSessionId = '';
+    _csrfToken = '';
+    _lastTokenDate = '';
   }
 
   void close() {
@@ -270,6 +310,7 @@ class Api {
         if (attempt > 0) {
           debugPrint('[API] Attempt ${attempt + 1}/$maxAttempts for $url');
           _cookieClient.reset();
+          _initialized = false;
         }
 
         await _ensureInitialized();

@@ -115,7 +115,6 @@ class _BestRoutePageState extends State<BestRoutePage>
   RouteResult _result = const RouteResult();
 
   List<SavedPlace> _recentSearches = [];
-  List<SavedPlace> _savedPlaces = [];
 
   bool _graphReady = false;
   bool _buildingGraph = false;
@@ -160,13 +159,6 @@ class _BestRoutePageState extends State<BestRoutePage>
           .toList();
     });
 
-    final savedJson = prefs.getStringList('saved_places') ?? [];
-    setState(() {
-      _savedPlaces = savedJson
-          .map((j) => SavedPlace.fromMap(
-              Map<String, dynamic>.from(Uri.splitQueryString(j))))
-          .toList();
-    });
   }
 
   Future<void> _saveRecentSearch(SavedPlace from, SavedPlace to) async {

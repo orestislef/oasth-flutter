@@ -95,10 +95,11 @@ class _LinePageState extends State<LinePage> {
         _busErrorMessage = error.toString();
       });
     } finally {
-      if (!mounted) return;
-      setState(() {
-        _isBusLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _isBusLoading = false;
+        });
+      }
     }
   }
 

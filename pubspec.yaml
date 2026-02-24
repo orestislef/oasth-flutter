@@ -25,6 +25,7 @@ dependencies:
   flutter_map_location_marker: ^10.2.0
   shared_preferences: ^2.5.4
   maps_launcher: ^3.0.0+1
+  crypto: ^3.0.6
 
 dependency_overrides:
   win32: ^5.15.0
