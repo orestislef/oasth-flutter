@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/data/route_planner.dart';
 import 'package:oasth/data/route_planner_models.dart';
+import 'package:oasth/screens/best_route/route_map.dart';
 
 class ResultsStep extends StatelessWidget {
   final RouteResult result;
@@ -112,9 +113,9 @@ class ResultsStep extends StatelessWidget {
         children: [
           _buildRouteSummaryCard(context, route, startStop, endStop),
           const SizedBox(height: 16),
-          _buildSegmentedPathCard(context, route),
+          RouteMapView(route: route, result: result),
           const SizedBox(height: 16),
-          _buildQuickActionsCard(context),
+          _buildSegmentedPathCard(context, route),
           const SizedBox(height: 24),
           OutlinedButton.icon(
             onPressed: onResetToInput,
@@ -264,14 +265,23 @@ class ResultsStep extends StatelessWidget {
           isStart: true,
         ),
         for (final segment in segments)
-          _buildSegmentItem(
-            context,
-            icon: Icons.directions_bus,
-            title: '${'line'.tr()} ${segment.lineId}',
-            subtitle:
-                '${segment.routeDescription}\n${segment.stops.length} ${'stops'.tr()}',
-            color: Theme.of(context).primaryColor,
-          ),
+          segment.isWalking
+              ? _buildSegmentItem(
+                  context,
+                  icon: Icons.directions_walk,
+                  title: 'walking_transfer'.tr(),
+                  subtitle:
+                      '${(segment.stops.fold<double>(0, (sum, e) => sum + e.distanceMeters) / 3).toStringAsFixed(0)}m',
+                  color: Theme.of(context).colorScheme.tertiary,
+                )
+              : _buildSegmentItem(
+                  context,
+                  icon: Icons.directions_bus,
+                  title: '${'line'.tr()} ${segment.lineId}',
+                  subtitle:
+                      '${segment.routeDescription}\n${segment.stops.length} ${'stops'.tr()}',
+                  color: Theme.of(context).primaryColor,
+                ),
         _buildSegmentItem(
           context,
           icon: Icons.location_on,
@@ -292,6 +302,7 @@ class ResultsStep extends StatelessWidget {
           routeCode: edge.routeCode,
           lineId: edge.lineId,
           routeDescription: edge.routeDescription,
+          isWalking: edge.isWalkingEdge,
         ));
       }
       segments.last.stops.add(edge);
@@ -368,100 +379,4 @@ class ResultsStep extends StatelessWidget {
     );
   }
 
-  Widget _buildQuickActionsCard(BuildContext context) {
-    return Card(
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.flash_on,
-                    color: Theme.of(context).primaryColor),
-                const SizedBox(width: 8),
-                Text(
-                  'quick_actions'.tr(),
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.w600,
-                      ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: _buildQuickActionButton(
-                    context,
-                    icon: Icons.star_outline,
-                    label: 'save_route'.tr(),
-                    onTap: () => _showFeatureSnackBar(context),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    context,
-                    icon: Icons.share,
-                    label: 'share'.tr(),
-                    onTap: () => _showFeatureSnackBar(context),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: _buildQuickActionButton(
-                    context,
-                    icon: Icons.map,
-                    label: 'view_map'.tr(),
-                    onTap: () => _showFeatureSnackBar(context),
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  void _showFeatureSnackBar(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('feature_coming_soon'.tr()),
-        behavior: SnackBarBehavior.floating,
-        duration: const Duration(seconds: 2),
-      ),
-    );
-  }
-
-  Widget _buildQuickActionButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: 24, color: Theme.of(context).primaryColor),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: Theme.of(context).textTheme.bodySmall,
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
 }

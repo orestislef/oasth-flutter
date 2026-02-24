@@ -332,5 +332,7 @@
   "force_refresh": "Ανανέωση δεδομένων",
   "cache_cleared": "Η μνήμη cache διαγράφηκε, γίνεται λήψη...",
   "more_options": "Περισσότερα",
-  "articles": "άρθρα"
+  "articles": "άρθρα",
+  "walking_transfer": "Περπάτημα στην επόμενη στάση",
+  "route_map": "Χάρτης Διαδρομής"
 }

@@ -332,5 +332,7 @@
   "force_refresh": "Force refresh data",
   "cache_cleared": "Cache cleared, re-downloading data...",
   "more_options": "More",
-  "articles": "articles"
+  "articles": "articles",
+  "walking_transfer": "Walk to next stop",
+  "route_map": "Route Map"
 }
