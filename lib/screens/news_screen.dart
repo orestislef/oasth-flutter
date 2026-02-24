@@ -1,7 +1,9 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:oasth/api/responses/news.dart';
+import 'package:oasth/helpers/app_routes.dart';
 
 class NewsScreen extends StatefulWidget {
   final List<NewsData> news;
@@ -40,25 +42,14 @@ class _NewsScreenState extends State<NewsScreen> {
       } else {
         _filteredNews = widget.news.where((newsItem) {
           return newsItem.title.toLowerCase().contains(query.toLowerCase()) ||
-                 newsItem.summary.toLowerCase().contains(query.toLowerCase());
+              newsItem.summary.toLowerCase().contains(query.toLowerCase());
         }).toList();
       }
     });
   }
 
   void _showNewsDetail(NewsData newsItem) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (_) => _NewsDetailPage(
-          newsItem: newsItem,
-          onShare: _shareNews,
-          onCopy: _copyNewsToClipboard,
-          formatDate: _formatDate,
-          isRecent: _isRecentNews,
-        ),
-      ),
-    );
+    context.push(AppRoutes.newsDetail, extra: NewsDetailArgs(newsItem));
   }
 
   @override
@@ -195,9 +186,9 @@ class _NewsScreenState extends State<NewsScreen> {
               'total': widget.news.length.toString(),
             }),
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              color: Theme.of(context).primaryColor,
-              fontWeight: FontWeight.w500,
-            ),
+                  color: Theme.of(context).primaryColor,
+                  fontWeight: FontWeight.w500,
+                ),
           ),
         ],
       ),
@@ -241,7 +232,8 @@ class _NewsScreenState extends State<NewsScreen> {
                   Container(
                     padding: const EdgeInsets.all(8),
                     decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor.withValues(alpha: .1),
+                      color:
+                          Theme.of(context).primaryColor.withValues(alpha: .1),
                       borderRadius: BorderRadius.circular(8),
                     ),
                     child: Icon(
@@ -277,10 +269,11 @@ class _NewsScreenState extends State<NewsScreen> {
                         const SizedBox(height: 4),
                         Text(
                           date,
-                          style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                            color: Theme.of(context).primaryColor,
-                            fontWeight: FontWeight.w500,
-                          ),
+                          style:
+                              Theme.of(context).textTheme.bodySmall?.copyWith(
+                                    color: Theme.of(context).primaryColor,
+                                    fontWeight: FontWeight.w500,
+                                  ),
                         ),
                       ],
                     ),
@@ -296,9 +289,9 @@ class _NewsScreenState extends State<NewsScreen> {
               Text(
                 newsItem.title,
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                  height: 1.3,
-                ),
+                      fontWeight: FontWeight.bold,
+                      height: 1.3,
+                    ),
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -306,9 +299,9 @@ class _NewsScreenState extends State<NewsScreen> {
               Text(
                 newsItem.summary,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  height: 1.4,
-                  color: Theme.of(context).hintColor,
-                ),
+                      height: 1.4,
+                      color: Theme.of(context).hintColor,
+                    ),
                 maxLines: 3,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -319,9 +312,9 @@ class _NewsScreenState extends State<NewsScreen> {
                   Text(
                     'tap_to_read_more'.tr(),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: Theme.of(context).primaryColor,
-                      fontWeight: FontWeight.w500,
-                    ),
+                          color: Theme.of(context).primaryColor,
+                          fontWeight: FontWeight.w500,
+                        ),
                   ),
                   Row(
                     children: [
@@ -364,14 +357,13 @@ class _NewsScreenState extends State<NewsScreen> {
             Text(
               'no_search_results'.tr(),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+                    fontWeight: FontWeight.w600,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
               'try_different_keywords'.tr(),
-              
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 24),
@@ -402,16 +394,16 @@ class _NewsScreenState extends State<NewsScreen> {
             Text(
               'no_news_available'.tr(),
               style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+                    fontWeight: FontWeight.w600,
+                  ),
               textAlign: TextAlign.center,
             ),
             const SizedBox(height: 12),
             Text(
               'check_back_later'.tr(),
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                color: Theme.of(context).hintColor,
-              ),
+                    color: Theme.of(context).hintColor,
+                  ),
               textAlign: TextAlign.center,
             ),
           ],
@@ -457,7 +449,8 @@ class _NewsScreenState extends State<NewsScreen> {
   }
 
   void _shareNews(NewsData newsItem) {
-    final text = '${newsItem.title}\n\n${newsItem.summary}\n\n${'shared_from_app'.tr()}';
+    final text =
+        '${newsItem.title}\n\n${newsItem.summary}\n\n${'shared_from_app'.tr()}';
     // You'll need to add share_plus package for actual sharing
     _copyToClipboard(text);
     _showInfoSnackBar('news_copied_for_sharing'.tr());
@@ -486,25 +479,27 @@ class _NewsScreenState extends State<NewsScreen> {
   }
 }
 
-class _NewsDetailPage extends StatelessWidget {
+class NewsDetailPage extends StatelessWidget {
   final NewsData newsItem;
-  final void Function(NewsData) onShare;
-  final void Function(NewsData) onCopy;
-  final String Function(String) formatDate;
-  final bool Function(String) isRecent;
+  final void Function(BuildContext context, NewsData item)? onShare;
+  final void Function(BuildContext context, NewsData item)? onCopy;
+  final String Function(BuildContext context, String value)? formatDate;
+  final bool Function(BuildContext context, String value)? isRecent;
 
-  const _NewsDetailPage({
+  const NewsDetailPage({
+    super.key,
     required this.newsItem,
-    required this.onShare,
-    required this.onCopy,
-    required this.formatDate,
-    required this.isRecent,
+    this.onShare,
+    this.onCopy,
+    this.formatDate,
+    this.isRecent,
   });
 
   @override
   Widget build(BuildContext context) {
-    final date = formatDate(newsItem.createdAt);
-    final recent = isRecent(newsItem.createdAt);
+    final date =
+        (formatDate ?? _defaultFormatDate)(context, newsItem.createdAt);
+    final recent = (isRecent ?? _defaultIsRecent)(context, newsItem.createdAt);
 
     return Scaffold(
       appBar: AppBar(
@@ -536,11 +531,10 @@ class _NewsDetailPage extends StatelessWidget {
                     children: [
                       Text(
                         date,
-                        style:
-                            Theme.of(context).textTheme.bodyMedium?.copyWith(
-                                  color: Theme.of(context).primaryColor,
-                                  fontWeight: FontWeight.w500,
-                                ),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                              color: Theme.of(context).primaryColor,
+                              fontWeight: FontWeight.w500,
+                            ),
                       ),
                       const SizedBox(height: 4),
                       if (recent)
@@ -556,8 +550,7 @@ class _NewsDetailPage extends StatelessWidget {
                           child: Text(
                             'new'.tr(),
                             style: TextStyle(
-                              color:
-                                  Theme.of(context).colorScheme.onPrimary,
+                              color: Theme.of(context).colorScheme.onPrimary,
                               fontSize: 12,
                               fontWeight: FontWeight.bold,
                             ),
@@ -599,7 +592,8 @@ class _NewsDetailPage extends StatelessWidget {
               children: [
                 Expanded(
                   child: ElevatedButton.icon(
-                    onPressed: () => onShare(newsItem),
+                    onPressed: () =>
+                        (onShare ?? _defaultShare)(context, newsItem),
                     icon: const Icon(Icons.share),
                     label: Text('share_news'.tr()),
                   ),
@@ -607,7 +601,8 @@ class _NewsDetailPage extends StatelessWidget {
                 const SizedBox(width: 12),
                 Expanded(
                   child: OutlinedButton.icon(
-                    onPressed: () => onCopy(newsItem),
+                    onPressed: () =>
+                        (onCopy ?? _defaultCopy)(context, newsItem),
                     icon: const Icon(Icons.copy),
                     label: Text('copy_text'.tr()),
                   ),
@@ -616,6 +611,52 @@ class _NewsDetailPage extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+
+  String _defaultFormatDate(BuildContext context, String createdAt) {
+    try {
+      final timestamp = int.parse(createdAt) * 1000;
+      final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+      return DateFormat('dd MMMM, yyyy').format(date);
+    } catch (_) {
+      return 'date_unavailable'.tr();
+    }
+  }
+
+  bool _defaultIsRecent(BuildContext context, String createdAt) {
+    try {
+      final timestamp = int.parse(createdAt) * 1000;
+      final date = DateTime.fromMillisecondsSinceEpoch(timestamp);
+      final now = DateTime.now();
+      return now.difference(date).inDays <= 3;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  void _defaultShare(BuildContext context, NewsData item) {
+    final text =
+        '${item.title}\n\n${item.summary}\n\n${'shared_from_app'.tr()}';
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('news_copied_for_sharing'.tr()),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+  }
+
+  void _defaultCopy(BuildContext context, NewsData item) {
+    final text = '${item.title}\n\n${item.summary}';
+    Clipboard.setData(ClipboardData(text: text));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('news_copied'.tr()),
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
       ),
     );
   }

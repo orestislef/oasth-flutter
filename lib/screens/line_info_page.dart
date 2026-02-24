@@ -2,6 +2,7 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:latlong2/latlong.dart' hide Path;
+import 'package:go_router/go_router.dart';
 import 'package:oasth/api/responses/line_name.dart';
 import 'package:oasth/api/responses/lines_and_routes_for_m_land_l_code.dart';
 import 'package:oasth/api/responses/lines_with_ml_info.dart';
@@ -9,8 +10,8 @@ import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/routes_for_line.dart';
 import 'package:oasth/data/favorites_service.dart';
 import 'package:oasth/data/oasth_repository.dart';
+import 'package:oasth/helpers/app_routes.dart';
 import 'package:oasth/helpers/language_helper.dart';
-import 'package:oasth/screens/stop_page.dart';
 import 'package:oasth/widgets/shimmer_loading.dart';
 
 import 'line_route_page.dart';
@@ -154,7 +155,8 @@ class _LineInfoPageState extends State<LineInfoPage>
   void _calculateDistances() {
     if (_userPosition == null) return;
     final distCalc = const Distance();
-    final userLatLng = LatLng(_userPosition!.latitude, _userPosition!.longitude);
+    final userLatLng =
+        LatLng(_userPosition!.latitude, _userPosition!.longitude);
     final distances = <String, double>{};
 
     if (_currentRouteData != null) {
@@ -355,6 +357,8 @@ class _LineInfoPageState extends State<LineInfoPage>
       delegate: _TabBarDelegate(
         TabBar(
           controller: _tabController,
+          labelColor: Theme.of(context).colorScheme.primary,
+          unselectedLabelColor: Theme.of(context).hintColor,
           tabs: [
             Tab(
               icon: const Icon(Icons.list),
@@ -764,10 +768,8 @@ class _LineInfoPageState extends State<LineInfoPage>
             if (_sortByDistance && _stopDistances.isNotEmpty) {
               stops = List.of(stops)
                 ..sort((a, b) {
-                  final distA =
-                      _stopDistances[a.stopCode] ?? double.infinity;
-                  final distB =
-                      _stopDistances[b.stopCode] ?? double.infinity;
+                  final distA = _stopDistances[a.stopCode] ?? double.infinity;
+                  final distB = _stopDistances[b.stopCode] ?? double.infinity;
                   return distA.compareTo(distB);
                 });
             }
@@ -796,8 +798,7 @@ class _LineInfoPageState extends State<LineInfoPage>
                         Text(
                           'showing_stops_results'.tr(namedArgs: {
                             'count': stops.length.toString(),
-                            'total':
-                                _currentRouteData!.stops.length.toString(),
+                            'total': _currentRouteData!.stops.length.toString(),
                           }),
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -904,9 +905,10 @@ class _LineInfoPageState extends State<LineInfoPage>
                         type: MaterialType.transparency,
                         child: Text(
                           description,
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                          style:
+                              Theme.of(context).textTheme.titleMedium?.copyWith(
+                                    fontWeight: FontWeight.w600,
+                                  ),
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -924,17 +926,16 @@ class _LineInfoPageState extends State<LineInfoPage>
                           const SizedBox(width: 4),
                           Text(
                             _formatDistance(distMeters),
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: distMeters < 300
-                                          ? Theme.of(context)
-                                              .colorScheme
-                                              .primary
-                                          : Theme.of(context).hintColor,
-                                      fontWeight: distMeters < 300
-                                          ? FontWeight.w600
-                                          : null,
-                                    ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(
+                                  color: distMeters < 300
+                                      ? Theme.of(context).colorScheme.primary
+                                      : Theme.of(context).hintColor,
+                                  fontWeight:
+                                      distMeters < 300 ? FontWeight.w600 : null,
+                                ),
                           ),
                           if (stop.routeStopOrder.isNotEmpty) ...[
                             const SizedBox(width: 12),
@@ -1103,12 +1104,7 @@ class _LineInfoPageState extends State<LineInfoPage>
   }
 
   void _navigateToStop(Stop stop) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => StopPage(stop: stop),
-      ),
-    );
+    context.push(AppRoutes.stop, extra: StopArgs(stop));
   }
 }
 

@@ -1,13 +1,15 @@
 import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/data/oasth_repository.dart';
+import 'package:oasth/helpers/app_routes.dart';
 import 'package:oasth/helpers/language_helper.dart';
-import 'package:oasth/screens/stop_page.dart';
+import 'package:oasth/helpers/tile_layer_helper.dart';
 import 'package:oasth/widgets/shimmer_loading.dart';
 
 class RoutePage extends StatefulWidget {
@@ -158,8 +160,12 @@ class _RoutePageState extends State<RoutePage> {
 
   Widget _buildLabeledStopMarker(Stop stop) {
     final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
-        ? stop.stopDescriptionEng.isNotEmpty ? stop.stopDescriptionEng : stop.stopDescription
-        : stop.stopDescription.isNotEmpty ? stop.stopDescription : stop.stopDescriptionEng;
+        ? stop.stopDescriptionEng.isNotEmpty
+            ? stop.stopDescriptionEng
+            : stop.stopDescription
+        : stop.stopDescription.isNotEmpty
+            ? stop.stopDescription
+            : stop.stopDescriptionEng;
 
     return Column(
       mainAxisSize: MainAxisSize.min,
@@ -186,9 +192,9 @@ class _RoutePageState extends State<RoutePage> {
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
             style: Theme.of(context).textTheme.bodySmall?.copyWith(
-              fontWeight: FontWeight.w600,
-              fontSize: 11,
-            ),
+                  fontWeight: FontWeight.w600,
+                  fontSize: 11,
+                ),
           ),
         ),
         const SizedBox(height: 4),
@@ -248,18 +254,14 @@ class _RoutePageState extends State<RoutePage> {
   }
 
   void _navigateToStop(Stop stop) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => StopPage(stop: stop),
-      ),
-    );
+    context.push(AppRoutes.stop, extra: StopArgs(stop));
   }
 
   void _toggleStopLabels() {
     setState(() {
       _showStopLabels = !_showStopLabels;
-      _stopMarkers = widget.stops.map((stop) => _buildStopMarker(stop)).toList();
+      _stopMarkers =
+          widget.stops.map((stop) => _buildStopMarker(stop)).toList();
     });
   }
 
@@ -354,11 +356,7 @@ class _RoutePageState extends State<RoutePage> {
           ),
         ),
         children: [
-          TileLayer(
-            urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-            subdomains: const ['a', 'b', 'c'],
-            userAgentPackageName: 'com.oasth.oast',
-          ),
+          const MapTileLayer(),
           if (_routePoints.isNotEmpty)
             PolylineLayer(
               polylines: [
@@ -421,8 +419,8 @@ class _RoutePageState extends State<RoutePage> {
                 Text(
                   'labels'.tr(),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
                 const SizedBox(width: 4),
                 InkWell(
@@ -458,8 +456,8 @@ class _RoutePageState extends State<RoutePage> {
                 Text(
                   'buses'.tr(),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    fontWeight: FontWeight.w500,
-                  ),
+                        fontWeight: FontWeight.w500,
+                      ),
                 ),
                 const SizedBox(width: 4),
                 InkWell(
@@ -539,7 +537,9 @@ class _RoutePageState extends State<RoutePage> {
         FloatingActionButton.small(
           heroTag: "toggle_labels",
           onPressed: _toggleStopLabels,
-          tooltip: _showStopLabels ? 'hide_stop_labels'.tr() : 'show_stop_labels'.tr(),
+          tooltip: _showStopLabels
+              ? 'hide_stop_labels'.tr()
+              : 'show_stop_labels'.tr(),
           backgroundColor: _showStopLabels
               ? Theme.of(context).primaryColor
               : Theme.of(context).cardColor,
@@ -597,8 +597,8 @@ class _RoutePageState extends State<RoutePage> {
                 child: Text(
                   'route_information'.tr(),
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                  ),
+                        fontWeight: FontWeight.bold,
+                      ),
                 ),
               ),
               Expanded(
@@ -612,9 +612,12 @@ class _RoutePageState extends State<RoutePage> {
                         context,
                         'route_details'.tr(),
                         [
-                          _buildInfoRow(context, 'line_number'.tr(), widget.lineId ?? 'N/A'),
-                          _buildInfoRow(context, 'route_code'.tr(), widget.routeCode),
-                          _buildInfoRow(context, 'total_stops'.tr(), widget.stops.length.toString()),
+                          _buildInfoRow(context, 'line_number'.tr(),
+                              widget.lineId ?? 'N/A'),
+                          _buildInfoRow(
+                              context, 'route_code'.tr(), widget.routeCode),
+                          _buildInfoRow(context, 'total_stops'.tr(),
+                              widget.stops.length.toString()),
                           _buildInfoRow(context, 'active_buses'.tr(),
                               _currentBusLocations.length.toString()),
                         ],
@@ -624,11 +627,17 @@ class _RoutePageState extends State<RoutePage> {
                         context,
                         'map_legend'.tr(),
                         [
-                          _buildLegendItem(context, Icons.location_on, 'bus_stops'.tr(),
-                              Theme.of(context).primaryColor),
-                          _buildLegendItem(context, Icons.directions_bus, 'live_buses'.tr(),
+                          _buildLegendItem(context, Icons.location_on,
+                              'bus_stops'.tr(), Theme.of(context).primaryColor),
+                          _buildLegendItem(
+                              context,
+                              Icons.directions_bus,
+                              'live_buses'.tr(),
                               Theme.of(context).colorScheme.secondary),
-                          _buildLegendItem(context, Icons.timeline, 'route_path'.tr(),
+                          _buildLegendItem(
+                              context,
+                              Icons.timeline,
+                              'route_path'.tr(),
                               Theme.of(context).primaryColor),
                         ],
                       ),
@@ -643,15 +652,16 @@ class _RoutePageState extends State<RoutePage> {
     );
   }
 
-  Widget _buildInfoSection(BuildContext context, String title, List<Widget> children) {
+  Widget _buildInfoSection(
+      BuildContext context, String title, List<Widget> children) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           title,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
-            fontWeight: FontWeight.bold,
-          ),
+                fontWeight: FontWeight.bold,
+              ),
         ),
         const SizedBox(height: 12),
         ...children,
@@ -676,8 +686,8 @@ class _RoutePageState extends State<RoutePage> {
             child: Text(
               value,
               style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                fontWeight: FontWeight.w600,
-              ),
+                    fontWeight: FontWeight.w600,
+                  ),
             ),
           ),
         ],
@@ -685,7 +695,8 @@ class _RoutePageState extends State<RoutePage> {
     );
   }
 
-  Widget _buildLegendItem(BuildContext context, IconData icon, String label, Color color) {
+  Widget _buildLegendItem(
+      BuildContext context, IconData icon, String label, Color color) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(

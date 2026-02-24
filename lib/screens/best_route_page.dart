@@ -77,8 +77,8 @@ class _BestRoutePageState extends State<BestRoutePage>
     final prefs = await SharedPreferences.getInstance();
 
     // Remove duplicate if same from/to already exists
-    _recentSearches.removeWhere((r) =>
-        r.from.name == from.name && r.to.name == to.name);
+    _recentSearches
+        .removeWhere((r) => r.from.name == from.name && r.to.name == to.name);
 
     _recentSearches.insert(
       0,
@@ -212,6 +212,7 @@ class _BestRoutePageState extends State<BestRoutePage>
         startStop.stopCode,
         endStop.stopCode,
         minimizeTransfers: _preferences.minimizeTransfers,
+        maxWalkingDistance: _preferences.maxWalkingDistance,
       );
 
       setState(() {
@@ -255,106 +256,99 @@ class _BestRoutePageState extends State<BestRoutePage>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: FadeTransition(
-        opacity: _fadeAnimation,
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: Column(
-                children: [
-                  if (_buildingGraph && !_graphReady)
-                    _buildGraphProgressIndicator(),
-                  Expanded(
-                    child: switch (_currentStep) {
-                      RouteStep.input => InputStep(
-                          fromPlace: _fromPlace,
-                          toPlace: _toPlace,
-                          preferences: _preferences,
-                          recentSearches: _recentSearches,
-                          graphReady: _graphReady,
-                          onFromChanged: (place) =>
-                              setState(() => _fromPlace = place),
-                          onToChanged: (place) =>
-                              setState(() => _toPlace = place),
-                          onPreferencesChanged: (prefs) =>
-                              setState(() => _preferences = prefs),
-                          onFindRoute: _findRoute,
-                          onSwapLocations: _swapLocations,
-                          onSelectRecentRoute: _selectRecentRoute,
-                          onDeleteRecentSearch: _deleteRecentSearch,
-                        ),
-                      RouteStep.results => ResultsStep(
-                          result: _result,
-                          onResetToInput: _resetToInput,
-                        ),
-                    },
-                  ),
-                ],
+      body: SafeArea(
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Column(
+            children: [
+              if (_buildingGraph && !_graphReady)
+                _buildGraphProgressIndicator(),
+              if (_currentStep == RouteStep.input) _buildInputHeader(),
+              if (_currentStep == RouteStep.results) _buildResultsTopBar(),
+              Expanded(
+                child: switch (_currentStep) {
+                  RouteStep.input => InputStep(
+                      fromPlace: _fromPlace,
+                      toPlace: _toPlace,
+                      preferences: _preferences,
+                      recentSearches: _recentSearches,
+                      graphReady: _graphReady,
+                      onFromChanged: (place) =>
+                          setState(() => _fromPlace = place),
+                      onToChanged: (place) => setState(() => _toPlace = place),
+                      onPreferencesChanged: (prefs) =>
+                          setState(() => _preferences = prefs),
+                      onFindRoute: _findRoute,
+                      onSwapLocations: _swapLocations,
+                      onSelectRecentRoute: _selectRecentRoute,
+                      onDeleteRecentSearch: _deleteRecentSearch,
+                    ),
+                  RouteStep.results => ResultsStep(
+                      result: _result,
+                      onResetToInput: _resetToInput,
+                    ),
+                },
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
-      padding: EdgeInsets.fromLTRB(
-          20, MediaQuery.of(context).padding.top + 16, 20, 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Theme.of(context).primaryColor.withAlpha(30),
-            Theme.of(context).primaryColor.withAlpha(10),
-          ],
-        ),
-      ),
+  Widget _buildInputHeader() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.route,
-              color: Theme.of(context).colorScheme.onPrimary,
-            ),
-          ),
-          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   'route_planner'.tr(),
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   'find_best_route'.tr(),
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                        color: Theme.of(context)
-                            .textTheme
-                            .bodySmall
-                            ?.color
-                            ?.withAlpha(178),
+                        color: Theme.of(context).hintColor,
                       ),
                 ),
               ],
             ),
           ),
-          if (_currentStep != RouteStep.input)
-            IconButton(
-              icon: const Icon(Icons.refresh),
-              onPressed: _resetToInput,
-              tooltip: 'start_over'.tr(),
+          Icon(
+            Icons.route,
+            color: Theme.of(context).colorScheme.primary,
+            size: 22,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResultsTopBar() {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(4, 4, 16, 0),
+      child: Row(
+        children: [
+          TextButton.icon(
+            onPressed: _resetToInput,
+            icon: const Icon(Icons.arrow_back, size: 18),
+            label: Text('start_over'.tr()),
+          ),
+          const Spacer(),
+          if (_fromPlace != null && _toPlace != null)
+            Text(
+              '${_fromPlace!.name.split(',').first} → ${_toPlace!.name.split(',').first}',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: Theme.of(context).hintColor,
+                  ),
+              overflow: TextOverflow.ellipsis,
             ),
         ],
       ),
@@ -404,7 +398,8 @@ class _BestRoutePageState extends State<BestRoutePage>
             child: LinearProgressIndicator(
               value: _totalRoutes > 0 ? progress : null,
               minHeight: 4,
-              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+              backgroundColor:
+                  Theme.of(context).colorScheme.surfaceContainerHighest,
             ),
           ),
         ],

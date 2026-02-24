@@ -1,16 +1,16 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 import 'package:oasth/api/responses/lines_with_ml_info.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/data/route_planner.dart';
 import 'package:oasth/helpers/language_helper.dart';
+import 'package:oasth/helpers/app_routes.dart';
 import 'package:oasth/screens/best_route_page.dart';
-import 'package:oasth/screens/line_info_page.dart';
 import 'package:oasth/screens/lines_page.dart';
 import 'package:oasth/screens/more_screen.dart';
-import 'package:oasth/screens/stop_page.dart';
 import 'package:oasth/screens/stops_page.dart';
 import 'package:oasth/widgets/shimmer_loading.dart';
 
@@ -88,7 +88,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
       _NavigationItem(
         icon: Icons.more_horiz_outlined,
         activeIcon: Icons.more_horiz,
-        label: 'more_options'.tr(),
+        label: 'more'.tr(),
         page: const MorePage(),
         color: Theme.of(context).colorScheme.secondary,
       ),
@@ -203,12 +203,10 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           return BottomNavigationBarItem(
             icon: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color: isSelected
-                    ? item.color.withAlpha(25)
-                    : Colors.transparent,
+                color:
+                    isSelected ? item.color.withAlpha(25) : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: AnimatedSwitcher(
@@ -318,10 +316,9 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
                     const SizedBox(width: 8),
                     Text(
                       'search_tips'.tr(),
-                      style:
-                          Theme.of(context).textTheme.titleMedium?.copyWith(
-                                fontWeight: FontWeight.w600,
-                              ),
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
                     ),
                   ],
                 ),
@@ -453,17 +450,14 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
           padding: const EdgeInsets.all(16),
           children: [
             if (results.lines.isNotEmpty) ...[
-              _buildResultSectionHeader(
-                  context, 'lines'.tr(), Icons.route),
-              ...results.lines
-                  .map((line) => _buildLineResult(context, line)),
+              _buildResultSectionHeader(context, 'lines'.tr(), Icons.route),
+              ...results.lines.map((line) => _buildLineResult(context, line)),
               const SizedBox(height: 16),
             ],
             if (results.stops.isNotEmpty) ...[
               _buildResultSectionHeader(
                   context, 'stations'.tr(), Icons.location_on),
-              ...results.stops
-                  .map((stop) => _buildStopResult(context, stop)),
+              ...results.stops.map((stop) => _buildStopResult(context, stop)),
             ],
           ],
         );
@@ -491,29 +485,21 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
     );
   }
 
-  Widget _buildLineResult(
-      BuildContext context, LineWithMasterLineInfo line) {
-    final description =
-        LanguageHelper.getLanguageUsedInApp(context) == 'en'
-            ? line.lineDescriptionEng.isNotEmpty
-                ? line.lineDescriptionEng
-                : line.lineDescription
-            : line.lineDescription.isNotEmpty
-                ? line.lineDescription
-                : line.lineDescriptionEng;
+  Widget _buildLineResult(BuildContext context, LineWithMasterLineInfo line) {
+    final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
+        ? line.lineDescriptionEng.isNotEmpty
+            ? line.lineDescriptionEng
+            : line.lineDescription
+        : line.lineDescription.isNotEmpty
+            ? line.lineDescription
+            : line.lineDescriptionEng;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
         onTap: () {
           close(context, '');
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) =>
-                  LineInfoPage(linesWithMasterLineInfo: line),
-            ),
-          );
+          context.push(AppRoutes.lineInfo, extra: LineInfoArgs(line));
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -548,10 +534,9 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
               Expanded(
                 child: Text(
                   description,
-                  style:
-                      Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -569,26 +554,20 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
   }
 
   Widget _buildStopResult(BuildContext context, Stop stop) {
-    final description =
-        LanguageHelper.getLanguageUsedInApp(context) == 'en'
-            ? stop.stopDescriptionEng.isNotEmpty
-                ? stop.stopDescriptionEng
-                : stop.stopDescription
-            : stop.stopDescription.isNotEmpty
-                ? stop.stopDescription
-                : stop.stopDescriptionEng;
+    final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
+        ? stop.stopDescriptionEng.isNotEmpty
+            ? stop.stopDescriptionEng
+            : stop.stopDescription
+        : stop.stopDescription.isNotEmpty
+            ? stop.stopDescription
+            : stop.stopDescriptionEng;
 
     return Card(
       margin: const EdgeInsets.only(bottom: 8),
       child: InkWell(
         onTap: () {
           close(context, '');
-          Navigator.push(
-            context,
-            MaterialPageRoute(
-              builder: (context) => StopPage(stop: stop),
-            ),
-          );
+          context.push(AppRoutes.stop, extra: StopArgs(stop));
         },
         borderRadius: BorderRadius.circular(12),
         child: Padding(
@@ -640,14 +619,13 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
                     const SizedBox(height: 4),
                     Text(
                       stop.stopCode,
-                      style:
-                          Theme.of(context).textTheme.bodySmall?.copyWith(
-                                color: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.color
-                                    ?.withAlpha(153),
-                              ),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.color
+                                ?.withAlpha(153),
+                          ),
                     ),
                   ],
                 ),

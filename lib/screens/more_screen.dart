@@ -2,7 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
 import 'package:oasth/api/api/api.dart';
+import 'package:oasth/enums/map_type.dart';
+import 'package:oasth/helpers/map_type_helper.dart';
 import 'package:oasth/helpers/shared_preferences_helper.dart';
+import 'package:oasth/helpers/tile_layer_helper.dart';
+import 'package:oasth/helpers/theme_mode_controller.dart';
+import 'package:oasth/helpers/theme_mode_helper.dart';
 
 import '../widgets/language_toggle.dart';
 
@@ -212,6 +217,16 @@ class _MorePageState extends State<MorePage> {
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_allItems.isNotEmpty) {
+      _allItems.clear();
+      _initializeItems();
+      _filterItems(_searchQuery);
+    }
+  }
+
+  @override
   void dispose() {
     _scrollController.dispose();
     super.dispose();
@@ -383,6 +398,162 @@ class _MorePageState extends State<MorePage> {
     );
   }
 
+  Widget _buildThemeModeSelector(BuildContext context) {
+    return FutureBuilder<ThemeMode>(
+      future: ThemeModeHelper.getThemeMode(),
+      builder: (context, snapshot) {
+        final mode = snapshot.data ?? ThemeMode.system;
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: .1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.brightness_6_outlined,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'theme_mode'.tr(),
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.w600,
+                                ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SegmentedButton<ThemeMode>(
+                  showSelectedIcon: false,
+                  segments: [
+                    ButtonSegment(
+                      value: ThemeMode.system,
+                      label: Text('theme_system'.tr()),
+                      icon: const Icon(Icons.settings_outlined, size: 18),
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.light,
+                      label: Text('theme_light'.tr()),
+                      icon: const Icon(Icons.light_mode_outlined, size: 18),
+                    ),
+                    ButtonSegment(
+                      value: ThemeMode.dark,
+                      label: Text('theme_dark'.tr()),
+                      icon: const Icon(Icons.dark_mode_outlined, size: 18),
+                    ),
+                  ],
+                  selected: {mode},
+                  onSelectionChanged: (value) async {
+                    final newMode = value.first;
+                    await ThemeModeController.set(newMode);
+                    if (!context.mounted) return;
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildMapModeSelector(BuildContext context) {
+    return FutureBuilder<MapType>(
+      future: MapTypeHelper.getMapType(),
+      builder: (context, snapshot) {
+        final mapType = snapshot.data ?? MapType.google;
+        return Card(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context)
+                            .colorScheme
+                            .primary
+                            .withValues(alpha: .1),
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Icon(
+                        Icons.map_outlined,
+                        size: 20,
+                        color: Theme.of(context).colorScheme.primary,
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'map_mode'.tr(),
+                        style: Theme.of(context)
+                            .textTheme
+                            .titleMedium
+                            ?.copyWith(fontWeight: FontWeight.w600),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SegmentedButton<MapType>(
+                  showSelectedIcon: false,
+                  segments: const [
+                    ButtonSegment(
+                      value: MapType.google,
+                      label: Text('Google'),
+                      icon: Icon(Icons.map, size: 18),
+                    ),
+                    ButtonSegment(
+                      value: MapType.osm,
+                      label: Text('OSM'),
+                      icon: Icon(Icons.public, size: 18),
+                    ),
+                    ButtonSegment(
+                      value: MapType.satellite,
+                      label: Text('Satellite'),
+                      icon: Icon(Icons.satellite_alt, size: 18),
+                    ),
+                  ],
+                  selected: {mapType},
+                  onSelectionChanged: (value) async {
+                    final newType = value.first;
+                    await MapTypeHelper.setMapType(newType);
+                    await SharedPreferencesHelper.setMapType(newType.id);
+                    await TileLayerHelper.clearCache();
+                    if (!context.mounted) return;
+                    setState(() {});
+                  },
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildContent(BuildContext context) {
     if (_filteredItems.isEmpty && _searchQuery.isNotEmpty) {
       return _buildEmptySearchState(context);
@@ -392,6 +563,10 @@ class _MorePageState extends State<MorePage> {
       controller: _scrollController,
       children: [
         const LanguageToggleWidget(),
+        const SizedBox(height: 8),
+        _buildThemeModeSelector(context),
+        const SizedBox(height: 8),
+        _buildMapModeSelector(context),
         const SizedBox(height: 8),
         _buildForceRefreshButton(context),
         const SizedBox(height: 16),

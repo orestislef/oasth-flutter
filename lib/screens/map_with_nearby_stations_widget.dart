@@ -1,15 +1,17 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 import 'package:oasth/data/oasth_repository.dart';
+import 'package:oasth/helpers/app_routes.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/helpers/location_helper.dart';
 import 'package:oasth/helpers/text_broadcaster.dart';
-import 'package:oasth/screens/stop_page.dart';
+import 'package:oasth/helpers/tile_layer_helper.dart';
 import 'package:oasth/widgets/shimmer_loading.dart';
 
 import '../api/responses/route_detail_and_stops.dart';
@@ -113,12 +115,14 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
   void _updateNearbyStops() {
     if (_userLocation == null || _allStops.isEmpty) return;
 
-    final userLatLng = LatLng(_userLocation!.latitude!, _userLocation!.longitude!);
+    final userLatLng =
+        LatLng(_userLocation!.latitude!, _userLocation!.longitude!);
     final distance = const Distance();
 
     _nearbyStops = _allStops.where((stop) {
       final stopLatLng = LatLng(stop.stopLat, stop.stopLng);
-      return distance.as(LengthUnit.Meter, userLatLng, stopLatLng) <= _searchRadius;
+      return distance.as(LengthUnit.Meter, userLatLng, stopLatLng) <=
+          _searchRadius;
     }).toList();
 
     _nearbyStops.sort((a, b) {
@@ -161,7 +165,8 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
         children: [
           _buildMapContent(context),
           _buildTopControls(context),
-          if (_isLoadingLocation || _isLoadingStops) _buildLoadingOverlay(context),
+          if (_isLoadingLocation || _isLoadingStops)
+            _buildLoadingOverlay(context),
           if (_errorMessage != null) _buildErrorOverlay(context),
         ],
       ),
@@ -206,12 +211,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
         ),
       ),
       children: [
-        TileLayer(
-          urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
-          subdomains: const ['a', 'b', 'c'],
-          userAgentPackageName: 'com.oasth.oast',
-          errorTileCallback: (tile, error, stackTrace) {},
-        ),
+        const MapTileLayer(),
         if (_userLocation != null)
           CurrentLocationLayer(
             alignPositionOnUpdate: AlignOnUpdate.once,
@@ -244,7 +244,8 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
             maxZoom: 15.0,
             size: const Size(40, 40),
             markers: _buildMarkers(stops: stopsToShow),
-            builder: (context, markers) => _buildClusterMarker(context, markers),
+            builder: (context, markers) =>
+                _buildClusterMarker(context, markers),
           ),
         ),
       ],
@@ -290,11 +291,13 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
             const SizedBox(width: 4),
             Text(
               _showOnlyNearby
-                  ? 'nearby_only'.tr(namedArgs: {'count': _nearbyStops.length.toString()})
-                  : 'all_stops'.tr(namedArgs: {'count': _allStops.length.toString()}),
+                  ? 'nearby_only'
+                      .tr(namedArgs: {'count': _nearbyStops.length.toString()})
+                  : 'all_stops'
+                      .tr(namedArgs: {'count': _allStops.length.toString()}),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                fontWeight: FontWeight.w500,
-              ),
+                    fontWeight: FontWeight.w500,
+                  ),
             ),
             const SizedBox(width: 4),
             InkWell(
@@ -374,16 +377,16 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
                 Text(
                   'map_loading_error'.tr(),
                   style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    color: Theme.of(context).colorScheme.error,
-                  ),
+                        color: Theme.of(context).colorScheme.error,
+                      ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 8),
                 Text(
                   _errorMessage!,
                   style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: Theme.of(context).hintColor,
-                  ),
+                        color: Theme.of(context).hintColor,
+                      ),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 16),
@@ -426,7 +429,8 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
         FloatingActionButton.small(
           heroTag: "filter",
           onPressed: _toggleNearbyFilter,
-          tooltip: _showOnlyNearby ? 'show_all_stops'.tr() : 'show_nearby_only'.tr(),
+          tooltip:
+              _showOnlyNearby ? 'show_all_stops'.tr() : 'show_nearby_only'.tr(),
           backgroundColor: _showOnlyNearby
               ? Theme.of(context).primaryColor
               : Theme.of(context).cardColor,
@@ -487,17 +491,19 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
               ),
               child: Text(
                 LanguageHelper.getLanguageUsedInApp(context) == 'en'
-                    ? stop.stopDescriptionEng.isNotEmpty ? stop.stopDescriptionEng : 'no_description'.tr()
-                    : stop.stopDescription.isNotEmpty ? stop.stopDescription : 'no_description'.tr(),
+                    ? stop.stopDescriptionEng.isNotEmpty
+                        ? stop.stopDescriptionEng
+                        : 'no_description'.tr()
+                    : stop.stopDescription.isNotEmpty
+                        ? stop.stopDescription
+                        : 'no_description'.tr(),
                 textAlign: TextAlign.center,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  color: isNearby
-                      ? Theme.of(context).primaryColor
-                      : null,
-                ),
+                      fontWeight: FontWeight.w600,
+                      color: isNearby ? Theme.of(context).primaryColor : null,
+                    ),
               ),
             ),
             const SizedBox(height: 2),
@@ -564,12 +570,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
   }
 
   void _onPressMarker({required Stop stop}) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => StopPage(stop: stop),
-      ),
-    );
+    context.push(AppRoutes.stop, extra: StopArgs(stop));
   }
 
   String _buildClusterMarkerCount(int length) {
@@ -622,7 +623,8 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
     );
   }
 
-  Widget _buildInfoItem(BuildContext context, IconData icon, String title, String description) {
+  Widget _buildInfoItem(
+      BuildContext context, IconData icon, String title, String description) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
@@ -637,15 +639,15 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
                 Text(
                   title,
                   style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
+                        fontWeight: FontWeight.w600,
+                      ),
                 ),
                 const SizedBox(height: 4),
                 Text(
                   description,
                   style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Theme.of(context).hintColor,
-                  ),
+                        color: Theme.of(context).hintColor,
+                      ),
                 ),
               ],
             ),
