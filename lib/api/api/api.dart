@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:flutter/foundation.dart';
@@ -338,15 +337,15 @@ class Api {
         }
 
         return response;
-      } on SocketException {
-        throw ApiError('No internet connection', endpoint: endpoint);
-      } on HttpException catch (e) {
-        throw ApiError('HTTP error: ${e.message}', endpoint: endpoint);
+      } on TimeoutException {
+        throw ApiError('Request timed out', endpoint: endpoint);
       } on FormatException catch (e) {
         throw ApiError('Invalid response format: ${e.message}',
             endpoint: endpoint);
-      } on TimeoutException {
-        throw ApiError('Request timed out', endpoint: endpoint);
+      } on ApiError {
+        rethrow;
+      } catch (e) {
+        throw ApiError('Network error: $e', endpoint: endpoint);
       }
     }
 
