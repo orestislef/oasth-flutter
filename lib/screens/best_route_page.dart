@@ -1,9 +1,12 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/data/route_planner.dart';
+import 'package:oasth/helpers/geocoding_helper.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum RouteStep { input, preferences, results }
@@ -120,6 +123,14 @@ class _BestRoutePageState extends State<BestRoutePage>
   bool _buildingGraph = false;
   double _graphProgress = 0.0;
 
+  // Autocomplete state
+  List<GeocodingResult> _fromSuggestions = [];
+  List<GeocodingResult> _toSuggestions = [];
+  Timer? _searchDebounce;
+  bool _isSearching = false;
+  bool _isGettingFromLocation = false;
+  bool _isGettingToLocation = false;
+
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
 
@@ -145,6 +156,7 @@ class _BestRoutePageState extends State<BestRoutePage>
     _fromController.dispose();
     _toController.dispose();
     _animationController.dispose();
+    _searchDebounce?.cancel();
     super.dispose();
   }
 
@@ -207,11 +219,20 @@ class _BestRoutePageState extends State<BestRoutePage>
   }
 
   Future<void> _getCurrentLocation(bool isFrom) async {
+    if (isFrom ? _isGettingFromLocation : _isGettingToLocation) return;
+    setState(() {
+      if (isFrom) {
+        _isGettingFromLocation = true;
+      } else {
+        _isGettingToLocation = true;
+      }
+    });
+
     try {
-      final permission = await Geolocator.checkPermission();
+      var permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
-        final result = await Geolocator.requestPermission();
-        if (result == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+        if (permission == LocationPermission.denied) {
           _showError('location_permission_denied'.tr());
           return;
         }
@@ -229,24 +250,130 @@ class _BestRoutePageState extends State<BestRoutePage>
         ),
       );
 
+      // Reverse geocode to get actual address
+      final address = await GeocodingHelper.reverseGeocode(
+        position.latitude,
+        position.longitude,
+      );
+
       final place = SavedPlace(
-        name: 'current_location'.tr(),
+        name: address,
         latitude: position.latitude,
         longitude: position.longitude,
       );
 
+      if (!mounted) return;
       setState(() {
         if (isFrom) {
           _fromPlace = place;
           _fromController.text = place.name;
+          _fromSuggestions = [];
         } else {
           _toPlace = place;
           _toController.text = place.name;
+          _toSuggestions = [];
         }
       });
     } catch (e) {
-      _showError('location_error'.tr());
+      if (mounted) _showError('location_error'.tr());
+    } finally {
+      if (mounted) {
+        setState(() {
+          if (isFrom) {
+            _isGettingFromLocation = false;
+          } else {
+            _isGettingToLocation = false;
+          }
+        });
+      }
     }
+  }
+
+  void _onLocationFieldChanged(String value, bool isFrom) {
+    // Clear place if text was manually changed
+    if (isFrom && _fromPlace != null && value != _fromPlace!.name) {
+      setState(() => _fromPlace = null);
+    } else if (!isFrom && _toPlace != null && value != _toPlace!.name) {
+      setState(() => _toPlace = null);
+    }
+
+    _searchDebounce?.cancel();
+
+    if (value.length < 3) {
+      setState(() {
+        if (isFrom) {
+          _fromSuggestions = [];
+        } else {
+          _toSuggestions = [];
+        }
+      });
+      return;
+    }
+
+    _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+      _searchSuggestions(value, isFrom);
+    });
+  }
+
+  Future<void> _searchSuggestions(String query, bool isFrom) async {
+    setState(() => _isSearching = true);
+
+    final results = <GeocodingResult>[];
+
+    // Search OASTH stops (local, instant)
+    final planner = RoutePlanner();
+    if (planner.isReady) {
+      final stops = planner.searchStopsByName(query);
+      results.addAll(stops.map((s) {
+        final name = s.stopDescriptionEng.isNotEmpty
+            ? s.stopDescriptionEng
+            : s.stopDescription;
+        final street = s.stopStreetEng.isNotEmpty
+            ? s.stopStreetEng
+            : s.stopStreet;
+        return GeocodingResult(
+          displayName: street.isNotEmpty ? '$name ($street)' : name,
+          latitude: s.stopLat,
+          longitude: s.stopLng,
+          type: 'stop',
+        );
+      }));
+    }
+
+    // Search addresses via Nominatim (remote)
+    final addresses = await GeocodingHelper.searchAddress(query);
+    results.addAll(addresses);
+
+    if (mounted) {
+      setState(() {
+        if (isFrom) {
+          _fromSuggestions = results;
+        } else {
+          _toSuggestions = results;
+        }
+        _isSearching = false;
+      });
+    }
+  }
+
+  void _selectSuggestion(GeocodingResult suggestion, bool isFrom) {
+    final place = SavedPlace(
+      name: suggestion.displayName,
+      latitude: suggestion.latitude,
+      longitude: suggestion.longitude,
+    );
+
+    setState(() {
+      if (isFrom) {
+        _fromPlace = place;
+        _fromController.text = place.name;
+        _fromSuggestions = [];
+      } else {
+        _toPlace = place;
+        _toController.text = place.name;
+        _toSuggestions = [];
+      }
+    });
   }
 
   void _showError(String message) {
@@ -294,7 +421,11 @@ class _BestRoutePageState extends State<BestRoutePage>
         _toPlace!.longitude,
       );
 
-      final route = planner.findBestRoute(startStop.stopCode, endStop.stopCode);
+      final route = planner.findBestRoute(
+        startStop.stopCode,
+        endStop.stopCode,
+        minimizeTransfers: _preferences.minimizeTransfers,
+      );
 
       setState(() {
         _result = RouteResult(
@@ -466,12 +597,8 @@ class _BestRoutePageState extends State<BestRoutePage>
             title: 'from_location'.tr(),
             controller: _fromController,
             place: _fromPlace,
-            onLocationTap: () => _getCurrentLocation(true),
-            onChanged: (value) {
-              if (_fromPlace != null && value != _fromPlace!.name) {
-                setState(() => _fromPlace = null);
-              }
-            },
+            isFrom: true,
+            suggestions: _fromSuggestions,
           ),
           Center(
             child: IconButton(
@@ -484,12 +611,8 @@ class _BestRoutePageState extends State<BestRoutePage>
             title: 'to_location'.tr(),
             controller: _toController,
             place: _toPlace,
-            onLocationTap: () => _getCurrentLocation(false),
-            onChanged: (value) {
-              if (_toPlace != null && value != _toPlace!.name) {
-                setState(() => _toPlace = null);
-              }
-            },
+            isFrom: false,
+            suggestions: _toSuggestions,
           ),
           const SizedBox(height: 24),
           if (_recentSearches.isNotEmpty) ...[
@@ -528,8 +651,8 @@ class _BestRoutePageState extends State<BestRoutePage>
     required String title,
     required TextEditingController controller,
     required SavedPlace? place,
-    required VoidCallback onLocationTap,
-    required Function(String) onChanged,
+    required bool isFrom,
+    required List<GeocodingResult> suggestions,
   }) {
     return Card(
       child: Padding(
@@ -540,9 +663,7 @@ class _BestRoutePageState extends State<BestRoutePage>
             Row(
               children: [
                 Icon(
-                  title == 'from_location'.tr()
-                      ? Icons.trip_origin
-                      : Icons.location_on,
+                  isFrom ? Icons.trip_origin : Icons.location_on,
                   size: 16,
                   color: Theme.of(context).primaryColor,
                 ),
@@ -553,20 +674,73 @@ class _BestRoutePageState extends State<BestRoutePage>
             const SizedBox(height: 12),
             TextField(
               controller: controller,
-              onChanged: onChanged,
+              onChanged: (value) => _onLocationFieldChanged(value, isFrom),
               decoration: InputDecoration(
                 hintText: 'enter_location_hint'.tr(),
-                suffixIcon: IconButton(
-                  icon: const Icon(Icons.my_location),
-                  onPressed: onLocationTap,
-                ),
+                suffixIcon: (isFrom ? _isGettingFromLocation : _isGettingToLocation)
+                    ? const Padding(
+                        padding: EdgeInsets.all(12),
+                        child: SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        ),
+                      )
+                    : IconButton(
+                        icon: const Icon(Icons.my_location),
+                        onPressed: () => _getCurrentLocation(isFrom),
+                      ),
                 border: const OutlineInputBorder(),
                 filled: true,
                 fillColor: Theme.of(context).colorScheme.surface,
               ),
             ),
+            if (_isSearching && suggestions.isEmpty)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: LinearProgressIndicator(),
+              ),
+            if (suggestions.isNotEmpty)
+              _buildSuggestionsList(suggestions, isFrom),
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildSuggestionsList(List<GeocodingResult> suggestions, bool isFrom) {
+    return ConstrainedBox(
+      constraints: const BoxConstraints(maxHeight: 220),
+      child: ListView.separated(
+        shrinkWrap: true,
+        padding: const EdgeInsets.only(top: 8),
+        itemCount: suggestions.length,
+        separatorBuilder: (_, __) => const Divider(height: 1),
+        itemBuilder: (context, index) {
+          final s = suggestions[index];
+          final isStop = s.type == 'stop';
+          return ListTile(
+            dense: true,
+            leading: Icon(
+              isStop ? Icons.directions_bus : Icons.location_on,
+              size: 20,
+              color: isStop
+                  ? Theme.of(context).primaryColor
+                  : Theme.of(context).colorScheme.error,
+            ),
+            title: Text(
+              s.displayName,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: Theme.of(context).textTheme.bodySmall,
+            ),
+            subtitle: Text(
+              isStop ? 'bus_stop'.tr() : 'address'.tr(),
+              style: Theme.of(context).textTheme.labelSmall,
+            ),
+            onTap: () => _selectSuggestion(s, isFrom),
+          );
+        },
       ),
     );
   }
@@ -953,8 +1127,8 @@ class _BestRoutePageState extends State<BestRoutePage>
         for (final segment in segments)
           _buildSegmentItem(
             icon: Icons.directions_bus,
-            title: '${'line'.tr()} ${segment.routeCode}',
-            subtitle: '${segment.stops.length} ${'stops'.tr()}',
+            title: '${'line'.tr()} ${segment.lineId}',
+            subtitle: '${segment.routeDescription}\n${segment.stops.length} ${'stops'.tr()}',
             color: Theme.of(context).primaryColor,
           ),
         _buildSegmentItem(
@@ -972,7 +1146,11 @@ class _BestRoutePageState extends State<BestRoutePage>
 
     for (final edge in edges) {
       if (segments.isEmpty || segments.last.routeCode != edge.routeCode) {
-        segments.add(_RouteSegment(routeCode: edge.routeCode));
+        segments.add(_RouteSegment(
+          routeCode: edge.routeCode,
+          lineId: edge.lineId,
+          routeDescription: edge.routeDescription,
+        ));
       }
       segments.last.stops.add(edge);
     }
@@ -1126,7 +1304,13 @@ class _BestRoutePageState extends State<BestRoutePage>
 
 class _RouteSegment {
   final String routeCode;
+  final String lineId;
+  final String routeDescription;
   final List<RouteEdge> stops = [];
 
-  _RouteSegment({required this.routeCode});
+  _RouteSegment({
+    required this.routeCode,
+    required this.lineId,
+    required this.routeDescription,
+  });
 }

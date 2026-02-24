@@ -325,5 +325,6 @@
   "please_select_locations": "Please select both locations",
   "route_data_loading": "Route data is still loading, please wait",
   "unknown_error": "An unknown error occurred",
-  "same_location": "Start and destination are the same"
+  "same_location": "Start and destination are the same",
+  "bus_stop": "Bus stop"
 }
