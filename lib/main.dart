@@ -16,11 +16,13 @@ import 'package:go_router/go_router.dart';
 import 'helpers/app_routes.dart';
 import 'helpers/language_helper.dart';
 import 'helpers/package_info_plus_helper.dart';
+import 'helpers/shared_preferences_helper.dart';
 import 'helpers/theme_mode_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await EasyLocalization.ensureInitialized();
+  await SharedPreferencesHelper.init();
   await OasthRepository().init();
   await ThemeModeController.init();
   await PackageInfoPlusHelper.ensureInitialized();
