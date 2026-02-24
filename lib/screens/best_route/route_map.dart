@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/data/route_planner.dart';
@@ -28,11 +31,31 @@ class _RouteMapViewState extends State<RouteMapView> {
   final MapController _mapController = MapController();
   final _repo = OasthRepository();
   late final Future<Map<String, RouteDetailAndStops>> _routeDetailsFuture;
+  List<BusLocationData> _busLocations = [];
 
   @override
   void initState() {
     super.initState();
     _routeDetailsFuture = _fetchRouteDetails();
+    _fetchBusLocations();
+  }
+
+  Future<void> _fetchBusLocations() async {
+    final segments = _groupEdgesByRoute(widget.route.edges);
+    final routeCodes = segments
+        .where((s) => !s.isWalking)
+        .map((s) => s.routeCode)
+        .toSet();
+
+    final allLocations = <BusLocationData>[];
+    for (final code in routeCodes) {
+      try {
+        final locs = await _repo.getBusLocations(code);
+        allLocations.addAll(locs);
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    setState(() => _busLocations = allLocations);
   }
 
   void _openFullScreen() {
@@ -132,25 +155,36 @@ class _RouteMapViewState extends State<RouteMapView> {
 
     // Build polylines for each segment
     for (final segment in segments) {
-      final points = _buildSegmentPoints(segment, detailsByRoute);
-
-      if (points.length >= 2) {
-        if (segment.isWalking) {
-          // Dashed walking line
+      if (segment.isWalking) {
+        final points = _buildSegmentPoints(segment, detailsByRoute);
+        if (points.length >= 2) {
           polylines.add(Polyline(
             points: points,
             color: Theme.of(context).colorScheme.tertiary,
             strokeWidth: 3,
             pattern: const StrokePattern.dotted(),
           ));
-        } else {
-          // Bus route line
-          final color = lineColors.putIfAbsent(segment.lineId, () {
-            final c = colorPalette[colorIndex % colorPalette.length];
-            colorIndex++;
-            return c;
-          });
+        }
+      } else {
+        final color = lineColors.putIfAbsent(segment.lineId, () {
+          final c = colorPalette[colorIndex % colorPalette.length];
+          colorIndex++;
+          return c;
+        });
 
+        // Ghost polyline: full bus route at 35% opacity
+        final fullPoints = _pointsFromRouteDetails(detailsByRoute[segment.routeCode]);
+        if (fullPoints.length >= 2) {
+          polylines.add(Polyline(
+            points: fullPoints,
+            color: color.withAlpha(90),
+            strokeWidth: 3,
+          ));
+        }
+
+        // Riding segment at full opacity
+        final points = _buildSegmentPoints(segment, detailsByRoute);
+        if (points.length >= 2) {
           polylines.add(Polyline(
             points: points,
             color: color,
@@ -192,7 +226,16 @@ class _RouteMapViewState extends State<RouteMapView> {
       prevRoute = edge.routeCode;
     }
 
-    // Calculate bounds
+    // Live bus markers
+    for (final bus in _busLocations) {
+      if (bus.csLat != 0.0 || bus.csLng != 0.0) {
+        final color = lineColors[_lineIdForRouteCode(bus.routeCode, segments)] ??
+            Theme.of(context).primaryColor;
+        markers.add(_buildBusMarker(context, bus, color));
+      }
+    }
+
+    // Calculate bounds (only from riding polylines + stop markers, not ghost lines)
     final allPoints = <LatLng>[];
     for (final p in polylines) {
       allPoints.addAll(p.points);
@@ -230,6 +273,60 @@ class _RouteMapViewState extends State<RouteMapView> {
     );
   }
 
+  String? _lineIdForRouteCode(String routeCode, List<RouteSegment> segments) {
+    for (final s in segments) {
+      if (s.routeCode == routeCode) return s.lineId;
+    }
+    return null;
+  }
+
+  Marker _buildBusMarker(
+      BuildContext context, BusLocationData bus, Color color) {
+    return Marker(
+      point: LatLng(bus.csLat, bus.csLng),
+      width: 56,
+      height: 40,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(4),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).shadowColor.withAlpha(80),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.directions_bus,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  size: 14,
+                ),
+                const SizedBox(width: 2),
+                Text(
+                  bus.vehNo,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Stop? _findStop(String code) {
     if (widget.route.startStop.stopCode == code) return widget.route.startStop;
     if (widget.route.endStop.stopCode == code) return widget.route.endStop;
@@ -245,25 +342,56 @@ class _RouteMapViewState extends State<RouteMapView> {
 
     final details = detailsByRoute[segment.routeCode];
     final detailsPoints = _pointsFromRouteDetails(details);
-    if (detailsPoints.isEmpty) return _pointsFromEdges(segment);
+    if (detailsPoints.isEmpty) {
+      debugPrint('[route_planner] No route details for ${segment.routeCode}, using edge points');
+      return _pointsFromEdges(segment);
+    }
 
     final startStop = _findStop(segment.stops.first.fromStopCode);
     final endStop = _findStop(segment.stops.last.toStopCode);
-    if (startStop == null || endStop == null) return detailsPoints;
+    if (startStop == null || endStop == null) {
+      debugPrint('[route_planner] Missing stops: start=${startStop != null} end=${endStop != null}, returning FULL polyline');
+      return detailsPoints;
+    }
 
-    final startLatLng = LatLng(startStop.stopLat, startStop.stopLng);
-    final endLatLng = LatLng(endStop.stopLat, endStop.stopLng);
-    final first = detailsPoints.first;
-    final last = detailsPoints.last;
+    final boardLatLng = LatLng(startStop.stopLat, startStop.stopLng);
+    final alightLatLng = LatLng(endStop.stopLat, endStop.stopLng);
 
-    final distStartToFirst = _distanceMeters(startLatLng, first);
-    final distStartToLast = _distanceMeters(startLatLng, last);
-    final distEndToLast = _distanceMeters(endLatLng, last);
-    final distEndToFirst = _distanceMeters(endLatLng, first);
+    // Find nearest polyline point to boarding stop
+    int boardIdx = 0;
+    double minBoardDist = double.infinity;
+    for (int i = 0; i < detailsPoints.length; i++) {
+      final d = _distanceMeters(boardLatLng, detailsPoints[i]);
+      if (d < minBoardDist) {
+        minBoardDist = d;
+        boardIdx = i;
+      }
+    }
 
-    final isForward =
-        distStartToFirst <= distStartToLast && distEndToLast <= distEndToFirst;
-    return isForward ? detailsPoints : detailsPoints.reversed.toList();
+    // Find nearest polyline point to alighting stop (only AFTER boarding)
+    int alightIdx = detailsPoints.length - 1;
+    double minAlightDist = double.infinity;
+    for (int i = boardIdx; i < detailsPoints.length; i++) {
+      final d = _distanceMeters(alightLatLng, detailsPoints[i]);
+      if (d < minAlightDist) {
+        minAlightDist = d;
+        alightIdx = i;
+      }
+    }
+
+    debugPrint('[route_planner] Route ${segment.routeCode} (line ${segment.lineId}): '
+        'polyline=${detailsPoints.length} pts');
+    debugPrint('[route_planner]   boarding=${segment.stops.first.fromStopCode} → polyIdx=$boardIdx (${minBoardDist.toStringAsFixed(0)}m)');
+    debugPrint('[route_planner]   alight=${segment.stops.last.toStopCode} → polyIdx=$alightIdx (${minAlightDist.toStringAsFixed(0)}m)');
+
+    if (alightIdx <= boardIdx) {
+      debugPrint('[route_planner]   could not trim, using edge points');
+      return _pointsFromEdges(segment);
+    }
+
+    final trimmed = detailsPoints.sublist(boardIdx, alightIdx + 1);
+    debugPrint('[route_planner]   trimmed: ${trimmed.length} of ${detailsPoints.length} pts');
+    return trimmed;
   }
 
   List<LatLng> _pointsFromRouteDetails(RouteDetailAndStops? details) {
@@ -392,11 +520,42 @@ class _FullScreenMapState extends State<FullScreenRouteMap> {
   final MapController _mapController = MapController();
   final _repo = OasthRepository();
   late final Future<Map<String, RouteDetailAndStops>> _routeDetailsFuture;
+  List<BusLocationData> _busLocations = [];
+  Timer? _busPollTimer;
 
   @override
   void initState() {
     super.initState();
     _routeDetailsFuture = _fetchRouteDetails();
+    _fetchBusLocations();
+    _busPollTimer = Timer.periodic(
+      const Duration(seconds: 10),
+      (_) => _fetchBusLocations(),
+    );
+  }
+
+  @override
+  void dispose() {
+    _busPollTimer?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchBusLocations() async {
+    final segments = _groupEdgesByRoute(widget.route.edges);
+    final routeCodes = segments
+        .where((s) => !s.isWalking)
+        .map((s) => s.routeCode)
+        .toSet();
+
+    final allLocations = <BusLocationData>[];
+    for (final code in routeCodes) {
+      try {
+        final locs = await _repo.getBusLocations(code);
+        allLocations.addAll(locs);
+      } catch (_) {}
+    }
+    if (!mounted) return;
+    setState(() => _busLocations = allLocations);
   }
 
   @override
@@ -464,22 +623,36 @@ class _FullScreenMapState extends State<FullScreenRouteMap> {
     int colorIndex = 0;
 
     for (final segment in segments) {
-      final points = _buildSegmentPoints(segment, detailsByRoute);
-
-      if (points.length >= 2) {
-        if (segment.isWalking) {
+      if (segment.isWalking) {
+        final points = _buildSegmentPoints(segment, detailsByRoute);
+        if (points.length >= 2) {
           polylines.add(Polyline(
             points: points,
             color: Theme.of(context).colorScheme.tertiary,
             strokeWidth: 3,
             pattern: const StrokePattern.dotted(),
           ));
-        } else {
-          final color = lineColors.putIfAbsent(segment.lineId, () {
-            final c = colorPalette[colorIndex % colorPalette.length];
-            colorIndex++;
-            return c;
-          });
+        }
+      } else {
+        final color = lineColors.putIfAbsent(segment.lineId, () {
+          final c = colorPalette[colorIndex % colorPalette.length];
+          colorIndex++;
+          return c;
+        });
+
+        // Ghost polyline: full bus route at 35% opacity
+        final fullPoints = _pointsFromRouteDetails(detailsByRoute[segment.routeCode]);
+        if (fullPoints.length >= 2) {
+          polylines.add(Polyline(
+            points: fullPoints,
+            color: color.withAlpha(90),
+            strokeWidth: 3,
+          ));
+        }
+
+        // Riding segment at full opacity
+        final points = _buildSegmentPoints(segment, detailsByRoute);
+        if (points.length >= 2) {
           polylines.add(Polyline(
             points: points,
             color: color,
@@ -507,6 +680,15 @@ class _FullScreenMapState extends State<FullScreenRouteMap> {
         }
       }
       prevRoute = edge.routeCode;
+    }
+
+    // Live bus markers
+    for (final bus in _busLocations) {
+      if (bus.csLat != 0.0 || bus.csLng != 0.0) {
+        final color = lineColors[_lineIdForRouteCode(bus.routeCode, segments)] ??
+            Theme.of(context).primaryColor;
+        markers.add(_buildBusMarker(context, bus, color));
+      }
     }
 
     final allPoints = <LatLng>[];
@@ -546,6 +728,60 @@ class _FullScreenMapState extends State<FullScreenRouteMap> {
     );
   }
 
+  String? _lineIdForRouteCode(String routeCode, List<RouteSegment> segments) {
+    for (final s in segments) {
+      if (s.routeCode == routeCode) return s.lineId;
+    }
+    return null;
+  }
+
+  Marker _buildBusMarker(
+      BuildContext context, BusLocationData bus, Color color) {
+    return Marker(
+      point: LatLng(bus.csLat, bus.csLng),
+      width: 56,
+      height: 40,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            decoration: BoxDecoration(
+              color: color,
+              borderRadius: BorderRadius.circular(4),
+              boxShadow: [
+                BoxShadow(
+                  color: Theme.of(context).shadowColor.withAlpha(80),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.directions_bus,
+                  color: Theme.of(context).colorScheme.onPrimary,
+                  size: 14,
+                ),
+                const SizedBox(width: 2),
+                Text(
+                  bus.vehNo,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Stop? _findStop(String code) {
     if (widget.route.startStop.stopCode == code) return widget.route.startStop;
     if (widget.route.endStop.stopCode == code) return widget.route.endStop;
@@ -561,25 +797,56 @@ class _FullScreenMapState extends State<FullScreenRouteMap> {
 
     final details = detailsByRoute[segment.routeCode];
     final detailsPoints = _pointsFromRouteDetails(details);
-    if (detailsPoints.isEmpty) return _pointsFromEdges(segment);
+    if (detailsPoints.isEmpty) {
+      debugPrint('[route_planner] No route details for ${segment.routeCode}, using edge points');
+      return _pointsFromEdges(segment);
+    }
 
     final startStop = _findStop(segment.stops.first.fromStopCode);
     final endStop = _findStop(segment.stops.last.toStopCode);
-    if (startStop == null || endStop == null) return detailsPoints;
+    if (startStop == null || endStop == null) {
+      debugPrint('[route_planner] Missing stops: start=${startStop != null} end=${endStop != null}, returning FULL polyline');
+      return detailsPoints;
+    }
 
-    final startLatLng = LatLng(startStop.stopLat, startStop.stopLng);
-    final endLatLng = LatLng(endStop.stopLat, endStop.stopLng);
-    final first = detailsPoints.first;
-    final last = detailsPoints.last;
+    final boardLatLng = LatLng(startStop.stopLat, startStop.stopLng);
+    final alightLatLng = LatLng(endStop.stopLat, endStop.stopLng);
 
-    final distStartToFirst = _distanceMeters(startLatLng, first);
-    final distStartToLast = _distanceMeters(startLatLng, last);
-    final distEndToLast = _distanceMeters(endLatLng, last);
-    final distEndToFirst = _distanceMeters(endLatLng, first);
+    // Find nearest polyline point to boarding stop
+    int boardIdx = 0;
+    double minBoardDist = double.infinity;
+    for (int i = 0; i < detailsPoints.length; i++) {
+      final d = _distanceMeters(boardLatLng, detailsPoints[i]);
+      if (d < minBoardDist) {
+        minBoardDist = d;
+        boardIdx = i;
+      }
+    }
 
-    final isForward =
-        distStartToFirst <= distStartToLast && distEndToLast <= distEndToFirst;
-    return isForward ? detailsPoints : detailsPoints.reversed.toList();
+    // Find nearest polyline point to alighting stop (only AFTER boarding)
+    int alightIdx = detailsPoints.length - 1;
+    double minAlightDist = double.infinity;
+    for (int i = boardIdx; i < detailsPoints.length; i++) {
+      final d = _distanceMeters(alightLatLng, detailsPoints[i]);
+      if (d < minAlightDist) {
+        minAlightDist = d;
+        alightIdx = i;
+      }
+    }
+
+    debugPrint('[route_planner] Route ${segment.routeCode} (line ${segment.lineId}): '
+        'polyline=${detailsPoints.length} pts');
+    debugPrint('[route_planner]   boarding=${segment.stops.first.fromStopCode} → polyIdx=$boardIdx (${minBoardDist.toStringAsFixed(0)}m)');
+    debugPrint('[route_planner]   alight=${segment.stops.last.toStopCode} → polyIdx=$alightIdx (${minAlightDist.toStringAsFixed(0)}m)');
+
+    if (alightIdx <= boardIdx) {
+      debugPrint('[route_planner]   could not trim, using edge points');
+      return _pointsFromEdges(segment);
+    }
+
+    final trimmed = detailsPoints.sublist(boardIdx, alightIdx + 1);
+    debugPrint('[route_planner]   trimmed: ${trimmed.length} of ${detailsPoints.length} pts');
+    return trimmed;
   }
 
   List<LatLng> _pointsFromRouteDetails(RouteDetailAndStops? details) {
