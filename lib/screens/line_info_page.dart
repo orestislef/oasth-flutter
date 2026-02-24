@@ -287,27 +287,33 @@ class _LineInfoPageState extends State<LineInfoPage>
       padding: const EdgeInsets.fromLTRB(20, 80, 20, 60),
       child: Row(
         children: [
-          Container(
-            width: 80,
-            height: 80,
-            decoration: BoxDecoration(
-              color: Theme.of(context).primaryColor,
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: Theme.of(context).shadowColor.withAlpha(76),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
+          Hero(
+            tag: 'line_badge_${widget.linesWithMasterLineInfo.lineId}',
+            child: Material(
+              type: MaterialType.transparency,
+              child: Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Theme.of(context).shadowColor.withAlpha(76),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-            child: Center(
-              child: Text(
-                widget.linesWithMasterLineInfo.lineId,
-                style: TextStyle(
-                  fontSize: 24,
-                  fontWeight: FontWeight.bold,
-                  color: Theme.of(context).colorScheme.onPrimary,
+                child: Center(
+                  child: Text(
+                    widget.linesWithMasterLineInfo.lineId,
+                    style: TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -366,16 +372,16 @@ class _LineInfoPageState extends State<LineInfoPage>
   }
 
   Widget _buildStopsTab(BuildContext context) {
-    return Column(
-      children: [
-        _buildLineVariantsSection(context),
-        _buildDirectionSection(context),
-        _buildSearchBar(context),
-        _buildSortToggle(context),
-        Expanded(
-          child: _buildStopsList(context),
-        ),
-      ],
+    return NestedScrollView(
+      headerSliverBuilder: (context, innerBoxIsScrolled) {
+        return [
+          SliverToBoxAdapter(child: _buildLineVariantsSection(context)),
+          SliverToBoxAdapter(child: _buildDirectionSection(context)),
+          SliverToBoxAdapter(child: _buildSearchBar(context)),
+          SliverToBoxAdapter(child: _buildSortToggle(context)),
+        ];
+      },
+      body: _buildStopsList(context),
     );
   }
 
@@ -396,15 +402,8 @@ class _LineInfoPageState extends State<LineInfoPage>
           if (_isGettingLocation)
             Padding(
               padding: const EdgeInsets.only(right: 12),
-              child: SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(
-                    Theme.of(context).primaryColor,
-                  ),
-                ),
+              child: const ShimmerContainer(
+                child: ShimmerBox(width: 16, height: 16),
               ),
             ),
           SegmentedButton<bool>(
@@ -777,11 +776,15 @@ class _LineInfoPageState extends State<LineInfoPage>
               return _buildEmptySearchState(context);
             }
 
-            return Column(
-              children: [
-                if (_searchQuery.isNotEmpty)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
+            final hasFilter = _searchQuery.isNotEmpty;
+            return ListView.builder(
+              controller: _scrollController,
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              itemCount: stops.length + (hasFilter ? 1 : 0),
+              itemBuilder: (context, index) {
+                if (hasFilter && index == 0) {
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 8),
                     child: Row(
                       children: [
                         Icon(
@@ -793,7 +796,8 @@ class _LineInfoPageState extends State<LineInfoPage>
                         Text(
                           'showing_stops_results'.tr(namedArgs: {
                             'count': stops.length.toString(),
-                            'total': _currentRouteData!.stops.length.toString(),
+                            'total':
+                                _currentRouteData!.stops.length.toString(),
                           }),
                           style:
                               Theme.of(context).textTheme.bodySmall?.copyWith(
@@ -803,19 +807,12 @@ class _LineInfoPageState extends State<LineInfoPage>
                         ),
                       ],
                     ),
-                  ),
-                Expanded(
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    itemCount: stops.length,
-                    itemBuilder: (context, index) {
-                      final stop = stops[index];
-                      return _buildStopCard(context, stop);
-                    },
-                  ),
-                ),
-              ],
+                  );
+                }
+                final stopIndex = hasFilter ? index - 1 : index;
+                final stop = stops[stopIndex];
+                return _buildStopCard(context, stop);
+              },
             );
           },
         );
@@ -901,13 +898,19 @@ class _LineInfoPageState extends State<LineInfoPage>
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      description,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    Hero(
+                      tag: 'stop_name_${stop.stopCode}',
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: Text(
+                          description,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
                     if (showDistance && distMeters != null) ...[
                       const SizedBox(height: 4),

@@ -546,15 +546,8 @@ class _LinePageState extends State<LinePage> {
                 IconButton(
                   onPressed: _isBusLoading ? null : _loadBusLocations,
                   icon: _isBusLoading
-                      ? SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Theme.of(context).primaryColor,
-                            ),
-                          ),
+                      ? const ShimmerContainer(
+                          child: ShimmerBox(width: 18, height: 18),
                         )
                       : const Icon(Icons.refresh),
                   tooltip: 'refresh_arrivals'.tr(),
@@ -733,13 +726,19 @@ class _LinePageState extends State<LinePage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      description,
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    Hero(
+                      tag: 'stop_name_${stop.stopCode}',
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: Text(
+                          description,
+                          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Row(

@@ -5,6 +5,7 @@ import 'package:oasth/data/route_planner.dart';
 import 'package:oasth/data/route_planner_models.dart';
 import 'package:oasth/screens/best_route/input_step.dart';
 import 'package:oasth/screens/best_route/results_step.dart';
+import 'package:oasth/widgets/shimmer_loading.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 enum RouteStep { input, results }
@@ -26,11 +27,13 @@ class _BestRoutePageState extends State<BestRoutePage>
   RoutePreferences _preferences = const RoutePreferences();
   RouteResult _result = const RouteResult();
 
-  List<SavedPlace> _recentSearches = [];
+  List<RecentRoute> _recentSearches = [];
 
   bool _graphReady = false;
   bool _buildingGraph = false;
-  double _graphProgress = 0.0;
+  int _processedRoutes = 0;
+  int _totalRoutes = 0;
+  DateTime? _buildStartTime;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -61,10 +64,10 @@ class _BestRoutePageState extends State<BestRoutePage>
   Future<void> _loadSavedData() async {
     final prefs = await SharedPreferences.getInstance();
 
-    final recentJson = prefs.getStringList('recent_routes') ?? [];
+    final recentJson = prefs.getStringList('recent_routes_v2') ?? [];
     setState(() {
       _recentSearches = recentJson
-          .map((j) => SavedPlace.fromMap(
+          .map((j) => RecentRoute.fromMap(
               Map<String, dynamic>.from(Uri.splitQueryString(j))))
           .toList();
     });
@@ -73,17 +76,45 @@ class _BestRoutePageState extends State<BestRoutePage>
   Future<void> _saveRecentSearch(SavedPlace from, SavedPlace to) async {
     final prefs = await SharedPreferences.getInstance();
 
-    _recentSearches.insert(0, from);
+    // Remove duplicate if same from/to already exists
+    _recentSearches.removeWhere((r) =>
+        r.from.name == from.name && r.to.name == to.name);
+
+    _recentSearches.insert(
+      0,
+      RecentRoute(from: from, to: to, timestamp: DateTime.now()),
+    );
     if (_recentSearches.length > 10) {
       _recentSearches = _recentSearches.sublist(0, 10);
     }
 
+    await _persistRecentSearches(prefs);
+  }
+
+  Future<void> _deleteRecentSearch(int index) async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _recentSearches.removeAt(index);
+    });
+    await _persistRecentSearches(prefs);
+  }
+
+  Future<void> _persistRecentSearches(SharedPreferences prefs) async {
     await prefs.setStringList(
-      'recent_routes',
+      'recent_routes_v2',
       _recentSearches
-          .map((p) => Uri(queryParameters: p.toMap()).query)
+          .map((r) => Uri(queryParameters: r.toMap()).query)
           .toList(),
     );
+  }
+
+  void _selectRecentRoute(RecentRoute route) {
+    setState(() {
+      _fromPlace = route.from;
+      _toPlace = route.to;
+    });
+    // Auto-trigger route search
+    _findRoute();
   }
 
   Future<void> _checkGraphStatus() async {
@@ -93,14 +124,18 @@ class _BestRoutePageState extends State<BestRoutePage>
       return;
     }
 
-    setState(() => _buildingGraph = true);
+    setState(() {
+      _buildingGraph = true;
+      _buildStartTime = DateTime.now();
+    });
 
     planner
         .buildGraph(
       repository: OasthRepository(),
       onProgress: (progress) {
         setState(() {
-          _graphProgress = progress.processedRoutes / progress.totalRoutes;
+          _processedRoutes = progress.processedRoutes;
+          _totalRoutes = progress.totalRoutes;
         });
       },
     )
@@ -134,6 +169,14 @@ class _BestRoutePageState extends State<BestRoutePage>
       return;
     }
 
+    // Check if from and to are the same or too close
+    final distBetween = (_fromPlace!.latitude - _toPlace!.latitude).abs() +
+        (_fromPlace!.longitude - _toPlace!.longitude).abs();
+    if (distBetween < 0.0005) {
+      _showError('same_location_error'.tr());
+      return;
+    }
+
     setState(() {
       _currentStep = RouteStep.results;
       _result = const RouteResult(isLoading: true);
@@ -153,6 +196,17 @@ class _BestRoutePageState extends State<BestRoutePage>
         _toPlace!.latitude,
         _toPlace!.longitude,
       );
+
+      // Check if nearest stops are the same
+      if (startStop.stopCode == endStop.stopCode) {
+        setState(() {
+          _result = RouteResult(
+            error: 'same_stop_error'.tr(),
+            isLoading: false,
+          );
+        });
+        return;
+      }
 
       final route = planner.findBestRoute(
         startStop.stopCode,
@@ -227,6 +281,8 @@ class _BestRoutePageState extends State<BestRoutePage>
                               setState(() => _preferences = prefs),
                           onFindRoute: _findRoute,
                           onSwapLocations: _swapLocations,
+                          onSelectRecentRoute: _selectRecentRoute,
+                          onDeleteRecentSearch: _deleteRecentSearch,
                         ),
                       RouteStep.results => ResultsStep(
                           result: _result,
@@ -305,27 +361,52 @@ class _BestRoutePageState extends State<BestRoutePage>
     );
   }
 
+  String _formatEta() {
+    if (_processedRoutes == 0 || _buildStartTime == null || _totalRoutes == 0) {
+      return '';
+    }
+    final elapsed = DateTime.now().difference(_buildStartTime!);
+    final msPerRoute = elapsed.inMilliseconds / _processedRoutes;
+    final remaining = (_totalRoutes - _processedRoutes) * msPerRoute;
+    final seconds = (remaining / 1000).ceil();
+    if (seconds <= 1) return ' (~1s)';
+    if (seconds < 60) return ' (~${seconds}s)';
+    return ' (~${(seconds / 60).ceil()}m)';
+  }
+
   Widget _buildGraphProgressIndicator() {
+    final progress = _totalRoutes > 0 ? _processedRoutes / _totalRoutes : 0.0;
+    final percent = (progress * 100).toInt();
+
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
       child: Column(
         children: [
           Row(
             children: [
-              const SizedBox(
-                width: 16,
-                height: 16,
-                child: CircularProgressIndicator(strokeWidth: 2),
+              const ShimmerContainer(
+                child: ShimmerBox(width: 16, height: 16),
               ),
               const SizedBox(width: 12),
-              Text(
-                'loading_route_data'.tr(),
-                style: Theme.of(context).textTheme.bodySmall,
+              Expanded(
+                child: Text(
+                  _totalRoutes > 0
+                      ? '${'loading_route_data'.tr()} ($percent%)${_formatEta()}'
+                      : 'loading_route_data'.tr(),
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
               ),
             ],
           ),
           const SizedBox(height: 8),
-          LinearProgressIndicator(value: _graphProgress),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(2),
+            child: LinearProgressIndicator(
+              value: _totalRoutes > 0 ? progress : null,
+              minHeight: 4,
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
+            ),
+          ),
         ],
       ),
     );

@@ -30,7 +30,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late Animation<double> _fadeAnimation;
 
   final List<_NavigationItem> _navigationItems = [];
-  bool _navigationInitialized = false;
 
   @override
   void initState() {
@@ -52,10 +51,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    if (!_navigationInitialized) {
-      _initializeNavigationItems();
-      _navigationInitialized = true;
-    }
+    _initializeNavigationItems();
   }
 
   @override
@@ -66,6 +62,7 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   }
 
   void _initializeNavigationItems() {
+    _navigationItems.clear();
     _navigationItems.addAll([
       _NavigationItem(
         icon: Icons.location_on_outlined,
@@ -523,20 +520,26 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Text(
-                    line.lineId,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 13,
+              Hero(
+                tag: 'line_badge_${line.lineId}',
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text(
+                        line.lineId,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -592,20 +595,26 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor.withAlpha(25),
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(
-                    color: Theme.of(context).primaryColor.withAlpha(76),
+              Hero(
+                tag: 'stop_icon_${stop.stopCode}',
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor.withAlpha(25),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(
+                        color: Theme.of(context).primaryColor.withAlpha(76),
+                      ),
+                    ),
+                    child: Icon(
+                      Icons.location_on,
+                      color: Theme.of(context).primaryColor,
+                      size: 20,
+                    ),
                   ),
-                ),
-                child: Icon(
-                  Icons.location_on,
-                  color: Theme.of(context).primaryColor,
-                  size: 20,
                 ),
               ),
               const SizedBox(width: 16),
@@ -613,14 +622,20 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      description,
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w600),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    Hero(
+                      tag: 'stop_name_${stop.stopCode}',
+                      child: Material(
+                        type: MaterialType.transparency,
+                        child: Text(
+                          description,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleMedium
+                              ?.copyWith(fontWeight: FontWeight.w600),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Text(
