@@ -326,5 +326,11 @@
   "route_data_loading": "Route data is still loading, please wait",
   "unknown_error": "An unknown error occurred",
   "same_location": "Start and destination are the same",
-  "bus_stop": "Bus stop"
+  "bus_stop": "Bus stop",
+  "type_to_search": "Type at least 2 characters to search",
+  "no_results_found": "No results found",
+  "force_refresh": "Force refresh data",
+  "cache_cleared": "Cache cleared, re-downloading data...",
+  "more_options": "More",
+  "articles": "articles"
 }

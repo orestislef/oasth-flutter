@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/services.dart';
+import 'package:oasth/api/api/api.dart';
+import 'package:oasth/helpers/shared_preferences_helper.dart';
 
 import '../widgets/language_toggle.dart';
 
@@ -288,26 +290,15 @@ class _MorePageState extends State<MorePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: _buildAppBar(context),
-      body: Column(
-        children: [
-          _buildHeader(context),
-          _buildSearchBar(context),
-          if (_searchQuery.isNotEmpty) _buildSearchResults(context),
-          Expanded(
-            child: _buildContent(context),
-          ),
-        ],
-      ),
-      floatingActionButton: _buildScrollToTopButton(),
-    );
-  }
-
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      title: Text('more_options'.tr()),
-      elevation: 0,
+    return Column(
+      children: [
+        _buildHeader(context),
+        _buildSearchBar(context),
+        if (_searchQuery.isNotEmpty) _buildSearchResults(context),
+        Expanded(
+          child: _buildContent(context),
+        ),
+      ],
     );
   }
 
@@ -394,11 +385,69 @@ class _MorePageState extends State<MorePage> {
       controller: _scrollController,
       children: [
         const LanguageToggleWidget(),
+        const SizedBox(height: 8),
+        _buildForceRefreshButton(context),
         const SizedBox(height: 16),
         if (_searchQuery.isEmpty) ..._buildCategorizedSections(context)
         else ..._buildFilteredResults(context),
-        const SizedBox(height: 80), // Space for FAB
+        const SizedBox(height: 32),
       ],
+    );
+  }
+
+  Widget _buildForceRefreshButton(BuildContext context) {
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: InkWell(
+        onTap: () async {
+          await SharedPreferencesHelper.clearDataCache();
+          Api.clearCache();
+          if (!mounted) return;
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('cache_cleared'.tr()),
+              behavior: SnackBarBehavior.floating,
+              duration: const Duration(seconds: 2),
+            ),
+          );
+          // Re-trigger background download
+          Api.downloadAllData().ignore();
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).colorScheme.error.withAlpha(25),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Icon(
+                  Icons.refresh,
+                  size: 20,
+                  color: Theme.of(context).colorScheme.error,
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  'force_refresh'.tr(),
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
+                      ),
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Theme.of(context).hintColor,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -490,19 +539,6 @@ class _MorePageState extends State<MorePage> {
     );
   }
 
-  Widget? _buildScrollToTopButton() {
-    return FloatingActionButton.small(
-      onPressed: () {
-        _scrollController.animateTo(
-          0,
-          duration: const Duration(milliseconds: 500),
-          curve: Curves.easeInOut,
-        );
-      },
-      tooltip: 'scroll_to_top'.tr(),
-      child: const Icon(Icons.keyboard_arrow_up),
-    );
-  }
 }
 
 class _SectionItem {

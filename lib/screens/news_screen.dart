@@ -14,6 +14,7 @@ class NewsScreen extends StatefulWidget {
 
 class _NewsScreenState extends State<NewsScreen> {
   final ScrollController _scrollController = ScrollController();
+  final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   List<NewsData> _filteredNews = [];
 
@@ -26,6 +27,7 @@ class _NewsScreenState extends State<NewsScreen> {
   @override
   void dispose() {
     _scrollController.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -34,6 +36,7 @@ class _NewsScreenState extends State<NewsScreen> {
       _searchQuery = query;
       if (query.isEmpty) {
         _filteredNews = widget.news;
+        _searchController.clear();
       } else {
         _filteredNews = widget.news.where((newsItem) {
           return newsItem.title.toLowerCase().contains(query.toLowerCase()) ||
@@ -55,34 +58,91 @@ class _NewsScreenState extends State<NewsScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(context),
-      body: Column(
-        children: [
-          _buildSearchBar(context),
-          _buildNewsCount(context),
-          Expanded(
-            child: _buildNewsList(context),
-          ),
-        ],
+      body: NestedScrollView(
+        controller: _scrollController,
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [_buildSliverAppBar(context)];
+        },
+        body: Column(
+          children: [
+            _buildSearchBar(context),
+            if (_searchQuery.isNotEmpty) _buildNewsCount(context),
+            Expanded(
+              child: _buildNewsList(context),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: _buildScrollToTopButton(),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      title: Text('latest_news'.tr()),
+  Widget _buildSliverAppBar(BuildContext context) {
+    return SliverAppBar(
+      expandedHeight: 200,
+      floating: false,
+      pinned: true,
       elevation: 0,
       actions: [
         IconButton(
           icon: const Icon(Icons.refresh),
           onPressed: () {
-            // You might want to add refresh functionality here
             _showInfoSnackBar('news_refresh_info'.tr());
           },
           tooltip: 'refresh_news'.tr(),
         ),
       ],
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.fromLTRB(56, 0, 56, 16),
+        title: Text(
+          'latest_news'.tr(),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+          overflow: TextOverflow.ellipsis,
+        ),
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).primaryColor.withAlpha(51),
+                Theme.of(context).primaryColor.withAlpha(25),
+              ],
+            ),
+          ),
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 24),
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor.withAlpha(38),
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Icon(
+                    Icons.newspaper,
+                    size: 40,
+                    color: Theme.of(context).primaryColor,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                Text(
+                  '${widget.news.length} ${'articles'.tr()}',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: Theme.of(context).primaryColor,
+                        fontWeight: FontWeight.w500,
+                      ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -90,6 +150,8 @@ class _NewsScreenState extends State<NewsScreen> {
     return Container(
       padding: const EdgeInsets.all(16),
       child: TextField(
+        controller: _searchController,
+        onTapOutside: (_) => FocusScope.of(context).unfocus(),
         onChanged: _filterNews,
         decoration: InputDecoration(
           hintText: 'search_news'.tr(),
@@ -97,9 +159,7 @@ class _NewsScreenState extends State<NewsScreen> {
           suffixIcon: _searchQuery.isNotEmpty
               ? IconButton(
                   icon: const Icon(Icons.clear),
-                  onPressed: () {
-                    _filterNews('');
-                  },
+                  onPressed: () => _filterNews(''),
                 )
               : null,
           border: OutlineInputBorder(
@@ -113,8 +173,6 @@ class _NewsScreenState extends State<NewsScreen> {
   }
 
   Widget _buildNewsCount(BuildContext context) {
-    if (_searchQuery.isEmpty) return const SizedBox.shrink();
-    
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
@@ -150,7 +208,6 @@ class _NewsScreenState extends State<NewsScreen> {
     }
 
     return ListView.builder(
-      controller: _scrollController,
       padding: const EdgeInsets.all(16),
       itemCount: _filteredNews.length,
       itemBuilder: (context, index) {

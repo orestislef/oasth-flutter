@@ -86,35 +86,43 @@ class _StopPageState extends State<StopPage> {
     }
   }
 
+  String _getStopDescription(BuildContext context) {
+    return LanguageHelper.getLanguageUsedInApp(context) == 'en'
+        ? widget.stop.stopDescriptionEng.isNotEmpty
+            ? widget.stop.stopDescriptionEng
+            : widget.stop.stopDescription
+        : widget.stop.stopDescription.isNotEmpty
+            ? widget.stop.stopDescription
+            : widget.stop.stopDescriptionEng;
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: _buildAppBar(context),
-      body: Column(
-        children: [
-          _buildStopInfo(context),
-          const SizedBox(height: 16),
-          _buildArrivalsSection(context),
-          const SizedBox(height: 16),
-          _buildMapSection(context),
-        ],
+      body: NestedScrollView(
+        headerSliverBuilder: (context, innerBoxIsScrolled) {
+          return [_buildSliverAppBar(context)];
+        },
+        body: Column(
+          children: [
+            _buildStopInfo(context),
+            const SizedBox(height: 16),
+            _buildArrivalsSection(context),
+            const SizedBox(height: 16),
+            _buildMapSection(context),
+          ],
+        ),
       ),
       floatingActionButton: _buildFloatingActionButtons(context),
     );
   }
 
-  PreferredSizeWidget _buildAppBar(BuildContext context) {
-    return AppBar(
-      title: Text(
-        LanguageHelper.getLanguageUsedInApp(context) == 'en'
-            ? widget.stop.stopDescriptionEng.isNotEmpty
-                ? widget.stop.stopDescriptionEng
-                : widget.stop.stopDescription
-            : widget.stop.stopDescription.isNotEmpty
-                ? widget.stop.stopDescription
-                : widget.stop.stopDescriptionEng,
-        overflow: TextOverflow.ellipsis,
-      ),
+  Widget _buildSliverAppBar(BuildContext context) {
+    return SliverAppBar(
+      expandedHeight: 200,
+      floating: false,
+      pinned: true,
+      elevation: 0,
       actions: [
         IconButton(
           icon: _isRefreshing
@@ -132,7 +140,92 @@ class _StopPageState extends State<StopPage> {
           onPressed: _isRefreshing ? null : _refreshArrivals,
           tooltip: 'refresh_arrivals'.tr(),
         ),
+        IconButton(
+          icon: const Icon(Icons.map),
+          onPressed: _openInMaps,
+          tooltip: 'open_in_maps'.tr(),
+        ),
       ],
+      flexibleSpace: FlexibleSpaceBar(
+        titlePadding: const EdgeInsets.fromLTRB(56, 0, 56, 16),
+        title: Text(
+          _getStopDescription(context),
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+          overflow: TextOverflow.ellipsis,
+        ),
+        background: Container(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Theme.of(context).primaryColor.withAlpha(51),
+                Theme.of(context).primaryColor.withAlpha(25),
+              ],
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(20, 80, 20, 60),
+            child: Row(
+              children: [
+                Container(
+                  width: 80,
+                  height: 80,
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Theme.of(context).shadowColor.withAlpha(76),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Center(
+                    child: Icon(
+                      Icons.directions_bus,
+                      size: 36,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 20),
+                Expanded(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'stop_information'.tr(),
+                        style:
+                            Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  color: Theme.of(context).primaryColor,
+                                ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        widget.stop.stopCode,
+                        style:
+                            Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                  color: Theme.of(context)
+                                      .textTheme
+                                      .bodyMedium
+                                      ?.color
+                                      ?.withAlpha(178),
+                                ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

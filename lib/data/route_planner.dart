@@ -1,5 +1,7 @@
 import 'dart:math';
 
+import 'package:flutter/foundation.dart';
+import 'package:oasth/api/api/api.dart';
 import 'package:oasth/api/responses/lines.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/routes_for_line.dart';
@@ -65,6 +67,12 @@ class RoutePlanner {
   }) async {
     if (_graphReady || _building) return;
     _building = true;
+
+    // Try loading from disk cache first so all API calls hit in-memory cache
+    final loaded = await Api.tryLoadFromDisk();
+    if (loaded) {
+      debugPrint('[RoutePlanner] Disk cache loaded, building graph from memory');
+    }
 
     final lines = await repository.getLines();
     final lineRoutes = <(LineData, List<LineRoute>)>[];
