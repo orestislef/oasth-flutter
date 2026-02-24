@@ -675,6 +675,175 @@ class Api {
     );
   }
 
+  // --- Offline Data: Full Download + Disk Cache ---
+
+  /// Try to load lines/routes/stops graph from disk into in-memory cache.
+  /// Returns true if disk cache was valid and loaded.
+  static Future<bool> tryLoadFromDisk() async {
+    try {
+      final isValid = await SharedPreferencesHelper.isCacheValid();
+      if (!isValid) return false;
+
+      final linesJson = await SharedPreferencesHelper.getLinesCache();
+      final graphJson = await SharedPreferencesHelper.getRoutesGraphCache();
+      if (linesJson == null || graphJson == null) return false;
+
+      _populateInMemoryCacheFromDisk(linesJson, graphJson);
+      debugPrint('[Api] Loaded full data graph from disk cache');
+      return true;
+    } catch (e) {
+      debugPrint('[Api] Failed to load disk cache: $e');
+      return false;
+    }
+  }
+
+  /// Parses disk-cached JSON and fills the in-memory _cache map so that
+  /// subsequent getLines/getRoutesForLine/webGetStops calls return instantly.
+  static void _populateInMemoryCacheFromDisk(
+      String linesJson, String graphJson) {
+    // Parse lines
+    final List<dynamic> linesData = json.decode(linesJson);
+    final lines = Lines.fromMap(linesData);
+    _cache['lines'] = lines;
+    _cacheTimestamps['lines'] = DateTime.now();
+
+    // Parse routes graph: { lineCode: { routes: [ { routeCode, stops: [...] } ] } }
+    final Map<String, dynamic> graph = json.decode(graphJson);
+    final Set<Stop> allStops = {};
+
+    for (final entry in graph.entries) {
+      final lineCode = entry.key;
+      final lineData = entry.value as Map<String, dynamic>;
+      final routesList = lineData['routes'] as List<dynamic>;
+
+      // Populate routes_for_line cache
+      final lineRoutes = routesList.map((r) {
+        final routeMap = r as Map<String, dynamic>;
+        return LineRoute(
+          routeCode: routeMap['route_code']?.toString() ?? '',
+          routeDescription: routeMap['route_descr']?.toString() ?? '',
+          routeDescriptionEng: routeMap['route_descr_eng']?.toString() ?? '',
+        );
+      }).toList();
+      _cache['routes_for_line_$lineCode'] =
+          RoutesForLine(routesForLine: lineRoutes);
+      _cacheTimestamps['routes_for_line_$lineCode'] = DateTime.now();
+
+      // Populate stops per route cache
+      for (final routeMap in routesList) {
+        final rMap = routeMap as Map<String, dynamic>;
+        final routeCode = rMap['route_code']?.toString() ?? '';
+        final stopsData = rMap['stops'] as List<dynamic>? ?? [];
+        final stops = stopsData.map((s) => Stop.fromMap(s as Map<String, dynamic>)).toList();
+        _cache['stops_$routeCode'] = WebStops(stops: stops);
+        _cacheTimestamps['stops_$routeCode'] = DateTime.now();
+        allStops.addAll(stops);
+      }
+    }
+
+    // Also populate the flat all_stops cache
+    _cache['all_stops'] = allStops.toList();
+    _cacheTimestamps['all_stops'] = DateTime.now();
+  }
+
+  /// Downloads ALL lines, routes, and stops from API.
+  /// Saves the full relational graph to disk for offline use.
+  /// Returns flat stop list for backward compatibility.
+  static Future<List<Stop>> downloadAllData() async {
+    // Check disk cache first
+    try {
+      final isValid = await SharedPreferencesHelper.isCacheValid();
+      if (isValid) {
+        final linesJson = await SharedPreferencesHelper.getLinesCache();
+        final graphJson = await SharedPreferencesHelper.getRoutesGraphCache();
+        if (linesJson != null && graphJson != null) {
+          _populateInMemoryCacheFromDisk(linesJson, graphJson);
+          debugPrint('[Api] downloadAllData: using valid disk cache');
+          return _cache['all_stops'] as List<Stop>? ?? [];
+        }
+      }
+    } catch (e) {
+      debugPrint('[Api] Disk cache check failed, will re-download: $e');
+    }
+
+    // Download from API
+    await _ensureInitialized();
+
+    final Lines lines = await webGetLines();
+    final Map<String, dynamic> routesGraph = {};
+    final Set<Stop> allStops = {};
+    int totalRoutes = 0;
+
+    // First pass: collect all routes per line
+    final Map<String, RoutesForLine> allRoutes = {};
+    for (final line in lines.lines) {
+      final routesForLine = await getRoutesForLine(line.lineCode);
+      allRoutes[line.lineCode] = routesForLine;
+      totalRoutes += routesForLine.routesForLine.length;
+    }
+
+    int processedRoutes = 0;
+    final DateTime startTime = DateTime.now();
+
+    // Second pass: fetch stops for each route
+    for (final line in lines.lines) {
+      final routesForLine = allRoutes[line.lineCode]!;
+      final routesList = <Map<String, dynamic>>[];
+
+      final routes = routesForLine.routesForLine;
+      const batchSize = 3;
+
+      for (int i = 0; i < routes.length; i += batchSize) {
+        final batch = routes.skip(i).take(batchSize).toList();
+        final futures = batch.map((route) => webGetStops(route.routeCode));
+        final results = await Future.wait(futures);
+
+        for (int j = 0; j < batch.length; j++) {
+          final route = batch[j];
+          final webStops = results[j];
+          allStops.addAll(webStops.stops);
+
+          routesList.add({
+            'route_code': route.routeCode,
+            'route_descr': route.routeDescription,
+            'route_descr_eng': route.routeDescriptionEng,
+            'stops': webStops.stops.map((s) => s.toMap()).toList(),
+          });
+
+          processedRoutes++;
+          if (processedRoutes > 0) {
+            _updateProgress(processedRoutes, totalRoutes, startTime);
+          }
+        }
+      }
+
+      routesGraph[line.lineCode] = {
+        'routes': routesList,
+      };
+    }
+
+    // Save to disk
+    final linesJson = json.encode(lines.lines.map((l) => l.toMap()).toList());
+    final graphJson = json.encode(routesGraph);
+
+    await SharedPreferencesHelper.setLinesCache(linesJson);
+    await SharedPreferencesHelper.setRoutesGraphCache(graphJson);
+    await SharedPreferencesHelper
+        .setCacheTimestamp(DateTime.now().millisecondsSinceEpoch);
+
+    // Also save flat stops list for backward compat
+    final stopsList = allStops.toList();
+    await _cacheStops(stopsList);
+
+    // Populate in-memory cache
+    _cache['all_stops'] = stopsList;
+    _cacheTimestamps['all_stops'] = DateTime.now();
+
+    debugPrint(
+        '[Api] downloadAllData complete: ${lines.lines.length} lines, $totalRoutes routes, ${stopsList.length} stops');
+    return stopsList;
+  }
+
   static void dispose() {
     _cookieClient.close();
     clearCache();

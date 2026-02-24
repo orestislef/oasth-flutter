@@ -1,8 +1,16 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:oasth/api/responses/lines_with_ml_info.dart';
+import 'package:oasth/api/responses/route_detail_and_stops.dart';
+import 'package:oasth/data/oasth_repository.dart';
+import 'package:oasth/data/route_planner.dart';
+import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/best_route_page.dart';
+import 'package:oasth/screens/line_info_page.dart';
 import 'package:oasth/screens/lines_page.dart';
+import 'package:oasth/screens/more_screen.dart';
+import 'package:oasth/screens/stop_page.dart';
 import 'package:oasth/screens/stops_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -21,7 +29,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   late Animation<double> _fadeAnimation;
 
   final List<_NavigationItem> _navigationItems = [];
-
   bool _navigationInitialized = false;
 
   @override
@@ -60,11 +67,11 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void _initializeNavigationItems() {
     _navigationItems.addAll([
       _NavigationItem(
-        icon: Icons.directions_outlined,
-        activeIcon: Icons.directions,
-        label: 'best_route'.tr(),
-        page: const BestRoutePage(),
-        color: const Color(0xFF4CAF50),
+        icon: Icons.location_on_outlined,
+        activeIcon: Icons.location_on,
+        label: 'stations'.tr(),
+        page: const StopsPage(),
+        color: Theme.of(context).colorScheme.primary,
       ),
       _NavigationItem(
         icon: Icons.route_outlined,
@@ -74,11 +81,18 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
         color: Theme.of(context).primaryColor,
       ),
       _NavigationItem(
-        icon: Icons.location_on_outlined,
-        activeIcon: Icons.location_on,
-        label: 'stations'.tr(),
-        page: const StopsPage(),
-        color: const Color(0xFF2196F3),
+        icon: Icons.directions_outlined,
+        activeIcon: Icons.directions,
+        label: 'best_route'.tr(),
+        page: const BestRoutePage(),
+        color: Theme.of(context).colorScheme.tertiary,
+      ),
+      _NavigationItem(
+        icon: Icons.more_horiz_outlined,
+        activeIcon: Icons.more_horiz,
+        label: 'more_options'.tr(),
+        page: const MorePage(),
+        color: Theme.of(context).colorScheme.secondary,
       ),
     ]);
   }
@@ -86,7 +100,6 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
   void _onTabSelected(int index) {
     if (_currentIndex == index) return;
 
-    // Haptic feedback
     HapticFeedback.lightImpact();
 
     setState(() {
@@ -192,10 +205,12 @@ class _HomePageState extends State<HomePage> with TickerProviderStateMixin {
           return BottomNavigationBarItem(
             icon: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               decoration: BoxDecoration(
-                color:
-                    isSelected ? item.color.withAlpha(25) : Colors.transparent,
+                color: isSelected
+                    ? item.color.withAlpha(25)
+                    : Colors.transparent,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: AnimatedSwitcher(
@@ -246,6 +261,9 @@ class _NavigationItem {
 }
 
 class _GlobalSearchDelegate extends SearchDelegate<String> {
+  final _repo = OasthRepository();
+  final _planner = RoutePlanner();
+
   @override
   String get searchFieldLabel => 'search_lines_stops_routes'.tr();
 
@@ -272,7 +290,7 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
 
   @override
   Widget buildResults(BuildContext context) {
-    return _buildSearchResults(context);
+    return _buildSearchContent(context);
   }
 
   @override
@@ -280,7 +298,7 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
     if (query.isEmpty) {
       return _buildSearchTips(context);
     }
-    return _buildSearchResults(context);
+    return _buildSearchContent(context);
   }
 
   Widget _buildSearchTips(BuildContext context) {
@@ -302,9 +320,10 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
                     const SizedBox(width: 8),
                     Text(
                       'search_tips'.tr(),
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
+                      style:
+                          Theme.of(context).textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.w600,
+                              ),
                     ),
                   ],
                 ),
@@ -342,11 +361,7 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(
-            icon,
-            size: 20,
-            color: Theme.of(context).primaryColor,
-          ),
+          Icon(icon, size: 20, color: Theme.of(context).primaryColor),
           const SizedBox(width: 12),
           Expanded(
             child: Column(
@@ -377,37 +392,281 @@ class _GlobalSearchDelegate extends SearchDelegate<String> {
     );
   }
 
-  Widget _buildSearchResults(BuildContext context) {
-    // This is a placeholder - you would implement actual search functionality
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+  Widget _buildSearchContent(BuildContext context) {
+    if (query.length < 2) {
+      return Center(
+        child: Text(
+          'type_to_search'.tr(),
+          style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                color: Theme.of(context).hintColor,
+              ),
+        ),
+      );
+    }
+
+    return FutureBuilder<_SearchResults>(
+      future: _performSearch(query, context),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator.adaptive());
+        }
+
+        if (snapshot.hasError) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.error_outline,
+                    size: 48, color: Theme.of(context).colorScheme.error),
+                const SizedBox(height: 16),
+                Text('error'.tr(),
+                    style: Theme.of(context).textTheme.titleMedium),
+              ],
+            ),
+          );
+        }
+
+        final results = snapshot.data!;
+        if (results.lines.isEmpty && results.stops.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.search_off,
+                    size: 64, color: Theme.of(context).disabledColor),
+                const SizedBox(height: 16),
+                Text('no_results_found'.tr(),
+                    style: Theme.of(context).textTheme.titleMedium),
+              ],
+            ),
+          );
+        }
+
+        return ListView(
+          padding: const EdgeInsets.all(16),
+          children: [
+            if (results.lines.isNotEmpty) ...[
+              _buildResultSectionHeader(
+                  context, 'lines'.tr(), Icons.route),
+              ...results.lines
+                  .map((line) => _buildLineResult(context, line)),
+              const SizedBox(height: 16),
+            ],
+            if (results.stops.isNotEmpty) ...[
+              _buildResultSectionHeader(
+                  context, 'stations'.tr(), Icons.location_on),
+              ...results.stops
+                  .map((stop) => _buildStopResult(context, stop)),
+            ],
+          ],
+        );
+      },
+    );
+  }
+
+  Widget _buildResultSectionHeader(
+      BuildContext context, String title, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
         children: [
-          Icon(
-            Icons.search,
-            size: 64,
-            color: Theme.of(context).disabledColor,
-          ),
-          const SizedBox(height: 16),
+          Icon(icon, size: 18, color: Theme.of(context).primaryColor),
+          const SizedBox(width: 8),
           Text(
-            'search_functionality_placeholder'.tr(),
-            style: Theme.of(context).textTheme.titleMedium,
-            textAlign: TextAlign.center,
-          ),
-          const SizedBox(height: 8),
-          Text(
-            'implement_search_logic'.tr(),
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: Theme.of(context)
-                      .textTheme
-                      .bodyMedium
-                      ?.color
-                      ?.withAlpha(153),
+            title,
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Theme.of(context).primaryColor,
                 ),
-            textAlign: TextAlign.center,
           ),
         ],
       ),
     );
   }
+
+  Widget _buildLineResult(
+      BuildContext context, LineWithMasterLineInfo line) {
+    final description =
+        LanguageHelper.getLanguageUsedInApp(context) == 'en'
+            ? line.lineDescriptionEng.isNotEmpty
+                ? line.lineDescriptionEng
+                : line.lineDescription
+            : line.lineDescription.isNotEmpty
+                ? line.lineDescription
+                : line.lineDescriptionEng;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: () {
+          close(context, '');
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) =>
+                  LineInfoPage(linesWithMasterLineInfo: line),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Center(
+                  child: Text(
+                    line.lineId,
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      fontSize: 13,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Text(
+                  description,
+                  style:
+                      Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Theme.of(context).primaryColor,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildStopResult(BuildContext context, Stop stop) {
+    final description =
+        LanguageHelper.getLanguageUsedInApp(context) == 'en'
+            ? stop.stopDescriptionEng.isNotEmpty
+                ? stop.stopDescriptionEng
+                : stop.stopDescription
+            : stop.stopDescription.isNotEmpty
+                ? stop.stopDescription
+                : stop.stopDescriptionEng;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 8),
+      child: InkWell(
+        onTap: () {
+          close(context, '');
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => StopPage(stop: stop),
+            ),
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: Theme.of(context).primaryColor.withAlpha(25),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Theme.of(context).primaryColor.withAlpha(76),
+                  ),
+                ),
+                child: Icon(
+                  Icons.location_on,
+                  color: Theme.of(context).primaryColor,
+                  size: 20,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      description,
+                      style: Theme.of(context)
+                          .textTheme
+                          .titleMedium
+                          ?.copyWith(fontWeight: FontWeight.w600),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      stop.stopCode,
+                      style:
+                          Theme.of(context).textTheme.bodySmall?.copyWith(
+                                color: Theme.of(context)
+                                    .textTheme
+                                    .bodySmall
+                                    ?.color
+                                    ?.withAlpha(153),
+                              ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.arrow_forward_ios,
+                size: 16,
+                color: Theme.of(context).primaryColor,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Future<_SearchResults> _performSearch(
+      String query, BuildContext context) async {
+    final q = query.toLowerCase();
+    final lines = <LineWithMasterLineInfo>[];
+    final stops = <Stop>[];
+
+    // Search lines
+    try {
+      final allLines = await _repo.getLinesWithMLInfo();
+      lines.addAll(allLines.where((line) {
+        return line.lineId.toLowerCase().contains(q) ||
+            line.lineDescription.toLowerCase().contains(q) ||
+            line.lineDescriptionEng.toLowerCase().contains(q);
+      }).take(10));
+    } catch (_) {}
+
+    // Search stops using route planner (if graph is ready)
+    if (_planner.isReady) {
+      stops.addAll(_planner.searchStopsByName(query, limit: 10));
+    }
+
+    return _SearchResults(lines: lines, stops: stops);
+  }
+}
+
+class _SearchResults {
+  final List<LineWithMasterLineInfo> lines;
+  final List<Stop> stops;
+
+  _SearchResults({required this.lines, required this.stops});
 }

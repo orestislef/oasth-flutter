@@ -45,11 +45,25 @@ class _RoutePageState extends State<RoutePage> {
   List<Marker> _stopMarkers = [];
   List<Marker> _busMarkers = [];
 
+  bool _initialized = false;
+
   @override
   void initState() {
     super.initState();
-    _initializeRoute();
+    _routePoints = widget.details
+        .map((detail) => LatLng(detail.routedY, detail.routedX))
+        .toList();
     _startBusLocationUpdates();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_initialized) {
+      _initialized = true;
+      _stopMarkers =
+          widget.stops.map((stop) => _buildStopMarker(stop)).toList();
+    }
   }
 
   @override
@@ -57,14 +71,6 @@ class _RoutePageState extends State<RoutePage> {
     _busLocationTimer?.cancel();
     _mapController.dispose();
     super.dispose();
-  }
-
-  void _initializeRoute() {
-    _routePoints = widget.details
-        .map((detail) => LatLng(detail.routedY, detail.routedX))
-        .toList();
-
-    _stopMarkers = widget.stops.map((stop) => _buildStopMarker(stop)).toList();
   }
 
   void _startBusLocationUpdates() {
