@@ -27,8 +27,6 @@ class _LanguageToggleWidgetState extends State<LanguageToggleWidget> {
               onTap: () async {
                 await context
                     .setLocale(LanguageHelper.getAvailableLocales().last);
-                if (!context.mounted) return;
-                Navigator.of(context).pop();
               },
               child: Image.asset(
                 'assets/icons/greek_flag.png',
@@ -44,8 +42,6 @@ class _LanguageToggleWidgetState extends State<LanguageToggleWidget> {
               onTap: () async {
                 await context
                     .setLocale(LanguageHelper.getAvailableLocales().first);
-                if (!context.mounted) return;
-                Navigator.of(context).pop();
               },
               child: Image.asset(
                 'assets/icons/english_flag.png',

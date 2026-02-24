@@ -311,6 +311,8 @@
   "route_found": "Route Found!",
   "total_distance": "Distance",
   "transfers": "Transfers",
+  "same_location_error": "From and To locations are the same",
+  "same_stop_error": "Both locations are near the same bus stop",
   "no_route_found": "No route found",
   "no_route_hint": "Try different locations or increase walking distance",
   "change_route": "Change route",

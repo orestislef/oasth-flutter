@@ -6,18 +6,21 @@ import 'package:geolocator/geolocator.dart';
 import 'package:oasth/data/route_planner.dart';
 import 'package:oasth/data/route_planner_models.dart';
 import 'package:oasth/helpers/geocoding_helper.dart';
+import 'package:oasth/widgets/shimmer_loading.dart';
 
 class InputStep extends StatefulWidget {
   final SavedPlace? fromPlace;
   final SavedPlace? toPlace;
   final RoutePreferences preferences;
-  final List<SavedPlace> recentSearches;
+  final List<RecentRoute> recentSearches;
   final bool graphReady;
   final ValueChanged<SavedPlace?> onFromChanged;
   final ValueChanged<SavedPlace?> onToChanged;
   final ValueChanged<RoutePreferences> onPreferencesChanged;
   final VoidCallback onFindRoute;
   final VoidCallback onSwapLocations;
+  final ValueChanged<RecentRoute> onSelectRecentRoute;
+  final ValueChanged<int> onDeleteRecentSearch;
 
   const InputStep({
     super.key,
@@ -31,6 +34,8 @@ class InputStep extends StatefulWidget {
     required this.onPreferencesChanged,
     required this.onFindRoute,
     required this.onSwapLocations,
+    required this.onSelectRecentRoute,
+    required this.onDeleteRecentSearch,
   });
 
   @override
@@ -295,23 +300,16 @@ class _InputStepState extends State<InputStep> {
           const SizedBox(height: 24),
           if (widget.recentSearches.isNotEmpty) ...[
             Text(
-              'recent_places'.tr(),
+              'recent_searches'.tr(),
               style: Theme.of(context).textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
             ),
             const SizedBox(height: 8),
-            SizedBox(
-              height: 80,
-              child: ListView.builder(
-                scrollDirection: Axis.horizontal,
-                itemCount: widget.recentSearches.length,
-                itemBuilder: (context, index) {
-                  final place = widget.recentSearches[index];
-                  return _buildRecentPlaceChip(place);
-                },
-              ),
-            ),
+            ...List.generate(widget.recentSearches.length, (index) {
+              final route = widget.recentSearches[index];
+              return _buildRecentRouteCard(route, index);
+            }),
             const SizedBox(height: 24),
           ],
           FilledButton.icon(
@@ -364,10 +362,8 @@ class _InputStepState extends State<InputStep> {
                         : _isGettingToLocation)
                     ? const Padding(
                         padding: EdgeInsets.all(12),
-                        child: SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                        child: ShimmerContainer(
+                          child: ShimmerBox(width: 20, height: 20),
                         ),
                       )
                     : IconButton(
@@ -385,7 +381,13 @@ class _InputStepState extends State<InputStep> {
                 suggestions.isEmpty)
               const Padding(
                 padding: EdgeInsets.only(top: 8),
-                child: LinearProgressIndicator(),
+                child: ShimmerContainer(
+                  child: ShimmerBox(
+                    width: double.infinity,
+                    height: 4,
+                    borderRadius: 2,
+                  ),
+                ),
               ),
             if (suggestions.isNotEmpty)
               _buildSuggestionsList(suggestions, isFrom),
@@ -522,40 +524,82 @@ class _InputStepState extends State<InputStep> {
     );
   }
 
-  Widget _buildRecentPlaceChip(SavedPlace place) {
-    return Padding(
-      padding: const EdgeInsets.only(right: 8),
-      child: InkWell(
-        onTap: () {
-          if (widget.fromPlace == null) {
-            widget.onFromChanged(place);
-          } else if (widget.toPlace == null) {
-            widget.onToChanged(place);
-          }
-        },
-        borderRadius: BorderRadius.circular(12),
-        child: Container(
-          padding: const EdgeInsets.all(12),
-          decoration: BoxDecoration(
-            color: Theme.of(context).colorScheme.surfaceContainerHighest,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(
-                Icons.history,
-                size: 20,
-                color: Theme.of(context).primaryColor,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                place.name,
-                style: Theme.of(context).textTheme.bodySmall,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
+  Widget _buildRecentRouteCard(RecentRoute route, int index) {
+    return Dismissible(
+      key: ValueKey('recent_${index}_${route.timestamp.millisecondsSinceEpoch}'),
+      direction: DismissDirection.endToStart,
+      onDismissed: (_) => widget.onDeleteRecentSearch(index),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 16),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.error.withAlpha(30),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          Icons.delete_outline,
+          color: Theme.of(context).colorScheme.error,
+        ),
+      ),
+      child: Card(
+        margin: const EdgeInsets.only(bottom: 8),
+        child: InkWell(
+          onTap: () => widget.onSelectRecentRoute(route),
+          borderRadius: BorderRadius.circular(12),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.history,
+                  size: 20,
+                  color: Theme.of(context).primaryColor,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.trip_origin, size: 12,
+                              color: Theme.of(context).primaryColor),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              route.from.name,
+                              style: Theme.of(context).textTheme.bodySmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          Icon(Icons.location_on, size: 12,
+                              color: Theme.of(context).colorScheme.error),
+                          const SizedBox(width: 6),
+                          Expanded(
+                            child: Text(
+                              route.to.name,
+                              style: Theme.of(context).textTheme.bodySmall,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                Icon(
+                  Icons.chevron_right,
+                  color: Theme.of(context).hintColor,
+                ),
+              ],
+            ),
           ),
         ),
       ),

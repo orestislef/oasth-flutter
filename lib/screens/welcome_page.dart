@@ -5,6 +5,7 @@ import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/screens/home_page.dart';
 import 'package:oasth/screens/more_screen.dart';
 import 'package:oasth/screens/news_screen.dart';
+import 'package:oasth/widgets/shimmer_loading.dart';
 
 import '../api/responses/news.dart';
 import '../data/oasth_repository.dart';
@@ -258,8 +259,11 @@ class WelcomeScreen extends StatelessWidget {
             future: OasthRepository().getNews(LanguageHelper.getLanguageUsedInApp(context)),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(
-                  child: CircularProgressIndicator.adaptive(),
+                return const ShimmerContainer(
+                  child: Padding(
+                    padding: EdgeInsets.symmetric(horizontal: 16),
+                    child: ShimmerBox(width: double.infinity, height: 180),
+                  ),
                 );
               }
 

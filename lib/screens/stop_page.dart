@@ -23,9 +23,12 @@ class StopPage extends StatefulWidget {
 class _StopPageState extends State<StopPage> {
   final _repo = OasthRepository();
   Timer? _timer;
-  late Future<List<StopDetails>> _futureStopArrivals;
   final MapController _mapController = MapController();
   bool _isRefreshing = false;
+
+  List<StopDetails>? _arrivals;
+  bool _isInitialLoading = true;
+  String? _error;
 
   @override
   void initState() {
@@ -41,10 +44,22 @@ class _StopPageState extends State<StopPage> {
     super.dispose();
   }
 
-  void _loadStopArrivals() {
-    setState(() {
-      _futureStopArrivals = _repo.getStopArrivals(widget.stop.stopCode);
-    });
+  Future<void> _loadStopArrivals() async {
+    try {
+      final data = await _repo.getStopArrivals(widget.stop.stopCode);
+      if (!mounted) return;
+      setState(() {
+        _arrivals = data;
+        _isInitialLoading = false;
+        _error = null;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.toString();
+        _isInitialLoading = false;
+      });
+    }
   }
 
   void _startAutoRefresh() {
@@ -62,9 +77,7 @@ class _StopPageState extends State<StopPage> {
       _isRefreshing = true;
     });
 
-    _loadStopArrivals();
-
-    await Future.delayed(const Duration(milliseconds: 500));
+    await _loadStopArrivals();
 
     if (mounted) {
       setState(() {
@@ -129,15 +142,8 @@ class _StopPageState extends State<StopPage> {
       actions: [
         IconButton(
           icon: _isRefreshing
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
+              ? const ShimmerContainer(
+                  child: ShimmerBox(width: 20, height: 20),
                 )
               : const Icon(Icons.refresh),
           onPressed: _isRefreshing ? null : _refreshArrivals,
@@ -151,12 +157,18 @@ class _StopPageState extends State<StopPage> {
       ],
       flexibleSpace: FlexibleSpaceBar(
         titlePadding: const EdgeInsets.fromLTRB(56, 0, 56, 16),
-        title: Text(
-          _getStopDescription(context),
-          style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-          overflow: TextOverflow.ellipsis,
+        title: Hero(
+          tag: 'stop_name_${widget.stop.stopCode}',
+          child: Material(
+            type: MaterialType.transparency,
+            child: Text(
+              _getStopDescription(context),
+              style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
         ),
         background: Container(
           decoration: BoxDecoration(
@@ -173,25 +185,31 @@ class _StopPageState extends State<StopPage> {
             padding: const EdgeInsets.fromLTRB(20, 80, 20, 60),
             child: Row(
               children: [
-                Container(
-                  width: 80,
-                  height: 80,
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).primaryColor,
-                    borderRadius: BorderRadius.circular(20),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Theme.of(context).shadowColor.withAlpha(76),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
+                Hero(
+                  tag: 'stop_icon_${widget.stop.stopCode}',
+                  child: Material(
+                    type: MaterialType.transparency,
+                    child: Container(
+                      width: 80,
+                      height: 80,
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context).shadowColor.withAlpha(76),
+                            blurRadius: 8,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                    ],
-                  ),
-                  child: Center(
-                    child: Icon(
-                      Icons.directions_bus,
-                      size: 36,
-                      color: Theme.of(context).colorScheme.onPrimary,
+                      child: Center(
+                        child: Icon(
+                          Icons.directions_bus,
+                          size: 36,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                        ),
+                      ),
                     ),
                   ),
                 ),
@@ -381,24 +399,19 @@ class _StopPageState extends State<StopPage> {
   }
 
   Widget _buildArrivalsContent(BuildContext context) {
-    return FutureBuilder<List<StopDetails>>(
-      future: _futureStopArrivals,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return _buildLoadingState(context);
-        }
+    if (_isInitialLoading) {
+      return _buildLoadingState(context);
+    }
 
-        if (snapshot.hasError) {
-          return _buildErrorState(context, snapshot.error.toString());
-        }
+    if (_error != null && _arrivals == null) {
+      return _buildErrorState(context, _error!);
+    }
 
-        if (!snapshot.hasData || snapshot.data!.isEmpty) {
-          return _buildEmptyArrivalsState(context);
-        }
+    if (_arrivals == null || _arrivals!.isEmpty) {
+      return _buildEmptyArrivalsState(context);
+    }
 
-        return _buildArrivalsList(context, snapshot.data!);
-      },
-    );
+    return _buildArrivalsList(context, _arrivals!);
   }
 
   Widget _buildLoadingState(BuildContext context) {
@@ -700,15 +713,8 @@ class _StopPageState extends State<StopPage> {
           onPressed: _isRefreshing ? null : _refreshArrivals,
           tooltip: 'refresh_arrivals'.tr(),
           child: _isRefreshing
-              ? SizedBox(
-                  width: 20,
-                  height: 20,
-                  child: CircularProgressIndicator(
-                    strokeWidth: 2,
-                    valueColor: AlwaysStoppedAnimation<Color>(
-                      Theme.of(context).colorScheme.onPrimary,
-                    ),
-                  ),
+              ? const ShimmerContainer(
+                  child: ShimmerBox(width: 20, height: 20),
                 )
               : const Icon(Icons.refresh),
         ),

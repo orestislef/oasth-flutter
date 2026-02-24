@@ -258,20 +258,26 @@ class _StopsPageState extends State<StopsPage> {
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Theme.of(context).primaryColor,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Center(
-                  child: Text(
-                    line.lineId,
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      color: Theme.of(context).colorScheme.onPrimary,
-                      fontSize: 13,
+              Hero(
+                tag: 'line_badge_${line.lineId}',
+                child: Material(
+                  type: MaterialType.transparency,
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Theme.of(context).primaryColor,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Center(
+                      child: Text(
+                        line.lineId,
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ),
                 ),

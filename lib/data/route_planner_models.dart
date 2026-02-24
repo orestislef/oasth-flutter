@@ -89,6 +89,48 @@ class RouteResult {
   }
 }
 
+class RecentRoute {
+  final SavedPlace from;
+  final SavedPlace to;
+  final DateTime timestamp;
+
+  const RecentRoute({
+    required this.from,
+    required this.to,
+    required this.timestamp,
+  });
+
+  Map<String, String> toMap() => {
+        'from_name': from.name,
+        'from_lat': from.latitude.toString(),
+        'from_lng': from.longitude.toString(),
+        'to_name': to.name,
+        'to_lat': to.latitude.toString(),
+        'to_lng': to.longitude.toString(),
+        'ts': timestamp.millisecondsSinceEpoch.toString(),
+      };
+
+  factory RecentRoute.fromMap(Map<String, dynamic> map) => RecentRoute(
+        from: SavedPlace(
+          name: map['from_name'] as String? ?? '',
+          latitude:
+              double.tryParse(map['from_lat']?.toString() ?? '') ?? 0,
+          longitude:
+              double.tryParse(map['from_lng']?.toString() ?? '') ?? 0,
+        ),
+        to: SavedPlace(
+          name: map['to_name'] as String? ?? '',
+          latitude:
+              double.tryParse(map['to_lat']?.toString() ?? '') ?? 0,
+          longitude:
+              double.tryParse(map['to_lng']?.toString() ?? '') ?? 0,
+        ),
+        timestamp: DateTime.fromMillisecondsSinceEpoch(
+          int.tryParse(map['ts']?.toString() ?? '0') ?? 0,
+        ),
+      );
+}
+
 class RouteSegment {
   final String routeCode;
   final String lineId;

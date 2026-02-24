@@ -85,8 +85,8 @@ class _RouteMapViewState extends State<RouteMapView> {
       Theme.of(context).primaryColor,
       Theme.of(context).colorScheme.tertiary,
       Theme.of(context).colorScheme.secondary,
-      Colors.deepOrange,
-      Colors.teal,
+      Theme.of(context).colorScheme.error,
+      Theme.of(context).colorScheme.inversePrimary,
     ];
     int colorIndex = 0;
 
@@ -219,15 +219,16 @@ class _RouteMapViewState extends State<RouteMapView> {
       child: Container(
         decoration: BoxDecoration(
           color: isStart
-              ? Colors.green
+              ? Theme.of(context).colorScheme.tertiary
               : isEnd
-                  ? Colors.red
+                  ? Theme.of(context).colorScheme.error
                   : Theme.of(context).primaryColor,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 3),
+          border: Border.all(
+              color: Theme.of(context).colorScheme.surface, width: 3),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(64),
+              color: Theme.of(context).shadowColor.withAlpha(64),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -239,7 +240,7 @@ class _RouteMapViewState extends State<RouteMapView> {
               : isEnd
                   ? Icons.location_on
                   : Icons.directions_bus,
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onPrimary,
           size: 20,
         ),
       ),
@@ -255,11 +256,12 @@ class _RouteMapViewState extends State<RouteMapView> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.tertiary,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 2),
+          border: Border.all(
+              color: Theme.of(context).colorScheme.surface, width: 2),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.swap_horiz,
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onTertiary,
           size: 16,
         ),
       ),
@@ -325,8 +327,8 @@ class _FullScreenMapState extends State<_FullScreenMap> {
       Theme.of(context).primaryColor,
       Theme.of(context).colorScheme.tertiary,
       Theme.of(context).colorScheme.secondary,
-      Colors.deepOrange,
-      Colors.teal,
+      Theme.of(context).colorScheme.error,
+      Theme.of(context).colorScheme.inversePrimary,
     ];
     int colorIndex = 0;
 
@@ -441,15 +443,16 @@ class _FullScreenMapState extends State<_FullScreenMap> {
       child: Container(
         decoration: BoxDecoration(
           color: isStart
-              ? Colors.green
+              ? Theme.of(context).colorScheme.tertiary
               : isEnd
-                  ? Colors.red
+                  ? Theme.of(context).colorScheme.error
                   : Theme.of(context).primaryColor,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 3),
+          border: Border.all(
+              color: Theme.of(context).colorScheme.surface, width: 3),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withAlpha(64),
+              color: Theme.of(context).shadowColor.withAlpha(64),
               blurRadius: 4,
               offset: const Offset(0, 2),
             ),
@@ -461,7 +464,7 @@ class _FullScreenMapState extends State<_FullScreenMap> {
               : isEnd
                   ? Icons.location_on
                   : Icons.directions_bus,
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onPrimary,
           size: 20,
         ),
       ),
@@ -477,11 +480,12 @@ class _FullScreenMapState extends State<_FullScreenMap> {
         decoration: BoxDecoration(
           color: Theme.of(context).colorScheme.tertiary,
           shape: BoxShape.circle,
-          border: Border.all(color: Colors.white, width: 2),
+          border: Border.all(
+              color: Theme.of(context).colorScheme.surface, width: 2),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.swap_horiz,
-          color: Colors.white,
+          color: Theme.of(context).colorScheme.onTertiary,
           size: 16,
         ),
       ),
