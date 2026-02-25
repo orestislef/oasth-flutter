@@ -33,6 +33,7 @@ dependencies:
   maps_launcher: ^3.0.0+1
   crypto: ^3.0.7
   flutter_local_notifications: ^20.1.0
+  web: ^1.1.1
 
 dependency_overrides:
   win32: ^5.15.0

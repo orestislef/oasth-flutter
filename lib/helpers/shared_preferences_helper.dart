@@ -69,16 +69,16 @@ class SharedPreferencesHelper {
 
   // --- Full data cache (lines + routes + stops graph) ---
 
-  static Future<void> setLinesCache(String json) async {
-    await file_cache.writeFileCache(_linesCacheFile, json);
+  static Future<bool> setLinesCache(String json) async {
+    return await file_cache.writeFileCache(_linesCacheFile, json);
   }
 
   static Future<String?> getLinesCache() async {
     return await file_cache.readFileCache(_linesCacheFile);
   }
 
-  static Future<void> setRoutesGraphCache(String json) async {
-    await file_cache.writeFileCache(_routesGraphCacheFile, json);
+  static Future<bool> setRoutesGraphCache(String json) async {
+    return await file_cache.writeFileCache(_routesGraphCacheFile, json);
   }
 
   static Future<String?> getRoutesGraphCache() async {

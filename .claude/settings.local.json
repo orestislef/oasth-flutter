@@ -78,7 +78,12 @@
       "Bash(flutter clean:*)",
       "Bash(pod install:*)",
       "Bash(flutter build ios:*)",
-      "Bash(open:*)"
+      "Bash(open:*)",
+      "WebFetch(domain:orestislef.gr)",
+      "Bash(curl -sI \"https://orestislef.gr/oasth/api-proxy.php?act=webGetLines\")",
+      "Bash(curl -sI \"https://orestislef.gr/oasth/api-proxy.php?act=getStopArrivals&p1=1234\")",
+      "Bash(curl -s \"https://orestislef.gr/oasth/api-proxy.php?act=webGetLines\")",
+      "Bash(dart --version)"
     ]
   }
 }

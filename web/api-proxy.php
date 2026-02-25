@@ -14,6 +14,9 @@ $csrfToken = $headers['X-CSRF-TOKEN'] ?? $headers['X-Csrf-Token'] ?? null;
 $clientCookie = $headers['Cookie'] ?? null;
 
 session_start();
+// Remove PHP's default session cache headers that conflict with our Cache-Control
+header_remove('Expires');
+header_remove('Pragma');
 $cookieFile = sys_get_temp_dir() . '/oasth_proxy_' . session_id() . '.cookie';
 
 $httpHeaders = [
@@ -74,6 +77,16 @@ header('Access-Control-Allow-Headers: *');
 
 if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
   exit;
+}
+
+// Set HTTP cache headers based on endpoint type
+$act = $_GET['act'] ?? '';
+$realTimeEndpoints = ['getStopArrivals', 'getBusLocation'];
+if (in_array($act, $realTimeEndpoints)) {
+  header('Cache-Control: no-cache, must-revalidate');
+} else {
+  // Cache static/semi-static data for 24 hours in browser
+  header('Cache-Control: public, max-age=86400');
 }
 
 echo $body;
