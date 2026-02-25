@@ -16,10 +16,11 @@ Future<void> initCacheDir() async {
   _cacheDir = cacheDir.path;
 }
 
-Future<void> writeFileCache(String fileName, String content) async {
+Future<bool> writeFileCache(String fileName, String content) async {
   await initCacheDir();
   final file = File('$_cacheDir/$fileName');
   await file.writeAsString(content, flush: true);
+  return true;
 }
 
 Future<String?> readFileCache(String fileName) async {

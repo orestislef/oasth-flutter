@@ -817,10 +817,22 @@ class Api {
     final linesJson = json.encode(lines.lines.map((l) => l.toMap()).toList());
     final graphJson = json.encode(routesGraph);
 
-    await SharedPreferencesHelper.setLinesCache(linesJson);
-    await SharedPreferencesHelper.setRoutesGraphCache(graphJson);
-    await SharedPreferencesHelper.setCacheTimestamp(
-        DateTime.now().millisecondsSinceEpoch);
+    final linesSaved = await SharedPreferencesHelper.setLinesCache(linesJson);
+    final graphSaved =
+        await SharedPreferencesHelper.setRoutesGraphCache(graphJson);
+
+    if (linesSaved && graphSaved) {
+      await SharedPreferencesHelper.setCacheTimestamp(
+          DateTime.now().millisecondsSinceEpoch);
+      debugPrint('[Api] Disk cache saved successfully');
+    } else {
+      // Don't set timestamp if save failed (e.g. localStorage quota on web)
+      // so next launch will re-download and try again
+      debugPrint(
+          '[Api] WARNING: Disk cache save failed (lines=$linesSaved, graph=$graphSaved). '
+          'Data will be re-downloaded next launch. '
+          'On web this is likely a localStorage quota issue.');
+    }
 
     // Also save flat stops list for backward compat
     final stopsList = allStops.toList();
