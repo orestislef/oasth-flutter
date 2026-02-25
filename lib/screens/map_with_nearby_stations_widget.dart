@@ -72,6 +72,10 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
         });
 
         if (location != null) {
+          _mapController.move(
+            LatLng(location.latitude!, location.longitude!),
+            15.5,
+          );
           _updateNearbyStops();
         }
       }
@@ -165,13 +169,16 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
         children: [
           _buildMapContent(context),
           _buildTopControls(context),
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: _buildFloatingActionButtons(context),
+          ),
           if (_isLoadingLocation || _isLoadingStops)
             _buildLoadingOverlay(context),
           if (_errorMessage != null) _buildErrorOverlay(context),
         ],
       ),
-      floatingActionButton: _buildFloatingActionButtons(context),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 

@@ -16,6 +16,8 @@ class AppRoutes {
   static const String routeMapFull = '/route-map-full';
   static const String news = '/news';
   static const String newsDetail = '/news-detail';
+  static const String nearbyDepartures = '/nearby-departures';
+  static const String favoritesLiveMap = '/favorites-live-map';
 }
 
 class HomeArgs {

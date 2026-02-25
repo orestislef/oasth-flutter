@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
@@ -7,11 +8,13 @@ import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:location/location.dart';
 import 'package:maps_launcher/maps_launcher.dart';
+import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/stop_details.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/helpers/location_helper.dart';
+import 'package:oasth/helpers/notification_helper.dart';
 import 'package:oasth/helpers/tile_layer_helper.dart';
 import 'package:oasth/widgets/shimmer_loading.dart';
 
@@ -35,6 +38,14 @@ class _StopPageState extends State<StopPage> {
   String? _error;
 
   LocationData? _userLocation;
+
+  // Bus tracking state
+  String? _expandedArrivalKey;
+  final Map<String, _BusTrackingInfo> _trackingCache = {};
+
+  // Reminder state
+  final _notificationHelper = NotificationHelper();
+  final Set<String> _reminderSet = {};
 
   @override
   void initState() {
@@ -536,68 +547,109 @@ class _StopPageState extends State<StopPage> {
     final minutes = int.tryParse(arrival.btime2) ?? 0;
     final isImminent = minutes <= 2;
     final isSoon = minutes <= 5;
+    final key = '${arrival.routeCode}_${arrival.vehCode}';
+    final isExpanded = _expandedArrivalKey == key;
 
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-      leading: Container(
-        width: 40,
-        height: 40,
-        decoration: BoxDecoration(
-          color: isImminent
-              ? Theme.of(context).colorScheme.error.withValues(alpha: .1)
-              : isSoon
-                  ? Theme.of(context).colorScheme.primary.withValues(alpha: .1)
-                  : Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(8),
-          border: Border.all(
-            color: isImminent
-                ? Theme.of(context).colorScheme.error
-                : isSoon
-                    ? Theme.of(context).colorScheme.primary
-                    : Theme.of(context).dividerColor,
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        ListTile(
+          onTap: minutes > 0 ? () => _toggleArrivalExpansion(arrival) : null,
+          contentPadding:
+              const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+          leading: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: isImminent
+                  ? Theme.of(context)
+                      .colorScheme
+                      .error
+                      .withValues(alpha: .1)
+                  : isSoon
+                      ? Theme.of(context)
+                          .colorScheme
+                          .primary
+                          .withValues(alpha: .1)
+                      : Theme.of(context).cardColor,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(
+                color: isImminent
+                    ? Theme.of(context).colorScheme.error
+                    : isSoon
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context).dividerColor,
+              ),
+            ),
+            child: Center(
+              child: Text(
+                arrival.routeCode,
+                style: TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: isImminent
+                      ? Theme.of(context).colorScheme.error
+                      : isSoon
+                          ? Theme.of(context).colorScheme.primary
+                          : Theme.of(context).textTheme.bodyMedium?.color,
+                ),
+              ),
+            ),
+          ),
+          title: Text(
+            '${'bus'.tr()} ${arrival.vehCode}',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w500,
+                ),
+          ),
+          subtitle: Text(
+            minutes == 0
+                ? 'arriving_now'.tr()
+                : '${'in'.tr()} $minutes ${'minutes'.tr()}',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                  color: isImminent
+                      ? Theme.of(context).colorScheme.error
+                      : isSoon
+                          ? Theme.of(context).colorScheme.primary
+                          : null,
+                  fontWeight: isImminent ? FontWeight.w600 : null,
+                ),
+          ),
+          trailing: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (minutes > 1 && !_reminderSet.contains(key))
+                IconButton(
+                  icon: const Icon(Icons.notifications_none, size: 20),
+                  onPressed: () => _showReminderDialog(arrival),
+                  tooltip: 'set_reminder'.tr(),
+                  constraints:
+                      const BoxConstraints(minWidth: 36, minHeight: 36),
+                  padding: EdgeInsets.zero,
+                )
+              else if (_reminderSet.contains(key))
+                Icon(Icons.notifications_active,
+                    size: 20,
+                    color: Theme.of(context).colorScheme.primary),
+              const SizedBox(width: 4),
+              Icon(
+                isImminent
+                    ? Icons.warning
+                    : isExpanded
+                        ? Icons.expand_less
+                        : Icons.access_time,
+                color: isImminent
+                    ? Theme.of(context).colorScheme.error
+                    : isSoon
+                        ? Theme.of(context).colorScheme.primary
+                        : Theme.of(context)
+                            .primaryColor
+                            .withValues(alpha: .6),
+              ),
+            ],
           ),
         ),
-        child: Center(
-          child: Text(
-            arrival.routeCode,
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              color: isImminent
-                  ? Theme.of(context).colorScheme.error
-                  : isSoon
-                      ? Theme.of(context).colorScheme.primary
-                      : Theme.of(context).textTheme.bodyMedium?.color,
-            ),
-          ),
-        ),
-      ),
-      title: Text(
-        '${'bus'.tr()} ${arrival.vehCode}',
-        style: Theme.of(context).textTheme.titleMedium?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
-      ),
-      subtitle: Text(
-        minutes == 0
-            ? 'arriving_now'.tr()
-            : '${'in'.tr()} $minutes ${'minutes'.tr()}',
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: isImminent
-                  ? Theme.of(context).colorScheme.error
-                  : isSoon
-                      ? Theme.of(context).colorScheme.primary
-                      : null,
-              fontWeight: isImminent ? FontWeight.w600 : null,
-            ),
-      ),
-      trailing: Icon(
-        isImminent ? Icons.warning : Icons.access_time,
-        color: isImminent
-            ? Theme.of(context).colorScheme.error
-            : isSoon
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).primaryColor.withValues(alpha: .6),
-      ),
+        if (isExpanded) _buildTrackingPanel(context, key),
+      ],
     );
   }
 
@@ -868,6 +920,305 @@ class _StopPageState extends State<StopPage> {
     );
   }
 
+  // --- Bus tracking methods ---
+
+  void _toggleArrivalExpansion(StopDetails arrival) {
+    final key = '${arrival.routeCode}_${arrival.vehCode}';
+    setState(() {
+      if (_expandedArrivalKey == key) {
+        _expandedArrivalKey = null;
+      } else {
+        _expandedArrivalKey = key;
+        if (!_trackingCache.containsKey(key)) {
+          _fetchBusTracking(arrival).then((info) {
+            if (mounted && info != null) {
+              setState(() => _trackingCache[key] = info);
+            }
+          });
+        }
+      }
+    });
+  }
+
+  Future<_BusTrackingInfo?> _fetchBusTracking(StopDetails arrival) async {
+    try {
+      final routeData =
+          await _repo.getRouteDetailsAndStops(arrival.routeCode);
+      final stops = routeData.stops;
+      if (stops.isEmpty) return null;
+
+      final currentIdx = stops.indexWhere(
+        (s) => s.stopCode == widget.stop.stopCode,
+      );
+
+      final busLocations =
+          await _repo.getBusLocations(arrival.routeCode);
+
+      BusLocationData? matchedBus;
+      for (final bus in busLocations) {
+        if (bus.vehNo == arrival.vehCode) {
+          matchedBus = bus;
+          break;
+        }
+      }
+
+      int? busStopIdx;
+      if (matchedBus != null) {
+        double minDist = double.infinity;
+        for (int i = 0; i < stops.length; i++) {
+          final dist = _haversineMeters(
+            matchedBus.csLat,
+            matchedBus.csLng,
+            stops[i].stopLat,
+            stops[i].stopLng,
+          );
+          if (dist < minDist) {
+            minDist = dist;
+            busStopIdx = i;
+          }
+        }
+      }
+
+      int? stopsAway;
+      if (currentIdx >= 0 && busStopIdx != null) {
+        stopsAway = currentIdx - busStopIdx;
+        if (stopsAway < 0) stopsAway = 0;
+      }
+
+      return _BusTrackingInfo(
+        routeStops: stops,
+        currentStopIndex: currentIdx,
+        busStopIndex: busStopIdx,
+        busLocation: matchedBus,
+        stopsAway: stopsAway,
+      );
+    } catch (e) {
+      debugPrint('Bus tracking error: $e');
+      return null;
+    }
+  }
+
+  double _haversineMeters(
+      double lat1, double lon1, double lat2, double lon2) {
+    const radius = 6371000.0;
+    final dLat = (lat2 - lat1) * (pi / 180.0);
+    final dLon = (lon2 - lon1) * (pi / 180.0);
+    final a = pow(sin(dLat / 2), 2) +
+        cos(lat1 * (pi / 180.0)) *
+            cos(lat2 * (pi / 180.0)) *
+            pow(sin(dLon / 2), 2);
+    return radius * 2 * atan2(sqrt(a), sqrt(1 - a));
+  }
+
+  Widget _buildTrackingPanel(BuildContext context, String key) {
+    final info = _trackingCache[key];
+    if (info == null) {
+      return const Padding(
+        padding: EdgeInsets.all(16),
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    if (info.busLocation == null) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        child: Text(
+          'bus_not_found_on_route'.tr(),
+          style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                color: Theme.of(context).hintColor,
+              ),
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (info.stopsAway != null && info.stopsAway! > 0)
+            Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: Text(
+                '${info.stopsAway} ${'stops_away'.tr()}',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: Theme.of(context).primaryColor,
+                    ),
+              ),
+            ),
+          _buildMiniRouteStrip(context, info),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniRouteStrip(
+      BuildContext context, _BusTrackingInfo info) {
+    final startIdx = max(0, (info.busStopIndex ?? 0) - 1);
+    final endIdx =
+        min(info.routeStops.length, (info.currentStopIndex) + 2);
+    if (endIdx <= startIdx) return const SizedBox.shrink();
+
+    final visibleStops = info.routeStops.sublist(startIdx, endIdx);
+
+    return SizedBox(
+      height: 56,
+      child: Row(
+        children: [
+          for (int i = 0; i < visibleStops.length; i++) ...[
+            if (i > 0)
+              Expanded(
+                child: Container(
+                  height: 2,
+                  color: Theme.of(context).dividerColor,
+                ),
+              ),
+            _buildStopDot(context, info, startIdx + i, visibleStops[i]),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildStopDot(
+    BuildContext context,
+    _BusTrackingInfo info,
+    int globalIdx,
+    Stop stop,
+  ) {
+    final isBusHere = globalIdx == info.busStopIndex;
+    final isCurrentStop = globalIdx == info.currentStopIndex;
+
+    final stopName = LanguageHelper.getLanguageUsedInApp(context) == 'en'
+        ? stop.stopDescriptionEng.isNotEmpty
+            ? stop.stopDescriptionEng
+            : stop.stopDescription
+        : stop.stopDescription.isNotEmpty
+            ? stop.stopDescription
+            : stop.stopDescriptionEng;
+
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (isBusHere)
+          Icon(Icons.directions_bus,
+              size: 14, color: Theme.of(context).colorScheme.secondary)
+        else
+          const SizedBox(height: 14),
+        const SizedBox(height: 2),
+        Container(
+          width: isCurrentStop || isBusHere ? 14 : 10,
+          height: isCurrentStop || isBusHere ? 14 : 10,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: isCurrentStop
+                ? Theme.of(context).primaryColor
+                : isBusHere
+                    ? Theme.of(context).colorScheme.secondary
+                    : Theme.of(context).dividerColor,
+          ),
+        ),
+        const SizedBox(height: 2),
+        if (isCurrentStop || isBusHere)
+          SizedBox(
+            width: 60,
+            child: Text(
+              stopName,
+              style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                    fontSize: 8,
+                  ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              textAlign: TextAlign.center,
+            ),
+          )
+        else
+          const SizedBox(height: 10),
+      ],
+    );
+  }
+
+  // --- Reminder methods ---
+
+  Future<void> _showReminderDialog(StopDetails arrival) async {
+    final minutes = int.tryParse(arrival.btime2) ?? 0;
+    if (minutes <= 1) return;
+
+    final shouldSet = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text('set_reminder'.tr()),
+        content: Text(
+          'reminder_dialog_text'.tr(namedArgs: {
+            'vehCode': arrival.vehCode,
+            'routeCode': arrival.routeCode,
+            'minutes': minutes.toString(),
+          }),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, false),
+            child: Text('cancel'.tr()),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            child: Text('set_reminder'.tr()),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldSet == true && mounted) {
+      final stopName = _getStopDescription(context);
+      final hasPermission =
+          await _notificationHelper.requestPermission();
+      if (!hasPermission) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('notification_permission_denied'.tr()),
+              behavior: SnackBarBehavior.floating,
+            ),
+          );
+        }
+        return;
+      }
+
+      final key = '${arrival.routeCode}_${arrival.vehCode}';
+      final notificationId = key.hashCode;
+
+      await _notificationHelper.scheduleArrivalReminder(
+        id: notificationId,
+        lineId: arrival.routeCode,
+        vehCode: arrival.vehCode,
+        minutesUntilArrival: minutes,
+        stopName: stopName,
+      );
+
+      setState(() {
+        _reminderSet.add(key);
+      });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('reminder_set'.tr(namedArgs: {
+              'minutes': (minutes - 1).toString(),
+            })),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
   void _showErrorSnackBar(String message) {
     if (!mounted) return;
 
@@ -884,4 +1235,20 @@ class _StopPageState extends State<StopPage> {
       ),
     );
   }
+}
+
+class _BusTrackingInfo {
+  final List<Stop> routeStops;
+  final int currentStopIndex;
+  final int? busStopIndex;
+  final BusLocationData? busLocation;
+  final int? stopsAway;
+
+  _BusTrackingInfo({
+    required this.routeStops,
+    required this.currentStopIndex,
+    this.busStopIndex,
+    this.busLocation,
+    this.stopsAway,
+  });
 }
