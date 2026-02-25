@@ -365,5 +365,8 @@
   "set_reminder": "Set Reminder",
   "reminder_dialog_text": "Remind you 1 minute before Bus {vehCode} (Line {routeCode}) arrives? That's in about {minutes} minutes.",
   "reminder_set": "Reminder set! You'll be notified in about {minutes} minutes.",
-  "notification_permission_denied": "Notification permission is required to set reminders"
+  "notification_permission_denied": "Notification permission is required to set reminders",
+  "pick_from_map": "Pick from Map",
+  "confirm_location": "Confirm Location",
+  "move_map_to_select": "Move the map to position the pin on your desired location"
 }

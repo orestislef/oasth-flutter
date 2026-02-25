@@ -18,6 +18,7 @@ class AppRoutes {
   static const String newsDetail = '/news-detail';
   static const String nearbyDepartures = '/nearby-departures';
   static const String favoritesLiveMap = '/favorites-live-map';
+  static const String locationPicker = '/location-picker';
 }
 
 class HomeArgs {

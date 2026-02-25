@@ -5,8 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:oasth/data/route_planner.dart';
 import 'package:oasth/data/route_planner_models.dart';
+import 'package:oasth/helpers/app_routes.dart';
 import 'package:oasth/helpers/geocoding_helper.dart';
+import 'package:oasth/screens/location_picker_page.dart';
 import 'package:oasth/widgets/shimmer_loading.dart';
+import 'package:go_router/go_router.dart';
 
 class InputStep extends StatefulWidget {
   final SavedPlace? fromPlace;
@@ -157,6 +160,52 @@ class _InputStepState extends State<InputStep> {
           }
         });
       }
+    }
+  }
+
+  Future<void> _pickFromMap(bool isFrom) async {
+    final result = await context.push<LocationPickerResult>(
+      AppRoutes.locationPicker,
+    );
+    if (result == null || !mounted) return;
+
+    final place = SavedPlace(
+      name: result.address,
+      latitude: result.latitude,
+      longitude: result.longitude,
+    );
+
+    setState(() {
+      if (isFrom) {
+        _fromController.text = place.name;
+        _fromSuggestions = [];
+      } else {
+        _toController.text = place.name;
+        _toSuggestions = [];
+      }
+    });
+
+    if (isFrom) {
+      widget.onFromChanged(place);
+    } else {
+      widget.onToChanged(place);
+    }
+  }
+
+  void _clearField(bool isFrom) {
+    setState(() {
+      if (isFrom) {
+        _fromController.clear();
+        _fromSuggestions = [];
+      } else {
+        _toController.clear();
+        _toSuggestions = [];
+      }
+    });
+    if (isFrom) {
+      widget.onFromChanged(null);
+    } else {
+      widget.onToChanged(null);
     }
   }
 
@@ -381,16 +430,54 @@ class _InputStepState extends State<InputStep> {
                           child: ShimmerBox(width: 20, height: 20),
                         ),
                       )
-                    : IconButton(
-                        icon: const Icon(Icons.my_location),
-                        onPressed: () => _getCurrentLocation(isFrom),
-                      ),
+                    : controller.text.isNotEmpty
+                        ? IconButton(
+                            icon: const Icon(Icons.clear),
+                            onPressed: () => _clearField(isFrom),
+                          )
+                        : null,
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(12),
                 ),
                 filled: true,
                 fillColor: Theme.of(context).cardColor,
               ),
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: (isFrom
+                            ? _isGettingFromLocation
+                            : _isGettingToLocation)
+                        ? null
+                        : () => _getCurrentLocation(isFrom),
+                    icon: (isFrom
+                            ? _isGettingFromLocation
+                            : _isGettingToLocation)
+                        ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: ShimmerContainer(
+                              child: ShimmerBox(width: 16, height: 16),
+                            ),
+                          )
+                        : const Icon(Icons.my_location, size: 18),
+                    label: Text('current_location'.tr(),
+                        style: Theme.of(context).textTheme.bodySmall),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    onPressed: () => _pickFromMap(isFrom),
+                    icon: const Icon(Icons.map, size: 18),
+                    label: Text('pick_from_map'.tr(),
+                        style: Theme.of(context).textTheme.bodySmall),
+                  ),
+                ),
+              ],
             ),
             if ((isFrom ? _isFromSearching : _isToSearching) &&
                 suggestions.isEmpty)

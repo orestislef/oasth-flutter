@@ -13,7 +13,9 @@ import 'package:oasth/screens/stop_page.dart';
 import 'package:oasth/screens/nearby_departures_page.dart';
 import 'package:oasth/screens/favorites_live_map_page.dart';
 import 'package:oasth/screens/best_route/route_map.dart';
+import 'package:oasth/screens/location_picker_page.dart';
 import 'package:go_router/go_router.dart';
+import 'package:latlong2/latlong.dart';
 
 import 'helpers/app_routes.dart';
 import 'helpers/language_helper.dart';
@@ -145,6 +147,13 @@ class MyApp extends StatelessWidget {
             GoRoute(
               path: AppRoutes.favoritesLiveMap,
               builder: (context, state) => const FavoritesLiveMapPage(),
+            ),
+            GoRoute(
+              path: AppRoutes.locationPicker,
+              builder: (context, state) {
+                final initialLocation = state.extra as LatLng?;
+                return LocationPickerPage(initialLocation: initialLocation);
+              },
             ),
           ],
         );

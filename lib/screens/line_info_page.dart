@@ -376,16 +376,14 @@ class _LineInfoPageState extends State<LineInfoPage>
   }
 
   Widget _buildStopsTab(BuildContext context) {
-    return NestedScrollView(
-      headerSliverBuilder: (context, innerBoxIsScrolled) {
-        return [
-          SliverToBoxAdapter(child: _buildLineVariantsSection(context)),
-          SliverToBoxAdapter(child: _buildDirectionSection(context)),
-          SliverToBoxAdapter(child: _buildSearchBar(context)),
-          SliverToBoxAdapter(child: _buildSortToggle(context)),
-        ];
-      },
-      body: _buildStopsList(context),
+    return Column(
+      children: [
+        _buildLineVariantsSection(context),
+        _buildDirectionSection(context),
+        _buildSearchBar(context),
+        _buildSortToggle(context),
+        Expanded(child: _buildStopsList(context)),
+      ],
     );
   }
 
@@ -726,6 +724,7 @@ class _LineInfoPageState extends State<LineInfoPage>
         if (snapshot.connectionState == ConnectionState.waiting) {
           return ShimmerContainer(
             child: ListView(
+              primary: false,
               padding: const EdgeInsets.symmetric(horizontal: 16),
               children: List.generate(8, (_) => const ShimmerListTile()),
             ),
@@ -744,6 +743,7 @@ class _LineInfoPageState extends State<LineInfoPage>
             if (routeSnapshot.connectionState == ConnectionState.waiting) {
               return ShimmerContainer(
                 child: ListView(
+                  primary: false,
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   children: List.generate(8, (_) => const ShimmerListTile()),
                 ),

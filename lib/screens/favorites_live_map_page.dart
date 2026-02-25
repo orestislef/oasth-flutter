@@ -14,6 +14,7 @@ import 'package:oasth/helpers/app_routes.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/helpers/location_helper.dart';
 import 'package:oasth/helpers/tile_layer_helper.dart';
+import 'package:oasth/widgets/shimmer_loading.dart';
 
 class FavoritesLiveMapPage extends StatefulWidget {
   const FavoritesLiveMapPage({super.key});
@@ -27,6 +28,7 @@ class _FavoritesLiveMapPageState extends State<FavoritesLiveMapPage> {
   final MapController _mapController = MapController();
   Timer? _refreshTimer;
   bool _isLoading = true;
+  bool _isRefreshing = false;
   String? _error;
   LocationData? _userLocation;
   bool _showPolylines = true;
@@ -155,6 +157,8 @@ class _FavoritesLiveMapPageState extends State<FavoritesLiveMapPage> {
   }
 
   Future<void> _refreshBusLocations() async {
+    if (mounted) setState(() => _isRefreshing = true);
+
     final markers = <_FavBusMarker>[];
 
     for (final entry in _lineRouteCodes.entries) {
@@ -176,7 +180,10 @@ class _FavoritesLiveMapPageState extends State<FavoritesLiveMapPage> {
     }
 
     if (mounted) {
-      setState(() => _busMarkers = markers);
+      setState(() {
+        _busMarkers = markers;
+        _isRefreshing = false;
+      });
     }
   }
 
@@ -213,6 +220,12 @@ class _FavoritesLiveMapPageState extends State<FavoritesLiveMapPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('favorites_live_map'.tr()),
+        bottom: _isRefreshing
+            ? const PreferredSize(
+                preferredSize: Size.fromHeight(2),
+                child: LinearProgressIndicator(),
+              )
+            : null,
         actions: [
           if (_busMarkers.isNotEmpty)
             IconButton(
@@ -276,19 +289,23 @@ class _FavoritesLiveMapPageState extends State<FavoritesLiveMapPage> {
   }
 
   Widget _buildLoadingState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 24),
-          Text(
-            'loading_favorites_map'.tr(),
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).hintColor,
-                ),
-          ),
-        ],
+    return ShimmerContainer(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            // Shimmer map placeholder
+            Expanded(
+              child: const ShimmerBox(
+                width: double.infinity,
+                height: double.infinity,
+              ),
+            ),
+            const SizedBox(height: 16),
+            // Shimmer legend placeholder
+            const ShimmerBox(width: 200, height: 80, borderRadius: 12),
+          ],
+        ),
       ),
     );
   }

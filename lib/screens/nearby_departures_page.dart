@@ -11,6 +11,7 @@ import 'package:oasth/data/route_planner.dart';
 import 'package:oasth/helpers/app_routes.dart';
 import 'package:oasth/helpers/language_helper.dart';
 import 'package:oasth/helpers/location_helper.dart';
+import 'package:oasth/widgets/shimmer_loading.dart';
 
 class NearbyDeparturesPage extends StatefulWidget {
   const NearbyDeparturesPage({super.key});
@@ -24,6 +25,7 @@ class _NearbyDeparturesPageState extends State<NearbyDeparturesPage> {
   final _planner = RoutePlanner();
   Timer? _timer;
   bool _isLoading = true;
+  bool _isRefreshing = false;
   String? _error;
   List<_NearbyArrival> _arrivals = [];
   List<(Stop, double)> _nearestStops = [];
@@ -88,6 +90,8 @@ class _NearbyDeparturesPageState extends State<NearbyDeparturesPage> {
   }
 
   Future<void> _fetchArrivals() async {
+    if (!_isLoading && mounted) setState(() => _isRefreshing = true);
+
     try {
       // Fetch arrivals and routes for all stops in parallel
       final arrivalFutures = _nearestStops
@@ -140,12 +144,14 @@ class _NearbyDeparturesPageState extends State<NearbyDeparturesPage> {
       setState(() {
         _arrivals = merged;
         _isLoading = false;
+        _isRefreshing = false;
       });
     } catch (e) {
       if (!mounted) return;
       setState(() {
         _error = e.toString();
         _isLoading = false;
+        _isRefreshing = false;
       });
     }
   }
@@ -162,6 +168,12 @@ class _NearbyDeparturesPageState extends State<NearbyDeparturesPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text('whats_coming_near_me'.tr()),
+        bottom: _isRefreshing
+            ? const PreferredSize(
+                preferredSize: Size.fromHeight(2),
+                child: LinearProgressIndicator(),
+              )
+            : null,
       ),
       body: _buildBody(context),
     );
@@ -196,18 +208,24 @@ class _NearbyDeparturesPageState extends State<NearbyDeparturesPage> {
   }
 
   Widget _buildLoadingState(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    return ShimmerContainer(
+      child: ListView(
+        padding: const EdgeInsets.all(16),
         children: [
-          const CircularProgressIndicator(),
-          const SizedBox(height: 24),
-          Text(
-            'fetching_nearby'.tr(),
-            style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                  color: Theme.of(context).hintColor,
-                ),
+          // Shimmer header chips
+          Padding(
+            padding: const EdgeInsets.only(bottom: 16),
+            child: Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: List.generate(
+                3,
+                (_) => const ShimmerBox(width: 140, height: 36, borderRadius: 18),
+              ),
+            ),
           ),
+          // Shimmer arrival cards
+          ...List.generate(6, (_) => const ShimmerArrivalCard()),
         ],
       ),
     );
