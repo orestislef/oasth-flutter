@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:location/location.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/data/oasth_repository.dart';
@@ -35,7 +35,7 @@ class _RouteMapViewState extends State<RouteMapView> {
   final _repo = OasthRepository();
   late final Future<Map<String, RouteDetailAndStops>> _routeDetailsFuture;
   List<BusLocationData> _busLocations = [];
-  LocationData? _userLocation;
+  Position? _userLocation;
 
   @override
   void initState() {
@@ -564,7 +564,7 @@ class _FullScreenMapState extends State<FullScreenRouteMap> {
   late final Future<Map<String, RouteDetailAndStops>> _routeDetailsFuture;
   List<BusLocationData> _busLocations = [];
   Timer? _busPollTimer;
-  LocationData? _userLocation;
+  Position? _userLocation;
 
   @override
   void initState() {
@@ -598,7 +598,7 @@ class _FullScreenMapState extends State<FullScreenRouteMap> {
   void _centerOnUserLocation() {
     if (_userLocation != null) {
       _mapController.move(
-        LatLng(_userLocation!.latitude!, _userLocation!.longitude!),
+        LatLng(_userLocation!.latitude, _userLocation!.longitude),
         16.0,
       );
     }

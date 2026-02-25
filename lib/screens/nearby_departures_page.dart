@@ -60,8 +60,8 @@ class _NearbyDeparturesPageState extends State<NearbyDeparturesPage> {
         return;
       }
 
-      final lat = location.latitude!;
-      final lng = location.longitude!;
+      final lat = location.latitude;
+      final lng = location.longitude;
 
       if (!_planner.isReady) {
         setState(() {

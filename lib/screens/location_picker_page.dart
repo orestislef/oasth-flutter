@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:location/location.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:oasth/helpers/geocoding_helper.dart';
 import 'package:oasth/helpers/location_helper.dart';
 import 'package:oasth/helpers/tile_layer_helper.dart';
@@ -31,7 +31,7 @@ class LocationPickerPage extends StatefulWidget {
 
 class _LocationPickerPageState extends State<LocationPickerPage> {
   final MapController _mapController = MapController();
-  LocationData? _userLocation;
+  Position? _userLocation;
   bool _isConfirming = false;
   LatLng _center = const LatLng(40.6401, 22.9444); // Thessaloniki default
 
@@ -58,7 +58,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
         // If no initial location was provided, center on user
         if (widget.initialLocation == null) {
           final userLatLng =
-              LatLng(location.latitude!, location.longitude!);
+              LatLng(location.latitude, location.longitude);
           _mapController.move(userLatLng, 16.0);
           setState(() => _center = userLatLng);
         }
@@ -69,7 +69,7 @@ class _LocationPickerPageState extends State<LocationPickerPage> {
   void _centerOnUserLocation() {
     if (_userLocation != null) {
       final userLatLng =
-          LatLng(_userLocation!.latitude!, _userLocation!.longitude!);
+          LatLng(_userLocation!.latitude, _userLocation!.longitude);
       _mapController.move(userLatLng, 16.0);
     }
   }

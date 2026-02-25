@@ -1,36 +1,34 @@
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
-import 'package:location/location.dart';
+import 'package:geolocator/geolocator.dart';
 
 class LocationHelper {
-  static Future<LocationData?> getUserLocation() async {
-    Location location = Location();
+  static Future<Position?> getUserLocation() async {
     bool serviceEnabled;
-    PermissionStatus permissionGranted;
-    LocationData locationData;
+    LocationPermission permission;
 
     // Check if location service is enabled
-    serviceEnabled = await location.serviceEnabled();
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
-      serviceEnabled = await location.requestService();
-      if (!serviceEnabled) {
+      return null;
+    }
+
+    // Check location permissions
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
         return null;
       }
     }
 
-    // Check location permissions
-    permissionGranted = await location.hasPermission();
-    if (permissionGranted == PermissionStatus.denied) {
-      permissionGranted = await location.requestPermission();
-      if (permissionGranted != PermissionStatus.granted) {
-        return null;
-      }
+    if (permission == LocationPermission.deniedForever) {
+      return null;
     }
 
     // Get user's location
     try {
-      locationData = await location.getLocation();
-      return locationData;
+      return await Geolocator.getCurrentPosition();
     } catch (e) {
       debugPrint(e.toString());
       return null;
