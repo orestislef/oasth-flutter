@@ -4,13 +4,16 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:location/location.dart';
 import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/data/route_planner.dart';
 import 'package:oasth/data/route_planner_models.dart';
 import 'package:oasth/helpers/app_routes.dart';
+import 'package:oasth/helpers/location_helper.dart';
 import 'package:oasth/helpers/tile_layer_helper.dart';
 
 class RouteMapView extends StatefulWidget {
@@ -32,12 +35,25 @@ class _RouteMapViewState extends State<RouteMapView> {
   final _repo = OasthRepository();
   late final Future<Map<String, RouteDetailAndStops>> _routeDetailsFuture;
   List<BusLocationData> _busLocations = [];
+  LocationData? _userLocation;
 
   @override
   void initState() {
     super.initState();
     _routeDetailsFuture = _fetchRouteDetails();
     _fetchBusLocations();
+    _loadUserLocation();
+  }
+
+  Future<void> _loadUserLocation() async {
+    try {
+      final location = await LocationHelper.getUserLocation();
+      if (mounted && location != null) {
+        setState(() {
+          _userLocation = location;
+        });
+      }
+    } catch (_) {}
   }
 
   Future<void> _fetchBusLocations() async {
@@ -268,6 +284,32 @@ class _RouteMapViewState extends State<RouteMapView> {
       children: [
         const MapTileLayer(),
         PolylineLayer(polylines: polylines),
+        if (_userLocation != null)
+          CurrentLocationLayer(
+            alignPositionOnUpdate: AlignOnUpdate.never,
+            alignDirectionOnUpdate: AlignOnUpdate.never,
+            style: LocationMarkerStyle(
+              marker: DefaultLocationMarker(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      width: 3,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.person,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    size: 16,
+                  ),
+                ),
+              ),
+              markerSize: const Size(40, 40),
+              markerDirection: MarkerDirection.heading,
+            ),
+          ),
         MarkerLayer(markers: markers),
       ],
     );
@@ -522,6 +564,7 @@ class _FullScreenMapState extends State<FullScreenRouteMap> {
   late final Future<Map<String, RouteDetailAndStops>> _routeDetailsFuture;
   List<BusLocationData> _busLocations = [];
   Timer? _busPollTimer;
+  LocationData? _userLocation;
 
   @override
   void initState() {
@@ -532,12 +575,33 @@ class _FullScreenMapState extends State<FullScreenRouteMap> {
       const Duration(seconds: 10),
       (_) => _fetchBusLocations(),
     );
+    _loadUserLocation();
   }
 
   @override
   void dispose() {
     _busPollTimer?.cancel();
     super.dispose();
+  }
+
+  Future<void> _loadUserLocation() async {
+    try {
+      final location = await LocationHelper.getUserLocation();
+      if (mounted && location != null) {
+        setState(() {
+          _userLocation = location;
+        });
+      }
+    } catch (_) {}
+  }
+
+  void _centerOnUserLocation() {
+    if (_userLocation != null) {
+      _mapController.move(
+        LatLng(_userLocation!.latitude!, _userLocation!.longitude!),
+        16.0,
+      );
+    }
   }
 
   Future<void> _fetchBusLocations() async {
@@ -564,6 +628,12 @@ class _FullScreenMapState extends State<FullScreenRouteMap> {
       appBar: AppBar(
         title: Text('route_map'.tr()),
         actions: [
+          if (_userLocation != null)
+            IconButton(
+              icon: const Icon(Icons.my_location),
+              onPressed: _centerOnUserLocation,
+              tooltip: 'center_on_location'.tr(),
+            ),
           IconButton(
             icon: const Icon(Icons.fit_screen),
             onPressed: _fitBounds,
@@ -723,6 +793,32 @@ class _FullScreenMapState extends State<FullScreenRouteMap> {
       children: [
         const MapTileLayer(),
         PolylineLayer(polylines: polylines),
+        if (_userLocation != null)
+          CurrentLocationLayer(
+            alignPositionOnUpdate: AlignOnUpdate.never,
+            alignDirectionOnUpdate: AlignOnUpdate.never,
+            style: LocationMarkerStyle(
+              marker: DefaultLocationMarker(
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).primaryColor,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: Theme.of(context).colorScheme.onPrimary,
+                      width: 3,
+                    ),
+                  ),
+                  child: Icon(
+                    Icons.person,
+                    color: Theme.of(context).colorScheme.onPrimary,
+                    size: 16,
+                  ),
+                ),
+              ),
+              markerSize: const Size(40, 40),
+              markerDirection: MarkerDirection.heading,
+            ),
+          ),
         MarkerLayer(markers: markers),
       ],
     );

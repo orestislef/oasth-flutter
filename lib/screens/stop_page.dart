@@ -3,12 +3,15 @@ import 'dart:async';
 import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:location/location.dart';
 import 'package:maps_launcher/maps_launcher.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/api/responses/stop_details.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/language_helper.dart';
+import 'package:oasth/helpers/location_helper.dart';
 import 'package:oasth/helpers/tile_layer_helper.dart';
 import 'package:oasth/widgets/shimmer_loading.dart';
 
@@ -31,11 +34,14 @@ class _StopPageState extends State<StopPage> {
   bool _isInitialLoading = true;
   String? _error;
 
+  LocationData? _userLocation;
+
   @override
   void initState() {
     super.initState();
     _loadStopArrivals();
     _startAutoRefresh();
+    _loadUserLocation();
   }
 
   @override
@@ -61,6 +67,17 @@ class _StopPageState extends State<StopPage> {
         _isInitialLoading = false;
       });
     }
+  }
+
+  Future<void> _loadUserLocation() async {
+    try {
+      final location = await LocationHelper.getUserLocation();
+      if (mounted && location != null) {
+        setState(() {
+          _userLocation = location;
+        });
+      }
+    } catch (_) {}
   }
 
   void _startAutoRefresh() {
@@ -626,6 +643,22 @@ class _StopPageState extends State<StopPage> {
     );
   }
 
+  String _formatDistance(double meters) {
+    if (meters < 1000) {
+      return '${meters.round()} m';
+    }
+    return '${(meters / 1000).toStringAsFixed(1)} km';
+  }
+
+  void _centerOnUserLocation() {
+    if (_userLocation != null) {
+      _mapController.move(
+        LatLng(_userLocation!.latitude!, _userLocation!.longitude!),
+        16.0,
+      );
+    }
+  }
+
   Widget _buildMap(BuildContext context) {
     final lat = widget.stop.stopLat;
     final lng = widget.stop.stopLng;
@@ -650,51 +683,152 @@ class _StopPageState extends State<StopPage> {
       );
     }
 
-    return FlutterMap(
-      mapController: _mapController,
-      options: MapOptions(
-        maxZoom: 18.0,
-        minZoom: 8.0,
-        initialCenter: LatLng(lat, lng),
-        initialZoom: 16.0,
-        interactionOptions: const InteractionOptions(
-          flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-        ),
-      ),
+    final stopLatLng = LatLng(lat, lng);
+    LatLng? userLatLng;
+    double? distanceToStop;
+
+    if (_userLocation != null) {
+      userLatLng = LatLng(_userLocation!.latitude!, _userLocation!.longitude!);
+      distanceToStop =
+          const Distance().as(LengthUnit.Meter, userLatLng, stopLatLng);
+    }
+
+    // Fit map to show both user and stop
+    CameraFit? initialFit;
+    if (userLatLng != null && distanceToStop != null && distanceToStop < 50000) {
+      initialFit = CameraFit.coordinates(
+        coordinates: [stopLatLng, userLatLng],
+        padding: const EdgeInsets.all(50),
+      );
+    }
+
+    return Stack(
       children: [
-        const MapTileLayer(),
-        MarkerLayer(
-          markers: [
-            Marker(
-              rotate: false,
-              width: 50.0,
-              height: 50.0,
-              point: LatLng(lat, lng),
-              child: GestureDetector(
-                onTap: _openInMaps,
-                child: Container(
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: Theme.of(context).primaryColor,
-                    boxShadow: [
-                      BoxShadow(
-                        color:
-                            Theme.of(context).shadowColor.withValues(alpha: .3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 2),
+        FlutterMap(
+          mapController: _mapController,
+          options: MapOptions(
+            maxZoom: 18.0,
+            minZoom: 8.0,
+            initialCenter: initialFit == null ? stopLatLng : stopLatLng,
+            initialZoom: initialFit == null ? 16.0 : 16.0,
+            initialCameraFit: initialFit,
+            interactionOptions: const InteractionOptions(
+              flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+            ),
+          ),
+          children: [
+            const MapTileLayer(),
+            // Walking dashed line from user to stop
+            if (userLatLng != null && distanceToStop != null && distanceToStop < 50000)
+              PolylineLayer(
+                polylines: [
+                  Polyline(
+                    points: [userLatLng, stopLatLng],
+                    color: Theme.of(context).colorScheme.tertiary,
+                    strokeWidth: 3,
+                    pattern: const StrokePattern.dotted(),
+                  ),
+                ],
+              ),
+            // User location layer
+            if (_userLocation != null)
+              CurrentLocationLayer(
+                alignPositionOnUpdate: AlignOnUpdate.never,
+                alignDirectionOnUpdate: AlignOnUpdate.never,
+                style: LocationMarkerStyle(
+                  marker: DefaultLocationMarker(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).primaryColor,
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          width: 3,
+                        ),
                       ),
-                    ],
+                      child: Icon(
+                        Icons.person,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                        size: 16,
+                      ),
+                    ),
                   ),
-                  child: Icon(
-                    Icons.directions_bus,
-                    size: 28,
-                    color: Theme.of(context).colorScheme.onPrimary,
-                  ),
+                  markerSize: const Size(40, 40),
+                  markerDirection: MarkerDirection.heading,
                 ),
               ),
+            MarkerLayer(
+              markers: [
+                Marker(
+                  rotate: false,
+                  width: 50.0,
+                  height: 50.0,
+                  point: stopLatLng,
+                  child: GestureDetector(
+                    onTap: _openInMaps,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Theme.of(context).primaryColor,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Theme.of(context)
+                                .shadowColor
+                                .withValues(alpha: .3),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        Icons.directions_bus,
+                        size: 28,
+                        color: Theme.of(context).colorScheme.onPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
           ],
         ),
+        // Distance badge overlay
+        if (distanceToStop != null)
+          Positioned(
+            top: 8,
+            left: 8,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+              decoration: BoxDecoration(
+                color: Theme.of(context).cardColor,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Theme.of(context).shadowColor.withValues(alpha: .2),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    Icons.directions_walk,
+                    size: 16,
+                    color: Theme.of(context).colorScheme.tertiary,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    _formatDistance(distanceToStop),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                  ),
+                ],
+              ),
+            ),
+          ),
       ],
     );
   }
@@ -703,6 +837,16 @@ class _StopPageState extends State<StopPage> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (_userLocation != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: FloatingActionButton.small(
+              heroTag: "my_location",
+              onPressed: _centerOnUserLocation,
+              tooltip: 'center_on_location'.tr(),
+              child: const Icon(Icons.my_location),
+            ),
+          ),
         FloatingActionButton.small(
           heroTag: "refresh",
           onPressed: _isRefreshing ? null : _refreshArrivals,

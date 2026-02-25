@@ -339,5 +339,6 @@
   "map_mode": "Map mode",
   "sort_by": "Sort by",
   "route_order": "Route order",
-  "closest": "Closest"
+  "closest": "Closest",
+  "nearest_stop": "Nearest Stop"
 }
