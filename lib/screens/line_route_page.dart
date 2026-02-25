@@ -3,12 +3,15 @@ import 'package:easy_localization/easy_localization.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
+import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
+import 'package:location/location.dart';
 import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/app_routes.dart';
 import 'package:oasth/helpers/language_helper.dart';
+import 'package:oasth/helpers/location_helper.dart';
 import 'package:oasth/helpers/tile_layer_helper.dart';
 import 'package:oasth/widgets/shimmer_loading.dart';
 
@@ -50,6 +53,10 @@ class _RoutePageState extends State<RoutePage> {
 
   bool _initialized = false;
 
+  LocationData? _userLocation;
+  Stop? _nearestStop;
+  double? _nearestStopDistance;
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +64,7 @@ class _RoutePageState extends State<RoutePage> {
         .map((detail) => LatLng(detail.routedY, detail.routedX))
         .toList();
     _startBusLocationUpdates();
+    _loadUserLocation();
   }
 
   @override
@@ -74,6 +82,64 @@ class _RoutePageState extends State<RoutePage> {
     _busLocationTimer?.cancel();
     _mapController.dispose();
     super.dispose();
+  }
+
+  Future<void> _loadUserLocation() async {
+    try {
+      final location = await LocationHelper.getUserLocation();
+      if (mounted && location != null) {
+        setState(() {
+          _userLocation = location;
+        });
+        _updateNearestStop();
+        // Rebuild stop markers to highlight nearest
+        if (_initialized) {
+          setState(() {
+            _stopMarkers =
+                widget.stops.map((stop) => _buildStopMarker(stop)).toList();
+          });
+        }
+      }
+    } catch (_) {}
+  }
+
+  void _updateNearestStop() {
+    if (_userLocation == null || widget.stops.isEmpty) return;
+    final userLatLng =
+        LatLng(_userLocation!.latitude!, _userLocation!.longitude!);
+    const distance = Distance();
+    double minDist = double.infinity;
+    Stop? closest;
+
+    for (final stop in widget.stops) {
+      final d = distance.as(
+          LengthUnit.Meter, userLatLng, LatLng(stop.stopLat, stop.stopLng));
+      if (d < minDist) {
+        minDist = d;
+        closest = stop;
+      }
+    }
+
+    setState(() {
+      _nearestStop = closest;
+      _nearestStopDistance = minDist;
+    });
+  }
+
+  void _centerOnUserLocation() {
+    if (_userLocation != null) {
+      _mapController.move(
+        LatLng(_userLocation!.latitude!, _userLocation!.longitude!),
+        16.0,
+      );
+    }
+  }
+
+  String _formatDistance(double meters) {
+    if (meters < 1000) {
+      return '${meters.round()} m';
+    }
+    return '${(meters / 1000).toStringAsFixed(1)} km';
   }
 
   void _startBusLocationUpdates() {
@@ -159,6 +225,7 @@ class _RoutePageState extends State<RoutePage> {
   }
 
   Widget _buildLabeledStopMarker(Stop stop) {
+    final isNearest = _nearestStop?.stopCode == stop.stopCode;
     final description = LanguageHelper.getLanguageUsedInApp(context) == 'en'
         ? stop.stopDescriptionEng.isNotEmpty
             ? stop.stopDescriptionEng
@@ -173,11 +240,15 @@ class _RoutePageState extends State<RoutePage> {
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
           decoration: BoxDecoration(
-            color: Theme.of(context).cardColor,
+            color: isNearest
+                ? Theme.of(context).colorScheme.tertiary
+                : Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: Theme.of(context).primaryColor,
-              width: 1,
+              color: isNearest
+                  ? Theme.of(context).colorScheme.tertiary
+                  : Theme.of(context).primaryColor,
+              width: isNearest ? 2 : 1,
             ),
             boxShadow: [
               BoxShadow(
@@ -187,22 +258,44 @@ class _RoutePageState extends State<RoutePage> {
               ),
             ],
           ),
-          child: Text(
-            description,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 11,
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              if (isNearest) ...[
+                Icon(
+                  Icons.near_me,
+                  size: 12,
+                  color: isNearest
+                      ? Theme.of(context).colorScheme.onTertiary
+                      : null,
                 ),
+                const SizedBox(width: 4),
+              ],
+              Flexible(
+                child: Text(
+                  description,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        fontWeight: FontWeight.w600,
+                        fontSize: 11,
+                        color: isNearest
+                            ? Theme.of(context).colorScheme.onTertiary
+                            : null,
+                      ),
+                ),
+              ),
+            ],
           ),
         ),
         const SizedBox(height: 4),
         Container(
-          width: 28,
-          height: 28,
+          width: isNearest ? 32 : 28,
+          height: isNearest ? 32 : 28,
           decoration: BoxDecoration(
-            color: Theme.of(context).primaryColor,
+            color: isNearest
+                ? Theme.of(context).colorScheme.tertiary
+                : Theme.of(context).primaryColor,
             shape: BoxShape.circle,
             border: Border.all(
               color: Theme.of(context).colorScheme.onPrimary,
@@ -217,8 +310,8 @@ class _RoutePageState extends State<RoutePage> {
             ],
           ),
           child: Icon(
-            Icons.location_on,
-            size: 16,
+            isNearest ? Icons.near_me : Icons.location_on,
+            size: isNearest ? 18 : 16,
             color: Theme.of(context).colorScheme.onPrimary,
           ),
         ),
@@ -227,11 +320,14 @@ class _RoutePageState extends State<RoutePage> {
   }
 
   Widget _buildSimpleStopMarker(Stop stop) {
+    final isNearest = _nearestStop?.stopCode == stop.stopCode;
     return Container(
-      width: 32,
-      height: 32,
+      width: isNearest ? 36 : 32,
+      height: isNearest ? 36 : 32,
       decoration: BoxDecoration(
-        color: Theme.of(context).primaryColor,
+        color: isNearest
+            ? Theme.of(context).colorScheme.tertiary
+            : Theme.of(context).primaryColor,
         shape: BoxShape.circle,
         border: Border.all(
           color: Theme.of(context).colorScheme.onPrimary,
@@ -246,8 +342,8 @@ class _RoutePageState extends State<RoutePage> {
         ],
       ),
       child: Icon(
-        Icons.location_on,
-        size: 18,
+        isNearest ? Icons.near_me : Icons.location_on,
+        size: isNearest ? 20 : 18,
         color: Theme.of(context).colorScheme.onPrimary,
       ),
     );
@@ -340,39 +436,109 @@ class _RoutePageState extends State<RoutePage> {
       borderRadius: widget.hasAppBar
           ? BorderRadius.zero
           : const BorderRadius.all(Radius.circular(12)),
-      child: FlutterMap(
-        mapController: _mapController,
-        options: MapOptions(
-          maxZoom: 18.0,
-          minZoom: 8.0,
-          initialCameraFit: _routePoints.isNotEmpty
-              ? CameraFit.coordinates(
-                  coordinates: _routePoints,
-                  padding: const EdgeInsets.all(50),
-                )
-              : null,
-          interactionOptions: const InteractionOptions(
-            flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-          ),
-        ),
+      child: Stack(
         children: [
-          const MapTileLayer(),
-          if (_routePoints.isNotEmpty)
-            PolylineLayer(
-              polylines: [
-                Polyline(
-                  points: _routePoints,
-                  strokeWidth: 4,
-                  color: Theme.of(context).primaryColor,
-                  strokeJoin: StrokeJoin.round,
-                  strokeCap: StrokeCap.round,
-                ),
-              ],
+          FlutterMap(
+            mapController: _mapController,
+            options: MapOptions(
+              maxZoom: 18.0,
+              minZoom: 8.0,
+              initialCameraFit: _routePoints.isNotEmpty
+                  ? CameraFit.coordinates(
+                      coordinates: _routePoints,
+                      padding: const EdgeInsets.all(50),
+                    )
+                  : null,
+              interactionOptions: const InteractionOptions(
+                flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+              ),
             ),
-          MarkerLayer(
-            markers: allMarkers,
-            alignment: Alignment.center,
+            children: [
+              const MapTileLayer(),
+              if (_routePoints.isNotEmpty)
+                PolylineLayer(
+                  polylines: [
+                    Polyline(
+                      points: _routePoints,
+                      strokeWidth: 4,
+                      color: Theme.of(context).primaryColor,
+                      strokeJoin: StrokeJoin.round,
+                      strokeCap: StrokeCap.round,
+                    ),
+                  ],
+                ),
+              // User location layer
+              if (_userLocation != null)
+                CurrentLocationLayer(
+                  alignPositionOnUpdate: AlignOnUpdate.never,
+                  alignDirectionOnUpdate: AlignOnUpdate.never,
+                  style: LocationMarkerStyle(
+                    marker: DefaultLocationMarker(
+                      child: Container(
+                        decoration: BoxDecoration(
+                          color: Theme.of(context).primaryColor,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: Theme.of(context).colorScheme.onPrimary,
+                            width: 3,
+                          ),
+                        ),
+                        child: Icon(
+                          Icons.person,
+                          color: Theme.of(context).colorScheme.onPrimary,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                    markerSize: const Size(40, 40),
+                    markerDirection: MarkerDirection.heading,
+                  ),
+                ),
+              MarkerLayer(
+                markers: allMarkers,
+                alignment: Alignment.center,
+              ),
+            ],
           ),
+          // Nearest stop distance badge
+          if (_nearestStop != null && _nearestStopDistance != null)
+            Positioned(
+              bottom: 16,
+              left: 16,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: Theme.of(context).cardColor,
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color:
+                          Theme.of(context).shadowColor.withValues(alpha: .2),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      Icons.near_me,
+                      size: 16,
+                      color: Theme.of(context).colorScheme.tertiary,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _formatDistance(_nearestStopDistance!),
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.w600,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
@@ -527,6 +693,16 @@ class _RoutePageState extends State<RoutePage> {
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (_userLocation != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: FloatingActionButton.small(
+              heroTag: "my_location",
+              onPressed: _centerOnUserLocation,
+              tooltip: 'center_on_location'.tr(),
+              child: const Icon(Icons.my_location),
+            ),
+          ),
         FloatingActionButton.small(
           heroTag: "fit_route",
           onPressed: _fitRouteToView,
@@ -639,6 +815,18 @@ class _RoutePageState extends State<RoutePage> {
                               Icons.timeline,
                               'route_path'.tr(),
                               Theme.of(context).primaryColor),
+                          if (_userLocation != null)
+                            _buildLegendItem(
+                                context,
+                                Icons.person,
+                                'your_location'.tr(),
+                                Theme.of(context).primaryColor),
+                          if (_nearestStop != null)
+                            _buildLegendItem(
+                                context,
+                                Icons.near_me,
+                                'nearest_stop'.tr(),
+                                Theme.of(context).colorScheme.tertiary),
                         ],
                       ),
                     ],
