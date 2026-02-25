@@ -48,8 +48,9 @@ class NotificationHelper {
     required int minutesUntilArrival,
     required String stopName,
   }) async {
-    final delaySeconds = (minutesUntilArrival - 1) * 60;
-    if (delaySeconds <= 0) return;
+    // Notify 1 minute before arrival, or immediately if <=1 min away
+    final delaySeconds =
+        minutesUntilArrival > 1 ? (minutesUntilArrival - 1) * 60 : 0;
 
     const androidDetails = AndroidNotificationDetails(
       'bus_arrival_reminders',
@@ -69,18 +70,31 @@ class NotificationHelper {
       iOS: iosDetails,
     );
 
-    Future.delayed(Duration(seconds: delaySeconds), () async {
+    if (delaySeconds == 0) {
       try {
         await _plugin.show(
           id: id,
           title: 'Bus Arriving Soon!',
-          body: 'Line $lineId (Bus $vehCode) arriving at $stopName in ~1 minute',
+          body: 'Line $lineId arriving at $stopName in ~1 minute',
           notificationDetails: details,
         );
       } catch (e) {
         debugPrint('Notification error: $e');
       }
-    });
+    } else {
+      Future.delayed(Duration(seconds: delaySeconds), () async {
+        try {
+          await _plugin.show(
+            id: id,
+            title: 'Bus Arriving Soon!',
+            body: 'Line $lineId arriving at $stopName in ~1 minute',
+            notificationDetails: details,
+          );
+        } catch (e) {
+          debugPrint('Notification error: $e');
+        }
+      });
+    }
   }
 
   Future<void> cancelReminder(int id) async {

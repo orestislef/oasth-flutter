@@ -376,13 +376,13 @@ class _LineInfoPageState extends State<LineInfoPage>
   }
 
   Widget _buildStopsTab(BuildContext context) {
-    return Column(
+    return ListView(
       children: [
         _buildLineVariantsSection(context),
         _buildDirectionSection(context),
         _buildSearchBar(context),
         _buildSortToggle(context),
-        Expanded(child: _buildStopsList(context)),
+        _buildStopsList(context),
       ],
     );
   }
@@ -723,10 +723,12 @@ class _LineInfoPageState extends State<LineInfoPage>
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return ShimmerContainer(
-            child: ListView(
-              primary: false,
+            child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: List.generate(8, (_) => const ShimmerListTile()),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: List.generate(8, (_) => const ShimmerListTile()),
+              ),
             ),
           );
         }
@@ -742,10 +744,12 @@ class _LineInfoPageState extends State<LineInfoPage>
           builder: (context, routeSnapshot) {
             if (routeSnapshot.connectionState == ConnectionState.waiting) {
               return ShimmerContainer(
-                child: ListView(
-                  primary: false,
+                child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
-                  children: List.generate(8, (_) => const ShimmerListTile()),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List.generate(8, (_) => const ShimmerListTile()),
+                  ),
                 ),
               );
             }
@@ -779,41 +783,40 @@ class _LineInfoPageState extends State<LineInfoPage>
             }
 
             final hasFilter = _searchQuery.isNotEmpty;
-            return ListView.builder(
-              controller: _scrollController,
+            return Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: stops.length + (hasFilter ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (hasFilter && index == 0) {
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.filter_list,
-                          size: 16,
-                          color: Theme.of(context).primaryColor,
-                        ),
-                        const SizedBox(width: 8),
-                        Text(
-                          'showing_stops_results'.tr(namedArgs: {
-                            'count': stops.length.toString(),
-                            'total': _currentRouteData!.stops.length.toString(),
-                          }),
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Theme.of(context).primaryColor,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                        ),
-                      ],
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (hasFilter)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.filter_list,
+                            size: 16,
+                            color: Theme.of(context).primaryColor,
+                          ),
+                          const SizedBox(width: 8),
+                          Text(
+                            'showing_stops_results'.tr(namedArgs: {
+                              'count': stops.length.toString(),
+                              'total':
+                                  _currentRouteData!.stops.length.toString(),
+                            }),
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context).primaryColor,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                          ),
+                        ],
+                      ),
                     ),
-                  );
-                }
-                final stopIndex = hasFilter ? index - 1 : index;
-                final stop = stops[stopIndex];
-                return _buildStopCard(context, stop);
-              },
+                  for (final stop in stops) _buildStopCard(context, stop),
+                ],
+              ),
             );
           },
         );
