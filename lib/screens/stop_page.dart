@@ -70,7 +70,31 @@ class _StopPageState extends State<StopPage> {
         _arrivals = data;
         _isInitialLoading = false;
         _error = null;
+        _trackingCache.clear();
       });
+
+      // Re-fetch tracking for the currently expanded arrival
+      if (_expandedArrivalKey != null) {
+        final expanded = data.where(
+          (a) => '${a.routeCode}_${a.vehCode}' == _expandedArrivalKey,
+        );
+        if (expanded.isNotEmpty) {
+          _fetchBusTracking(expanded.first).then((info) {
+            if (mounted) {
+              setState(() {
+                _trackingCache[_expandedArrivalKey!] = info ??
+                    _BusTrackingInfo(
+                      routeStops: [],
+                      currentStopIndex: -1,
+                    );
+              });
+            }
+          });
+        } else {
+          // The bus we were tracking is no longer in arrivals
+          setState(() => _expandedArrivalKey = null);
+        }
+      }
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -596,7 +620,7 @@ class _StopPageState extends State<StopPage> {
             ),
           ),
           title: Text(
-            '${'bus'.tr()} ${arrival.vehCode}',
+            '${'line'.tr()} ${arrival.routeCode}',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w500,
                 ),
@@ -636,7 +660,7 @@ class _StopPageState extends State<StopPage> {
                     ? Icons.warning
                     : isExpanded
                         ? Icons.expand_less
-                        : Icons.access_time,
+                        : Icons.expand_more,
                 color: isImminent
                     ? Theme.of(context).colorScheme.error
                     : isSoon
@@ -931,8 +955,14 @@ class _StopPageState extends State<StopPage> {
         _expandedArrivalKey = key;
         if (!_trackingCache.containsKey(key)) {
           _fetchBusTracking(arrival).then((info) {
-            if (mounted && info != null) {
-              setState(() => _trackingCache[key] = info);
+            if (mounted) {
+              setState(() {
+                _trackingCache[key] = info ??
+                    _BusTrackingInfo(
+                      routeStops: [],
+                      currentStopIndex: -1,
+                    );
+              });
             }
           });
         }
@@ -942,8 +972,29 @@ class _StopPageState extends State<StopPage> {
 
   Future<_BusTrackingInfo?> _fetchBusTracking(StopDetails arrival) async {
     try {
-      final routeData =
-          await _repo.getRouteDetailsAndStops(arrival.routeCode);
+      // arrival.routeCode is actually the line ID (e.g. "01", "28"),
+      // not the real route code. Resolve via getRoutesForStop.
+      final routesForStop =
+          await _repo.getRoutesForStop(widget.stop.stopCode);
+
+      // Find routes matching this line ID
+      final matchingRoutes = routesForStop
+          .where((r) => r.lineID == arrival.routeCode)
+          .toList();
+
+      if (matchingRoutes.isEmpty) return null;
+
+      final realRouteCode = matchingRoutes.first.routeCode;
+
+      // Fetch route details and bus locations in parallel with a timeout
+      final results = await Future.wait([
+        _repo.getRouteDetailsAndStops(realRouteCode),
+        _repo.getBusLocations(realRouteCode),
+      ]).timeout(const Duration(seconds: 12));
+
+      final routeData = results[0] as RouteDetailAndStops;
+      final busLocations = results[1] as List<BusLocationData>;
+
       final stops = routeData.stops;
       if (stops.isEmpty) return null;
 
@@ -951,11 +1002,21 @@ class _StopPageState extends State<StopPage> {
         (s) => s.stopCode == widget.stop.stopCode,
       );
 
-      final busLocations =
-          await _repo.getBusLocations(arrival.routeCode);
-
+      // Try matching across all route variants if needed
       BusLocationData? matchedBus;
-      for (final bus in busLocations) {
+      List<BusLocationData> allBusLocations = List.of(busLocations);
+
+      // If not found on first route, check other directions
+      if (!allBusLocations.any((b) => b.vehNo == arrival.vehCode) &&
+          matchingRoutes.length > 1) {
+        for (int i = 1; i < matchingRoutes.length; i++) {
+          final otherBuses =
+              await _repo.getBusLocations(matchingRoutes[i].routeCode);
+          allBusLocations.addAll(otherBuses);
+        }
+      }
+
+      for (final bus in allBusLocations) {
         if (bus.vehNo == arrival.vehCode) {
           matchedBus = bus;
           break;
@@ -1157,7 +1218,6 @@ class _StopPageState extends State<StopPage> {
         title: Text('set_reminder'.tr()),
         content: Text(
           'reminder_dialog_text'.tr(namedArgs: {
-            'vehCode': arrival.vehCode,
             'routeCode': arrival.routeCode,
             'minutes': minutes.toString(),
           }),

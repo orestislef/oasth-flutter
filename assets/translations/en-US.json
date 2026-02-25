@@ -363,7 +363,7 @@
   "legend": "Legend",
   "loading_favorites_map": "Loading favorite lines...",
   "set_reminder": "Set Reminder",
-  "reminder_dialog_text": "Remind you 1 minute before Bus {vehCode} (Line {routeCode}) arrives? That's in about {minutes} minutes.",
+  "reminder_dialog_text": "Remind you 1 minute before Line {routeCode} arrives? That's in about {minutes} minutes.",
   "reminder_set": "Reminder set! You'll be notified in about {minutes} minutes.",
   "notification_permission_denied": "Notification permission is required to set reminders",
   "pick_from_map": "Pick from Map",
