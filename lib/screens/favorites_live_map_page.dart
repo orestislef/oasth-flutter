@@ -6,7 +6,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:location/location.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/lines_with_ml_info.dart';
 import 'package:oasth/data/oasth_repository.dart';
@@ -30,7 +30,7 @@ class _FavoritesLiveMapPageState extends State<FavoritesLiveMapPage> {
   bool _isLoading = true;
   bool _isRefreshing = false;
   String? _error;
-  LocationData? _userLocation;
+  Position? _userLocation;
   bool _showPolylines = true;
 
   // Data
@@ -190,7 +190,7 @@ class _FavoritesLiveMapPageState extends State<FavoritesLiveMapPage> {
   void _centerOnUserLocation() {
     if (_userLocation != null) {
       _mapController.move(
-        LatLng(_userLocation!.latitude!, _userLocation!.longitude!),
+        LatLng(_userLocation!.latitude, _userLocation!.longitude),
         14.0,
       );
     }
@@ -203,7 +203,7 @@ class _FavoritesLiveMapPageState extends State<FavoritesLiveMapPage> {
     }
     if (_userLocation != null) {
       points.add(
-          LatLng(_userLocation!.latitude!, _userLocation!.longitude!));
+          LatLng(_userLocation!.latitude, _userLocation!.longitude));
     }
     if (points.length >= 2) {
       _mapController.fitCamera(CameraFit.coordinates(
@@ -341,7 +341,7 @@ class _FavoritesLiveMapPageState extends State<FavoritesLiveMapPage> {
           options: MapOptions(
             initialCenter: _userLocation != null
                 ? LatLng(
-                    _userLocation!.latitude!, _userLocation!.longitude!)
+                    _userLocation!.latitude, _userLocation!.longitude)
                 : const LatLng(40.6401, 22.9444), // Thessaloniki center
             initialZoom: 13.0,
           ),

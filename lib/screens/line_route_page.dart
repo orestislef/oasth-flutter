@@ -5,7 +5,7 @@ import 'package:go_router/go_router.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:location/location.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:oasth/api/responses/bus_location.dart';
 import 'package:oasth/api/responses/route_detail_and_stops.dart';
 import 'package:oasth/data/oasth_repository.dart';
@@ -53,7 +53,7 @@ class _RoutePageState extends State<RoutePage> {
 
   bool _initialized = false;
 
-  LocationData? _userLocation;
+  Position? _userLocation;
   Stop? _nearestStop;
   double? _nearestStopDistance;
 
@@ -106,7 +106,7 @@ class _RoutePageState extends State<RoutePage> {
   void _updateNearestStop() {
     if (_userLocation == null || widget.stops.isEmpty) return;
     final userLatLng =
-        LatLng(_userLocation!.latitude!, _userLocation!.longitude!);
+        LatLng(_userLocation!.latitude, _userLocation!.longitude);
     const distance = Distance();
     double minDist = double.infinity;
     Stop? closest;
@@ -129,7 +129,7 @@ class _RoutePageState extends State<RoutePage> {
   void _centerOnUserLocation() {
     if (_userLocation != null) {
       _mapController.move(
-        LatLng(_userLocation!.latitude!, _userLocation!.longitude!),
+        LatLng(_userLocation!.latitude, _userLocation!.longitude),
         16.0,
       );
     }

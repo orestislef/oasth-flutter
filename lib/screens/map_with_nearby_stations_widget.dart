@@ -5,7 +5,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_map_location_marker/flutter_map_location_marker.dart';
 import 'package:flutter_map_marker_cluster/flutter_map_marker_cluster.dart';
 import 'package:latlong2/latlong.dart';
-import 'package:location/location.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:oasth/data/oasth_repository.dart';
 import 'package:oasth/helpers/app_routes.dart';
 import 'package:oasth/helpers/language_helper.dart';
@@ -28,7 +28,7 @@ class MapWithNearbyStations extends StatefulWidget {
 class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
   final _repo = OasthRepository();
   final MapController _mapController = MapController();
-  LocationData? _userLocation;
+  Position? _userLocation;
   List<Stop> _allStops = [];
   List<Stop> _nearbyStops = [];
   bool _showOnlyNearby = false;
@@ -73,7 +73,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
 
         if (location != null) {
           _mapController.move(
-            LatLng(location.latitude!, location.longitude!),
+            LatLng(location.latitude, location.longitude),
             15.5,
           );
           _updateNearbyStops();
@@ -120,7 +120,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
     if (_userLocation == null || _allStops.isEmpty) return;
 
     final userLatLng =
-        LatLng(_userLocation!.latitude!, _userLocation!.longitude!);
+        LatLng(_userLocation!.latitude, _userLocation!.longitude);
     final distance = const Distance();
 
     _nearbyStops = _allStops.where((stop) {
@@ -149,7 +149,7 @@ class _MapWithNearbyStationsState extends State<MapWithNearbyStations> {
   void _centerOnUserLocation() {
     if (_userLocation != null) {
       _mapController.move(
-        LatLng(_userLocation!.latitude!, _userLocation!.longitude!),
+        LatLng(_userLocation!.latitude, _userLocation!.longitude),
         16.0,
       );
     }
