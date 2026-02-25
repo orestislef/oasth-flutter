@@ -396,10 +396,13 @@ class _RoutePageState extends State<RoutePage> {
           _buildMap(context),
           _buildTopControls(context),
           if (_hasError) _buildErrorBanner(context),
+          Positioned(
+            bottom: 16,
+            right: 16,
+            child: _buildFloatingActionButtons(context),
+          ),
         ],
       ),
-      floatingActionButton: _buildFloatingActionButtons(context),
-      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
 

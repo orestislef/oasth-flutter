@@ -20,6 +20,7 @@ class _StopsPageState extends State<StopsPage> {
   final _repo = OasthRepository();
   final TextEditingController _textFieldController = TextEditingController();
   bool _isButtonEnabled = false;
+  bool _isLookingUp = false;
   String _lineSearchQuery = '';
 
   @override
@@ -222,9 +223,22 @@ class _StopsPageState extends State<StopsPage> {
               width: double.infinity,
               child: FilledButton.icon(
                 onPressed:
-                    _isButtonEnabled ? () => _lookupStopByCode(context) : null,
-                icon: const Icon(Icons.search),
-                label: Text('take_station_info'.tr()),
+                    _isButtonEnabled && !_isLookingUp
+                        ? () => _lookupStopByCode(context)
+                        : null,
+                icon: _isLookingUp
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Icon(Icons.search),
+                label: Text(_isLookingUp
+                    ? 'loading'.tr()
+                    : 'take_station_info'.tr()),
               ),
             ),
           ],
@@ -381,6 +395,9 @@ class _StopsPageState extends State<StopsPage> {
   }
 
   Future<void> _lookupStopByCode(BuildContext context) async {
+    if (_isLookingUp) return;
+    setState(() => _isLookingUp = true);
+
     final stopCode = _textFieldController.text;
     try {
       final stopBySip = await _repo.getStopBySIP(stopCode);
@@ -410,6 +427,8 @@ class _StopsPageState extends State<StopsPage> {
           behavior: SnackBarBehavior.floating,
         ),
       );
+    } finally {
+      if (mounted) setState(() => _isLookingUp = false);
     }
   }
 
