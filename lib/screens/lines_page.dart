@@ -191,6 +191,14 @@ class _LinesPageState extends State<LinesPage> {
                   color: Theme.of(context).hintColor,
                 ),
           ),
+          if (_repo.favorites.favorites.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => context.push(AppRoutes.favoritesLiveMap),
+              icon: const Icon(Icons.map, size: 18),
+              label: Text('favorites_live_map'.tr()),
+            ),
+          ],
         ],
       ),
     );

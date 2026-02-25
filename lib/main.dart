@@ -10,11 +10,14 @@ import 'package:oasth/screens/map_with_nearby_stations_widget.dart';
 import 'package:oasth/screens/more_screen.dart';
 import 'package:oasth/screens/news_screen.dart';
 import 'package:oasth/screens/stop_page.dart';
+import 'package:oasth/screens/nearby_departures_page.dart';
+import 'package:oasth/screens/favorites_live_map_page.dart';
 import 'package:oasth/screens/best_route/route_map.dart';
 import 'package:go_router/go_router.dart';
 
 import 'helpers/app_routes.dart';
 import 'helpers/language_helper.dart';
+import 'helpers/notification_helper.dart';
 import 'helpers/package_info_plus_helper.dart';
 import 'helpers/shared_preferences_helper.dart';
 import 'helpers/theme_mode_controller.dart';
@@ -26,6 +29,7 @@ void main() async {
   await OasthRepository().init();
   await ThemeModeController.init();
   await PackageInfoPlusHelper.ensureInitialized();
+  await NotificationHelper().init();
 
   // Start background data download (non-blocking)
   Api.downloadAllData().then((_) {
@@ -134,6 +138,14 @@ class MyApp extends StatelessWidget {
                 return NewsDetailPage(newsItem: args.newsItem);
               },
             ),
+            GoRoute(
+              path: AppRoutes.nearbyDepartures,
+              builder: (context, state) => const NearbyDeparturesPage(),
+            ),
+            GoRoute(
+              path: AppRoutes.favoritesLiveMap,
+              builder: (context, state) => const FavoritesLiveMapPage(),
+            ),
           ],
         );
 
@@ -146,6 +158,10 @@ class MyApp extends StatelessWidget {
           theme: ThemeData(
             colorScheme: ColorScheme.fromSeed(seedColor: Colors.lightBlue),
             useMaterial3: true,
+            bottomNavigationBarTheme: BottomNavigationBarThemeData(
+              selectedItemColor: ColorScheme.fromSeed(seedColor: Colors.lightBlue).primary,
+              unselectedItemColor: ColorScheme.fromSeed(seedColor: Colors.lightBlue).onSurfaceVariant,
+            ),
           ),
           darkTheme: ThemeData(
             colorScheme: ColorScheme.fromSeed(
@@ -158,6 +174,13 @@ class MyApp extends StatelessWidget {
             tabBarTheme: const TabBarThemeData(
               labelColor: Colors.lightBlueAccent,
               unselectedLabelColor: Colors.white70,
+            ),
+            bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+              selectedItemColor: Colors.lightBlueAccent,
+              unselectedItemColor: Colors.white70,
+            ),
+            iconTheme: const IconThemeData(
+              color: Colors.white70,
             ),
             useMaterial3: true,
           ),

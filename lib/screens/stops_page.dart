@@ -44,6 +44,7 @@ class _StopsPageState extends State<StopsPage> {
   Widget build(BuildContext context) {
     return Column(
       children: [
+        _buildQuickAccessCards(context),
         _buildStopCodeSection(context),
         Padding(
           padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -67,6 +68,89 @@ class _StopsPageState extends State<StopsPage> {
         _buildLineSearchBar(context),
         Expanded(child: _buildLinesList(context)),
       ],
+    );
+  }
+
+  Widget _buildQuickAccessCards(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      child: Row(
+        children: [
+          Expanded(
+            child: _buildQuickAccessCard(
+              context,
+              icon: Icons.near_me,
+              color: Theme.of(context).primaryColor,
+              title: 'nearby_stations_quick'.tr(),
+              subtitle: 'nearby_stations_quick_desc'.tr(),
+              onTap: () => context.push(AppRoutes.mapFull),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: _buildQuickAccessCard(
+              context,
+              icon: Icons.departure_board,
+              color: Theme.of(context).colorScheme.tertiary,
+              title: 'whats_coming_near_me'.tr(),
+              subtitle: 'whats_coming_desc'.tr(),
+              onTap: () => context.push(AppRoutes.nearbyDepartures),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildQuickAccessCard(
+    BuildContext context, {
+    required IconData icon,
+    required Color color,
+    required String title,
+    required String subtitle,
+    required VoidCallback onTap,
+  }) {
+    return Card(
+      margin: EdgeInsets.zero,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Padding(
+          padding: const EdgeInsets.all(12),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: color.withValues(alpha: .15),
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: color, size: 22),
+              ),
+              const SizedBox(height: 10),
+              Text(
+                title,
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+              ),
+              const SizedBox(height: 4),
+              Text(
+                subtitle,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Theme.of(context).hintColor,
+                    ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
