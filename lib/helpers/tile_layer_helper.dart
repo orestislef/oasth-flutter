@@ -193,7 +193,7 @@ class TileLayerHelper {
         'scale': '@2x',
       },
       userAgentPackageName:
-          PackageInfoPlusHelper.packageName ?? 'com.lefkaditishub.oasth',
+          PackageInfoPlusHelper.packageName ?? 'com.orestislef.oasth',
       tileProvider: tileProvider,
       keepBuffer: 5,
     );
@@ -206,7 +206,7 @@ class TileLayerHelper {
       subdomains: const ['0', '1', '2', '3'],
       additionalOptions: {
         'userAgent':
-            PackageInfoPlusHelper.packageName ?? 'com.lefkaditishub.oasth',
+            PackageInfoPlusHelper.packageName ?? 'com.orestislef.oasth',
         'hl': _languageCode,
         'gl': _countryCode,
       },
